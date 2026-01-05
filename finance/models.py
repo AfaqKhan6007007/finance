@@ -1,5 +1,5 @@
 from django. db import models
-from django.contrib. auth.models import User
+from django.contrib.auth.models import User
 
 # Remove the Login and Signup models - they're not needed! 
 # Django's built-in User model handles this already

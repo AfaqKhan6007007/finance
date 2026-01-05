@@ -4,7 +4,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from . forms import LoginForm, SignupForm
+from .forms import LoginForm, SignupForm
 
 class Home(View):
     @method_decorator(login_required)  # Require login to access
