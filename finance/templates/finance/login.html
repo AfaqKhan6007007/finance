@@ -218,7 +218,7 @@
                 <div class="form-group">
                     <label class="form-label">Email address</label>
                     <div class="input-group">
-                        {{ form.email }}
+                        {{ form.username }}
                     </div>
                 </div>
                 
@@ -260,7 +260,7 @@
         
         // Add placeholder text if using Django forms
         document.addEventListener('DOMContentLoaded', function() {
-            const emailInput = document.querySelector('input[name="email"]');
+            const emailInput = document.querySelector('input[name="username"]');
             const passwordInput = document.querySelector('input[name="password"]');
             
             if (emailInput) {

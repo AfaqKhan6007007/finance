@@ -1,12 +1,30 @@
-from .models import Login, Signup
 from django import forms
+from django.contrib.auth. forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth. models import User
 
-class LoginForm(forms.ModelForm):
+class SignupForm(UserCreationForm):
+    first_name = forms.CharField(max_length=56, required=True)
+    last_name = forms.CharField(max_length=56, required=True)
+    email = forms.EmailField(max_length=56, required=True)
+    
     class Meta:
-        model = Login
-        fields = ['email', 'password']
+        model = User
+        fields = ['first_name', 'last_name', 'username', 'email', 'password1', 'password2']
+    
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data['email']
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
+        if commit:
+            user.save()
+        return user
 
-class SignupForm(forms.ModelForm):
-    class Meta:
-        model = Signup
-        fields = ['first_name', 'last_name', 'username', 'email', 'password', 'confirm_password']
+class LoginForm(AuthenticationForm):
+    username = forms.CharField(
+        label='Email or Username',
+        widget=forms. TextInput(attrs={'placeholder': 'example@gmail.com'})
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'placeholder': '••••••••••'})
+    )
