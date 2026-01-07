@@ -264,26 +264,31 @@
             margin-bottom: 20px;
         }
 
+        /* Floating Action Button */
         .fab {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
+            bottom: 32px;
+            right: 32px;
+            width: 56px;
+            height: 56px;
+            background-color:  #00a896;
             border-radius:  50%;
-            background-color: #52c77c;
-            color:  white;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(82, 199, 124, 0.4);
             display: flex;
             align-items: center;
             justify-content: center;
+            cursor:  pointer;
+            box-shadow:  0 4px 12px rgba(0, 168, 150, 0.4);
+            transition: transform 0.2s;
+        }
+        
+        .fab:hover {
+            transform: scale(1.1);
         }
 
-        .fab:hover {
-            background-color: #45b36b;
+        .fab svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
         }
 
         @media (max-width: 1100px) { /* Added this breakpoint */
@@ -459,7 +464,11 @@
         <p style="color: #666;">No recent journal entries to display.</p>
     </div>
 
-    <button class="fab" title="Add new entry">💬</button>
+    <div class="fab">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.  9 2-2V4c0-1.1-.9-2-2-2z" fill="white"/>
+        </svg>
+    </div>
     </div>
 </body>
 </html>

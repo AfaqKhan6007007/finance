@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Accounts - Finance</title>
+    <title>Journal - Finance</title>
     <style>
         * {
             margin: 0;
@@ -448,8 +448,8 @@
         <!-- Page Header -->
         <div class="page-header">
             <div class="page-title-section">
-                <h1>Accounts</h1>
-                <p class="page-subtitle">Complete list of all accounts in system</p>
+                <h1>Journal Entries</h1>
+                <p class="page-subtitle">Complete list of all journal entries in system</p>
             </div>
             
             <div class="header-actions">
@@ -471,7 +471,7 @@
                         <line x1="12" y1="8" x2="12" y2="16"/>
                         <line x1="8" y1="12" x2="16" y2="12"/>
                     </svg>
-                    Add Accounts
+                    Add Journal Entries
                 </button>
             </div>
         </div>
@@ -480,22 +480,6 @@
         <div class="search-section">
             <input type="text" class="search-bar" placeholder="Search by account name, ID, or number...">
             
-            <div class="filters">
-                <select class="filter-select">
-                    <option>Company</option>
-                </select>
-                <input type="text" class="filter-input" placeholder="ID">
-                <input type="text" class="filter-input" placeholder="Account Number">
-                <select class="filter-select">
-                    <option>Root Type</option>
-                </select>
-                <select class="filter-select">
-                    <option>Report Type</option>
-                </select>
-                <select class="filter-select">
-                    <option>Account Type</option>
-                </select>
-            </div>
         </div>
 
         <!-- Table -->
@@ -505,19 +489,23 @@
                     <tr>
                         <th><input type="checkbox" class="checkbox"></th>
                         <th>ID</th>
-                        <th>Account Name</th>
-                        <th>Account Number</th>
-                        <th>Type</th>
+                        <th>Posting Date</th>
+                        <th>Account</th>
+                        <th>Debit</th>
+                        <th>Credit</th>
+                        <th>Description</th>
                         <th style="text-align: left;">15 of 44</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td><input type="checkbox" class="checkbox"></td>
-                        <td>Equity - PA</td>
-                        <td>Equity</td>
-                        <td></td>
-                        <td><span class="badge badge-equity">Equity</span></td>
+                        <td>JE00005</td>
+                        <td>01/12/2025</td>
+                        <td>Sales Account</td>
+                        <td style="color:#2563eb">SAR 200.00</td>
+                        <td style="color: green">SAR 200.00</td>
+                        <td>Test Entry</td>
                         <td>
                             <div class="action-icons">
                                 <span class="time-badge">1mo</span>
@@ -528,10 +516,12 @@
                     </tr>
                     <tr>
                         <td><input type="checkbox" class="checkbox"></td>
-                        <td>Expense - PA</td>
-                        <td>Expense</td>
-                        <td></td>
-                        <td><span class="badge badge-expense">Expense</span></td>
+                        <td>JE00004</td>
+                        <td>01/12/2025</td>
+                        <td>Sales Account</td>
+                        <td style="color:#2563eb">SAR 200.00</td>
+                        <td style="color: green">SAR 200.00</td>
+                        <td>Test Entry</td>
                         <td>
                             <div class="action-icons">
                                 <span class="time-badge">1mo</span>
@@ -542,10 +532,12 @@
                     </tr>
                     <tr>
                         <td><input type="checkbox" class="checkbox"></td>
-                        <td>Income - PA</td>
-                        <td>Income</td>
-                        <td></td>
-                        <td><span class="badge badge-income">Income</span></td>
+                        <td>JE00003</td>
+                        <td>01/12/2025</td>
+                        <td>Sales Account</td>
+                        <td style="color:#2563eb">SAR 200.00</td>
+                        <td style="color: green">SAR 200.00</td>
+                        <td>Test Entry</td>
                         <td>
                             <div class="action-icons">
                                 <span class="time-badge">1mo</span>
@@ -556,10 +548,12 @@
                     </tr>
                     <tr>
                         <td><input type="checkbox" class="checkbox"></td>
-                        <td>Source of Funds (Liabilities) - PA</td>
-                        <td>Source of Funds (Liabilities)</td>
-                        <td></td>
-                        <td><span class="badge badge-liability">Liability</span></td>
+                        <td>JE00002</td>
+                        <td>01/12/2025</td>
+                        <td>Sales Account</td>
+                        <td style="color:#2563eb">SAR 200.00</td>
+                        <td style="color: green">SAR 200.00</td>
+                        <td>Test Entry</td>
                         <td>
                             <div class="action-icons">
                                 <span class="time-badge">1mo</span>
@@ -570,10 +564,12 @@
                     </tr>
                     <tr>
                         <td><input type="checkbox" class="checkbox"></td>
-                        <td>Application of Funds (Assets) - PA</td>
-                        <td>Application of Funds (Assets)</td>
-                        <td></td>
-                        <td><span class="badge badge-asset">Asset</span></td>
+                        <td>JE00001</td>
+                        <td>01/12/2025</td>
+                        <td>Sales Account</td>
+                        <td style="color:#2563eb">SAR 200.00</td>
+                        <td style="color: green">SAR 200.00</td>
+                        <td>Test Entry</td>
                         <td>
                             <div class="action-icons">
                                 <span class="time-badge">1mo</span>
@@ -584,10 +580,12 @@
                     </tr>
                     <tr>
                         <td><input type="checkbox" class="checkbox"></td>
-                        <td>Expense - G</td>
-                        <td>Expense</td>
-                        <td></td>
-                        <td><span class="badge badge-expense">Expense</span></td>
+                        <td>JE00006</td>
+                        <td>01/12/2025</td>
+                        <td>Sales Account</td>
+                        <td style="color:#2563eb">SAR 200.00</td>
+                        <td style="color: green">SAR 200.00</td>
+                        <td>Test Entry</td>
                         <td>
                             <div class="action-icons">
                                 <span class="time-badge">1mo</span>
@@ -596,90 +594,7 @@
                             </div>
                         </td>
                     </tr>
-                    <tr>
-                        <td><input type="checkbox" class="checkbox"></td>
-                        <td>Income - G</td>
-                        <td>Income</td>
-                        <td></td>
-                        <td><span class="badge badge-income">Income</span></td>
-                        <td>
-                            <div class="action-icons">
-                                <span class="time-badge">1mo</span>
-                                <span class="icon-btn">💬 0</span>
-                                <span class="icon-btn">♡</span>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><input type="checkbox" class="checkbox"></td>
-                        <td>Source of Funds (Liabilities) - G</td>
-                        <td>Source of Funds (Liabilities)</td>
-                        <td></td>
-                        <td><span class="badge badge-liability">Liability</span></td>
-                        <td>
-                            <div class="action-icons">
-                                <span class="time-badge">1mo</span>
-                                <span class="icon-btn">💬 0</span>
-                                <span class="icon-btn">♡</span>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><input type="checkbox" class="checkbox"></td>
-                        <td>Application of Funds (Assets) - G</td>
-                        <td>Application of Funds (Assets)</td>
-                        <td></td>
-                        <td><span class="badge badge-asset">Asset</span></td>
-                        <td>
-                            <div class="action-icons">
-                                <span class="time-badge">1mo</span>
-                                <span class="icon-btn">💬 0</span>
-                                <span class="icon-btn">♡</span>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><input type="checkbox" class="checkbox"></td>
-                        <td>Equity - G</td>
-                        <td>Equity</td>
-                        <td></td>
-                        <td><span class="badge badge-equity">Equity</span></td>
-                        <td>
-                            <div class="action-icons">
-                                <span class="time-badge">1mo</span>
-                                <span class="icon-btn">💬 0</span>
-                                <span class="icon-btn">♡</span>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><input type="checkbox" class="checkbox"></td>
-                        <td>101 - Cash in Hand - GNH</td>
-                        <td>Cash in Hand</td>
-                        <td>101</td>
-                        <td><span class="badge badge-income">Income</span></td>
-                        <td>
-                            <div class="action-icons">
-                                <span class="time-badge">1mo</span>
-                                <span class="icon-btn">💬 0</span>
-                                <span class="icon-btn">♡</span>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><input type="checkbox" class="checkbox"></td>
-                        <td>Expense - O</td>
-                        <td>Expense</td>
-                        <td></td>
-                        <td><span class="badge badge-expense">Expense</span></td>
-                        <td>
-                            <div class="action-icons">
-                                <span class="time-badge">1mo</span>
-                                <span class="icon-btn">💬 0</span>
-                                <span class="icon-btn">♡</span>
-                            </div>
-                        </td>
-                    </tr>
+                    
                 </tbody>
             </table>
         </div>

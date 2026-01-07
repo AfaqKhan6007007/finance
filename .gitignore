@@ -1,5 +1,6 @@
 # byte-compiled / optimized / DLL files
-__pycache__/
+finance/__pycache__/
+core/__pycache__/
 *.py[cod]
 
 # tests and coverage

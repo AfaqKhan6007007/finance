@@ -16,6 +16,16 @@ class Dashboard(View):
     def get(self, request):
         return render(request, 'finance/dashboard.html', {})
 
+class Journal(View):
+    @method_decorator(login_required)  # Require login to access
+    def get(self, request):
+        return render(request, 'finance/journal.html', {})
+
+class TrialBalance(View):
+    @method_decorator(login_required)  # Require login to access
+    def get(self, request):
+        return render(request, 'finance/trial.html', {})
+
 class Login(View):
     def get(self, request):
         # If user is already logged in, redirect to home
