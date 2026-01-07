@@ -1,0 +1,76 @@
+{% load static %}
+<style>
+  :root{
+      --sidebar-width:260px;
+      --topbar-height:74px;
+      --sidebar-bg:#08463f;
+      --accent:#00b387;
+      --muted:#7b8588;
+      --card-bg:#ffffff;
+      --surface:#f3f6f5;
+      --text:#183231;
+      --row-border:#e6e9e9;
+      --success:#19b24b;
+      --warning:#f0c94e;
+      --danger:#e06b6b;
+      --radius:10px;
+      font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+  /* ===== Sidebar: begins BELOW the topbar and fixed to bottom ===== */
+    .sidebar{
+      position:fixed;
+      top:0;
+      left:-1px;
+      bottom:0;
+      width:var(--sidebar-width);
+      background-color:  white;
+      padding:20px;
+      
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+      box-shadow:2px 0 0 rgba(0,0,0,0.04);
+      z-index:20;
+      transition: transform 0.3s ease;
+    }
+
+    .nav{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+    .nav-item{
+      display:flex;align-items:center;gap:12px;border-radius:10px;padding:12px 14px;background:transparent;border:none;color:inherit;text-align:left;cursor:pointer;position:relative;
+        text-decoration: none;
+    }
+    .nav-item:hover{
+        background-color: rgb(248, 227, 186);
+    }
+    .nav-item .nav-icon{width:28px;display:inline-flex;justify-content:center;font-size:18px}
+    
+</style>
+<!-- Sidebar: starts below topbar (fixed) -->
+    <aside class="sidebar" aria-label="Primary navigation">
+        <h3 style="text-align: center;color: #00b387;">Finance</h3>
+      <nav class="nav" role="navigation" aria-label="Primary">
+        <a class="nav-item active" aria-current="page" href="{% url 'finance-dashboard' %}">
+          
+          <span class="nav-label">Dashboard</span>
+        </a>
+        
+        
+
+        <a class="nav-item" href="{% url 'finance-home' %}"><span class="nav-label">Chart of Accounts</span></a>
+       
+        <a class="nav-item" href="#"><span class="nav-label">Journal Entries</span></a>
+        <a class="nav-item" href="#"><span class="nav-label">Trial Balance</span></a>
+        <a class="nav-item" href="#"><span class="nav-label">Ledger</span></a>
+        <a class="nav-item" href="#"><span class="nav-label">Accounts Payable</span></a>
+        
+        <a class="nav-item" href="#"><span class="nav-label">Accounts Receivable</span></a>
+        
+        <a class="nav-item" href="#"><span class="nav-label">Financial Report</span></a>
+        
+        <a class="nav-item" href="#"><span class="nav-label">Invoices</span></a>
+        
+        <a class="nav-item" href="#"><span class="nav-label">Invoices Scan</span></a>
+        <a class="nav-item" href="#"><span class="nav-label">Companies</span></a>
+      </nav>
+    </aside>

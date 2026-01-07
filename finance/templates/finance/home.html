@@ -17,6 +17,9 @@
             color:  #1f2937;
         }
         
+        body.sidebar-collapsed .sidebar {
+            transform: translateX(-100%);
+        }
         /* Header */
         .header {
             display: flex;
@@ -25,7 +28,12 @@
             padding: 16px 24px;
             background-color:  white;
             border-bottom: 1px solid #e5e7eb;
-            position: relative;
+            position: sticky;
+            top: 0;
+            margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
+            height: var(--topbar-height);
+            transition: margin-left 0.3s ease, width 0.3s ease;
         }
         
         .hamburger {
@@ -175,6 +183,17 @@
             max-width:   1400px;
             margin: 0 auto;
             padding:  32px 24px;
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s ease, width 0.3s ease;
+        }
+
+        body.sidebar-collapsed .header {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        body.sidebar-collapsed .main-content {
+            margin-left: 0;
         }
         
         .page-header {
@@ -422,69 +441,8 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <div class="header">
-        <div class="hamburger">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
-        
-        <div class="logo-container">
-            <svg class="logo" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 5L25 15L35 20L25 25L20 35L15 25L5 20L15 15L20 5Z" fill="#00a896"/>
-                <circle cx="20" cy="20" r="3" fill="#00a896"/>
-            </svg>
-            <span class="brand-name">Finance</span>
-        </div>
-        
-        <div class="user-menu">
-            <div class="user-avatar" id="userAvatar">👤</div>
-            
-            <div class="dropdown-menu" id="dropdownMenu">
-                <div class="dropdown-header">
-                    <div class="dropdown-user-name">{{ user.first_name }} {{ user.last_name }}</div>
-                    <div class="dropdown-user-email">{{ user.email }}</div>
-                </div>
-                
-                <a href="{% url 'finance-home' %}" class="dropdown-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                    </svg>
-                    Dashboard
-                </a>
-                
-                <a href="#" class="dropdown-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                    Profile
-                </a>
-                
-                <a href="#" class="dropdown-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M19. 4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-. 06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-. 33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                    </svg>
-                    Settings
-                </a>
-                
-                <div class="dropdown-divider"></div>
-                
-                <a href="{% url 'finance-logout' %}" class="dropdown-item logout">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
-                    Logout
-                </a>
-            </div>
-        </div>
-    </div>
-
+    {% include "finance/header.html" %}
+    {% include "finance/sidenav.html" %}
     <!-- Main Content -->
     <div class="main-content">
         <!-- Page Header -->
@@ -751,9 +709,10 @@
             }
         });
         
-        // Hamburger menu
-        document.querySelector('.hamburger').addEventListener('click', function() {
-            alert('Menu clicked');
+        const hamburger = document.querySelector('.hamburger');
+
+        hamburger.addEventListener('click', function () {
+            document.body.classList.toggle('sidebar-collapsed');
         });
     </script>
 </body>

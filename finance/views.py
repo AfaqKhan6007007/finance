@@ -10,11 +10,16 @@ class Home(View):
     @method_decorator(login_required)  # Require login to access
     def get(self, request):
         return render(request, 'finance/home.html', {})
-    
+
+class Dashboard(View):
+    @method_decorator(login_required)  # Require login to access
+    def get(self, request):
+        return render(request, 'finance/dashboard.html', {})
+
 class Login(View):
     def get(self, request):
         # If user is already logged in, redirect to home
-        if request.user. is_authenticated:
+        if request.user.is_authenticated:
             return redirect('finance-home')
         
         form = LoginForm()

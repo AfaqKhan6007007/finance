@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background-color:  white;
+            border-bottom: 1px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
+            height: var(--topbar-height);
+            transition: margin-left 0.3s ease, width 0.3s ease;
+            z-index: 100;
+        }
+        
+        .hamburger {
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .hamburger span {
+            width: 28px;
+            height: 3px;
+            background-color:   #00a896;
+            border-radius: 2px;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .logo {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .brand-name {
+            font-size:  16px;
+            font-weight:   600;
+            color: #374151;
+        }
+        
+        .user-menu {
+            position: relative;
+            z-index: 101;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background:   linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color:   white;
+            font-weight:  600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .user-avatar:hover {
+            transform:  scale(1.05);
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background:  white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 200px;
+            display: none;
+            z-index: 1000;
+            overflow: hidden;
+        }
+        
+        .dropdown-menu.show {
+            display: block;
+            animation: slideDown 0.2s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform:  translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform:  translateY(0);
+            }
+        }
+        
+        .dropdown-header {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .dropdown-user-name {
+            font-weight:  600;
+            color: #1f2937;
+            font-size: 14px;
+        }
+        
+        .dropdown-user-email {
+            color: #6b7280;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        
+        .dropdown-item {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            color: #374151;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f9fafb;
+        }
+        
+        .dropdown-item svg {
+            width: 18px;
+            height: 18px;
+            stroke: #6b7280;
+        }
+        
+        .dropdown-divider {
+            height: 1px;
+            background-color:  #e5e7eb;
+            margin: 8px 0;
+        }
+        
+        .dropdown-item.logout {
+            color: #dc2626;
+        }
+        
+        .dropdown-item.logout svg {
+            stroke: #dc2626;
+        }
+        
+        .dropdown-item.logout:hover {
+            background-color: #fee2e2;
+        }
+        
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <div class="user-menu">
+            <div class="user-avatar" id="userAvatar">👤</div>
+            
+            <div class="dropdown-menu" id="dropdownMenu">
+                <div class="dropdown-header">
+                    <div class="dropdown-user-name">{{ user.first_name }} {{ user.last_name }}</div>
+                    <div class="dropdown-user-email">{{ user.email }}</div>
+                </div>
+                
+                <a href="{% url 'finance-home' %}" class="dropdown-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    Dashboard
+                </a>
+                
+                <a href="#" class="dropdown-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Profile
+                </a>
+                
+                <a href="#" class="dropdown-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19. 4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-. 06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-. 33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    Settings
+                </a>
+                
+                <div class="dropdown-divider"></div>
+                
+                <a href="{% url 'finance-logout' %}" class="dropdown-item logout">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // User menu dropdown toggle
+        const userAvatar = document.getElementById('userAvatar');
+        const dropdownMenu = document.getElementById('dropdownMenu');
+        
+        userAvatar.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdownMenu.classList.toggle('show');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!dropdownMenu.contains(e.target) && e.target !== userAvatar) {
+                dropdownMenu.classList.remove('show');
+            }
+        });
+        
+        const hamburger = document.querySelector('.hamburger');
+
+        hamburger.addEventListener('click', function () {
+            document.body.classList.toggle('sidebar-collapsed');
+        });
+    </script>
+</body>
+</html>
