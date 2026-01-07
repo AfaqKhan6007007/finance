@@ -25,6 +25,21 @@ class TrialBalance(View):
     @method_decorator(login_required)  # Require login to access
     def get(self, request):
         return render(request, 'finance/trial.html', {})
+    
+class Ledger(View):
+    @method_decorator(login_required)  # Require login to access
+    def get(self, request):
+        return render(request, 'finance/ledger.html', {})
+    
+class Companies(View):
+    @method_decorator(login_required)  # Require login to access
+    def get(self, request):
+        return render(request, 'finance/companies.html', {})
+
+class Payables(View):
+    @method_decorator(login_required)  # Require login to access
+    def get(self, request):
+        return render(request, 'finance/payables.html', {})    
 
 class Login(View):
     def get(self, request):
