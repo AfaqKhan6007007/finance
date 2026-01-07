@@ -41,6 +41,11 @@ class Payables(View):
     def get(self, request):
         return render(request, 'finance/payables.html', {})    
 
+class Invoices(View):
+    @method_decorator(login_required)  # Require login to access
+    def get(self, request):
+        return render(request, 'finance/invoices.html', {}) 
+
 class Login(View):
     def get(self, request):
         # If user is already logged in, redirect to home
