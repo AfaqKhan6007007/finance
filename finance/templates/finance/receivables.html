@@ -1,0 +1,690 @@
+<! DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Finance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f9fafb;
+            color: #333;
+        }
+
+        body.sidebar-collapsed .sidebar {
+            transform: translateX(-100%);
+        }
+
+        body.sidebar-collapsed .header {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        body.sidebar-collapsed .main-content {
+            margin-left: 0;
+        }
+
+        .main-content {
+            max-width:   1400px;
+            margin: 0 auto;
+            padding:  32px 24px;
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s ease, width 0.3s ease;
+            z-index: 1;
+        }
+
+        .main-content h1 {
+            font-size:  32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .main-content p {
+            font-size: 16px;
+            color: #666;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom:  30px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow:  0 1px 3px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .metric-card .icon {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .icon.green {
+            background-color: #d4f4dd;
+            color: #52c77c;
+        }
+
+        .icon.red {
+            background-color: #ffd4d4;
+            color:  #ff6b6b;
+        }
+
+        .metric-label {
+            font-size: 18px;
+            color: #666;
+            padding-top: 10px;
+        }
+
+        .metric-value {
+            font-size: 36px;
+            font-weight:  700;
+            margin-bottom: 8px;
+        }
+
+        .metric-change {
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .metric-change.positive {
+            color: #52c77c;
+        }
+
+        .metric-change.negative {
+            color: #ff6b6b;
+        }
+
+         /* Table */
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background-color: #f3f4f6;
+        }
+        
+        th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        th:first-child {
+            width:  40px;
+        }
+        
+        td {
+            padding: 16px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px;
+        }
+        
+        tr:hover {
+            background-color: #f9fafb;
+        }
+        
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size:  12px;
+            font-weight: 600;
+        }
+        
+        .badge-equity {
+            background-color: #ede9fe;
+            color: #7c3aed;
+        }
+        
+        .badge-expense {
+            background-color:  #fee2e2;
+            color:  #dc2626;
+        }
+        
+        .badge-income {
+            background-color: #dbeafe;
+            color: #2563eb;
+        }
+        
+        .badge-liability {
+            background-color: #fee2e2;
+            color:   #dc2626;
+        }
+        
+        .badge-asset {
+            background-color:  #d1fae5;
+            color: #059669;
+        }
+        
+        .time-badge {
+            color: #9ca3af;
+            font-size: 12px;
+        }
+        
+        .action-icons {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        
+        .icon-btn {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #6b7280;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        
+        .icon-btn:hover {
+            color: #00a896;
+        }
+        
+        .pagination {
+            text-align: right;
+            padding: 16px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .journal-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow:  0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .journal-section h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            width: 56px;
+            height: 56px;
+            background-color:  #00a896;
+            border-radius:  50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor:  pointer;
+            box-shadow:  0 4px 12px rgba(0, 168, 150, 0.4);
+            transition: transform 0.2s;
+        }
+        
+        .fab:hover {
+            transform: scale(1.1);
+        }
+
+        .fab svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+
+        .dropdown-container {
+            
+            margin: 0 auto;
+            display: flex;
+        }
+
+        label {
+            display: block;
+            padding-top: 0.5%;
+            font-size: 14px;
+            font-weight:  600;
+            color: #333;
+            margin-right: 2%;
+        }
+
+        select {
+            width: 20%;
+            padding: 10px 12px;
+            font-size: 15px;
+            border: 1px solid #ccc;
+            border-radius:  4px;
+            background-color: rgb(249 249 249);
+            color:  #333;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size:  16px;
+            padding-right: 40px;
+            transition: border-color 0.2s ease;
+        }
+
+        select:hover {
+            border-color: #999;
+        }
+
+        select:focus {
+            border-color:  #0078d4;
+            border-width: 2px;
+            box-shadow: 0 0 0 1px #0078d4;
+        }
+
+        option {
+            padding: 10px;
+            font-size: 15px;
+            background-color: white;
+            color: #333;
+        }
+
+        .graph-container {
+            background:  white;
+            padding: 40px;
+            
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height:  300px;
+            margin-bottom: 60px;
+        }
+
+        .y-axis {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 40px;
+            width: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .y-label {
+            font-size: 13px;
+            color: #666;
+            text-align: right;
+            padding-right: 10px;
+        }
+
+        .chart-area {
+            position: absolute;
+            left: 70px;
+            right: 0;
+            top:  0;
+            bottom: 40px;
+            border-left: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .grid-lines {
+            position: absolute;
+            top: 0;
+            left:  0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .grid-line {
+            width: 100%;
+            height: 1px;
+            background-color: #f3f4f6;
+        }
+
+        .line-graph {
+            position: absolute;
+            top: 0;
+            left:  0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .x-axis {
+            position: absolute;
+            left: 70px;
+            right: 0;
+            bottom: 0;
+            height: 40px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .x-label {
+            font-size: 13px;
+            color: #666;
+            padding-top: 10px;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #10b981;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+        }
+
+        .legend-line {
+            width: 20px;
+            height: 2px;
+            background-color:  #10b981;
+        }
+
+        /* SVG Line and Points */
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .line-path {
+            fill: none;
+            stroke: #10b981;
+            stroke-width: 2.5;
+        }
+
+        .data-point {
+            fill: #10b981;
+            stroke: white;
+            stroke-width: 2;
+        }
+
+        .data-point:hover {
+            r: 6;
+            cursor: pointer;
+        }
+        @media (max-width: 1100px) { /* Added this breakpoint */
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .bar-chart { /* Added this */
+        gap: 10px;
+    }
+    
+    .bar { /* Added this */
+        width:  30px;
+    }
+}
+    </style>
+</head>
+<body>
+    {% include "finance/header.html" %}
+    {% include "finance/sidenav.html" %}
+    <div class="main-content">
+        <h1>Accounts Payable</h1>
+        <p style="margin-bottom: 20px;">Manage supplier invoices and payments</p>
+        
+
+        <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="icon green">💲</div>
+            <div class="metric-label">Total Payables</div>
+            <div class="metric-value">$166,200</div>
+            
+        </div>
+
+        <div class="metric-card">
+            <div class="icon green">💲</div>
+            <div class="metric-label">Paid Invoices</div>
+            <div class="metric-value">$164,500</div>
+            
+        </div>
+
+        <div class="metric-card">
+            <div class="icon green">💲</div>
+            <div class="metric-label">Overdue Invoices</div>
+            <div class="metric-value">$1,700</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-label">Avg Payment Period</div>
+            <div class="metric-value">45 days</div>
+            <div class="icon green">💰</div>
+        </div>
+        </div>
+        <div>
+            
+
+            <div class="journal-section" style="margin-bottom: 2%;">
+                <div class="graph-container">
+                    <div class="chart-wrapper">
+                        <!-- Y-axis labels -->
+                        <div class="y-axis">
+                            <div class="y-label">80000</div>
+                            <div class="y-label">60000</div>
+                            <div class="y-label">40000</div>
+                            <div class="y-label">20000</div>
+                            <div class="y-label">0</div>
+                        </div>
+
+                        <!-- Chart area -->
+                        <div class="chart-area">
+                            <!-- Grid lines -->
+                            <div class="grid-lines">
+                                <div class="grid-line"></div>
+                                <div class="grid-line"></div>
+                                <div class="grid-line"></div>
+                                <div class="grid-line"></div>
+                                <div class="grid-line"></div>
+                            </div>
+
+                            <!-- Line graph -->
+                            <svg class="line-graph" viewBox="0 0 1000 260" preserveAspectRatio="none">
+                                <!-- Line path -->
+                                <polyline 
+                                    class="line-path"
+                                    points="0,130 166,145 333,80 500,115 667,140 833,100 1000,50"
+                                    vector-effect="non-scaling-stroke"
+                                />
+                                
+                                <!-- Data points (these need to scale properly) -->
+                            </svg>
+
+                            <!-- Data points with proper positioning -->
+                            <svg class="line-graph" viewBox="0 0 1000 260" preserveAspectRatio="xMidYMid meet" style="position: absolute; top: 0; left: 0;">
+                                <circle class="data-point" cx="0" cy="130" r="5" />
+                                <circle class="data-point" cx="166" cy="145" r="5" />
+                                <circle class="data-point" cx="333" cy="80" r="5" />
+                                <circle class="data-point" cx="500" cy="115" r="5" />
+                                <circle class="data-point" cx="667" cy="140" r="5" />
+                                <circle class="data-point" cx="833" cy="100" r="5" />
+                                <circle class="data-point" cx="1000" cy="50" r="5" />
+                            </svg>
+                        </div>
+
+                        <!-- X-axis labels -->
+                        <div class="x-axis">
+                            <div class="x-label">Apr</div>
+                            <div class="x-label">May</div>
+                            <div class="x-label">Jun</div>
+                            <div class="x-label">Jul</div>
+                            <div class="x-label">Aug</div>
+                            <div class="x-label">Sep</div>
+                        </div>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="legend">
+                        <div class="legend-line"></div>
+                        <div class="legend-dot"></div>
+                        <span>Receivables</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journal-section" style="background-color: white;border: none;margin-bottom: 2%;">
+                <div class="dropdown-container">
+                    <label for="account-select">Filter by Status:</label>
+                    <select id="account-select" name="account">
+                        <option value="All Invoices" selected>All Invoices</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Overdue">Overdue</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Table -->
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="white-space: nowrap;width: 12%;">Invoice No</th>
+                            <th>Vendor</th>
+                            <th>Date</th>
+                            <th>Due Date</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Payment Method</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-weight: bold;">PAY-001</td>
+                            <td>ABC Supplies</td>
+                            <td>2025-09-30</td>
+                            <td>2025-10-30</td>
+                            <td>$1,200</td>
+                            <td><span class="badge badge-equity">Pending</span></td>
+                            <td>Bank Transfer</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold;">PAY-001</td>
+                            <td>ABC Supplies</td>
+                            <td>2025-09-30</td>
+                            <td>2025-10-30</td>
+                            <td>$1,200</td>
+                            <td><span class="badge badge-equity">Pending</span></td>
+                            <td>Bank Transfer</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold;">PAY-001</td>
+                            <td>ABC Supplies</td>
+                            <td>2025-09-30</td>
+                            <td>2025-10-30</td>
+                            <td>$1,200</td>
+                            <td><span class="badge badge-equity">Pending</span></td>
+                            <td>Bank Transfer</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold;">PAY-001</td>
+                            <td>ABC Supplies</td>
+                            <td>2025-09-30</td>
+                            <td>2025-10-30</td>
+                            <td>$1,200</td>
+                            <td><span class="badge badge-equity">Pending</span></td>
+                            <td>Bank Transfer</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold;">PAY-001</td>
+                            <td>ABC Supplies</td>
+                            <td>2025-09-30</td>
+                            <td>2025-10-30</td>
+                            <td>$1,200</td>
+                            <td><span class="badge badge-equity">Pending</span></td>
+                            <td>Bank Transfer</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold;">PAY-001</td>
+                            <td>ABC Supplies</td>
+                            <td>2025-09-30</td>
+                            <td>2025-10-30</td>
+                            <td>$1,200</td>
+                            <td><span class="badge badge-equity">Pending</span></td>
+                            <td>Bank Transfer</td>
+                        </tr>
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    
+        <div class="metrics-grid" style="margin-top: 2%;">
+            <div class="metric-card" style="background-color: #cbffbe;display: flex;justify-content: space-between;">
+                <div class="metric-label">Paid</div>
+                <div class="metric-value">3</div>
+            </div>
+            
+            <div class="metric-card" style="background-color: #fcffd4;display: flex;justify-content: space-between;">
+                <div class="metric-label">Pending</div>
+                <div class="metric-value">3</div>
+            </div>
+
+            <div class="metric-card" style="background-color: #ffc4c4;display: flex;justify-content: space-between;">
+                <div class="metric-label">Overdue</div>
+                <div class="metric-value">3</div>
+            </div>
+            
+        </div>
+        <!-- Floating Action Button -->
+
+        <div class="fab">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.  9 2-2V4c0-1.1-.9-2-2-2z" fill="white"/>
+            </svg>
+        </div>
+    </div>
+</body>
+</html>
