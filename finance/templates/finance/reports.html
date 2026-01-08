@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Reports</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f9fafb;
+            color: #333;
+        }
+
+        body.sidebar-collapsed .sidebar {
+            transform: translateX(-100%);
+        }
+
+        body.sidebar-collapsed .header {
+            top:0;
+            margin-left: 0;
+            width: 100%;
+        }
+
+        body.sidebar-collapsed .container {
+            margin-left: 0;
+        }
+
+        .container {
+            max-width:   1400px;
+            margin: 0 auto;
+            padding:  32px 24px;
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s ease, width 0.3s ease;
+            z-index: 1;
+            
+        }
+
+        .header-2 {
+            display: flex;
+            justify-content: space-between;
+            align-items:  flex-start;
+            margin-bottom: 30px;
+        }
+
+        .header-left h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .header-left p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .header-right {
+            display:  flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight:  500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-excel {
+            background-color: white;
+            color: #333;
+        }
+
+        .btn-pdf {
+            background-color: #059669;
+            color: white;
+            border: none;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 30px;
+            justify-content: space-evenly;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight:  500;
+            color: #666;
+            border:  none;
+            background:  none;
+            border-bottom:  3px solid transparent;
+            transition:  all 0.3s;
+            width: 33%;
+        }
+
+        .tab:hover {
+            color: #059669;
+        }
+
+        .tab.active {
+            color: #059669;
+            border-bottom-color: #059669;
+            background-color: #ecfdf5;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Profit & Loss Styles */
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .revenue-card {
+            background-color: #ecfdf5;
+            border:  1px solid #d1fae5;
+        }
+
+        .expenses-card {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+        }
+
+        .net-profit-card {
+            background-color:  #d1fae5;
+            border: 1px solid #a7f3d0;
+        }
+
+        .card-header {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .line-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .line-item:last-child {
+            border-bottom: none;
+        }
+
+        .line-item-label {
+            color: #059669;
+        }
+
+        .expenses-card .line-item-label {
+            color: #dc2626;
+        }
+
+        .line-item-value {
+            font-weight: 500;
+        }
+
+        .total-line {
+            font-weight: 700;
+            padding-top: 15px;
+            margin-top: 10px;
+            border-top:  2px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .net-profit-card .profit-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        /* Balance Sheet Styles */
+        .balance-sheet-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom:  20px;
+        }
+
+        .assets-section, .liabilities-section {
+            background-color: #f9fafb;
+            padding:  25px;
+            border-radius:  8px;
+        }
+
+        .section-heading {
+            font-size: 22px;
+            font-weight:  600;
+            margin-bottom: 20px;
+        }
+
+        .asset-card {
+            background-color: #eff6ff;
+            border: 1px solid #dbeafe;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom:  15px;
+        }
+
+        .liability-card {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .equity-card {
+            background-color: #f5f3ff;
+            border:  1px solid #e9d5ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .subsection-title {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom:  12px;
+            color: #1e40af;
+        }
+
+        .liability-card .subsection-title {
+            color: #dc2626;
+        }
+
+        .equity-card .subsection-title {
+            color: #7c3aed;
+        }
+
+        .asset-line, .liability-line {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+
+        .asset-line-label {
+            color: #1e40af;
+        }
+
+        .liability-line-label {
+            color: #dc2626;
+        }
+
+        .equity-line-label {
+            color: #7c3aed;
+        }
+
+        .total-card {
+            background-color: #dbeafe;
+            border: 2px solid #93c5fd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .liability-total-card {
+            background-color:  #f3f4f6;
+            border: 2px solid #d1d5db;
+        }
+
+        .total-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        /* Cash Flow Styles */
+        .chart-container {
+            background-color: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom:  30px;
+        }
+
+        .chart-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .chart-placeholder {
+            width: 100%;
+            height:  400px;
+            background:  linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
+            border:  1px solid #e5e7eb;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            font-size: 14px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+        }
+
+        .legend-item {
+            display:  flex;
+            align-items:  center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width:  30px;
+            height: 3px;
+            border-radius:  2px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .metric-card {
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid;
+        }
+
+        .metric-card.operating {
+            background-color: #ecfdf5;
+            border-color: #a7f3d0;
+        }
+
+        .metric-card.investing {
+            background-color:  #eff6ff;
+            border-color: #bfdbfe;
+        }
+
+        .metric-card.financing {
+            background-color: #fef3c7;
+            border-color: #fcd34d;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .metric-card.operating .metric-label {
+            color: #059669;
+        }
+
+        .metric-card.investing .metric-label {
+            color: #2563eb;
+        }
+
+        .metric-card.financing .metric-label {
+            color: #d97706;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight:  700;
+        }
+
+        .metric-card.operating .metric-value {
+            color: #047857;
+        }
+
+        .metric-card.investing .metric-value {
+            color: #1e40af;
+        }
+
+        .metric-card.financing .metric-value {
+            color:  #b45309;
+        }
+
+        .journal-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow:  0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    {% include "finance/header.html" %}
+    {% include "finance/sidenav.html" %}
+    <div class="container">
+        <div class="header-2">
+            <div class="header-left">
+                <h1>Financial Reports</h1>
+                <p>Comprehensive financial statements and analysis</p>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-excel">
+                    <span>📄</span> Export Excel
+                </button>
+                <button class="btn btn-pdf">
+                    <span>⬇</span> Download PDF
+                </button>
+            </div>
+        </div>
+        <div class="journal-section">
+
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('profit-loss')">Profit & Loss</button>
+            <button class="tab" onclick="showTab('balance-sheet')">Balance Sheet</button>
+            <button class="tab" onclick="showTab('cash-flow')">Cash Flow</button>
+        </div>
+
+        <!-- Profit & Loss Tab -->
+        <div id="profit-loss" class="tab-content active">
+            <div class="section-title">Income Statement</div>
+            
+            <div class="card revenue-card">
+                <div class="card-header">Revenue</div>
+                <div class="line-item">
+                    <span class="line-item-label">Sales Revenue</span>
+                    <span class="line-item-value">$120,000</span>
+                </div>
+                <div class="line-item">
+                    <span class="line-item-label">Service Revenue</span>
+                    <span class="line-item-value">$45,000</span>
+                </div>
+                <div class="line-item">
+                    <span class="line-item-label">Interest Income</span>
+                    <span class="line-item-value">$1,200</span>
+                </div>
+                <div class="line-item total-line">
+                    <span class="line-item-label">Total Revenue</span>
+                    <span class="line-item-value">$166,200</span>
+                </div>
+            </div>
+
+            <div class="card expenses-card">
+                <div class="card-header">Expenses</div>
+                <div class="line-item">
+                    <span class="line-item-label">Salaries Expense</span>
+                    <span class="line-item-value">$85,000</span>
+                </div>
+                <div class="line-item">
+                    <span class="line-item-label">Operating Expenses</span>
+                    <span class="line-item-value">$55,000</span>
+                </div>
+                <div class="line-item">
+                    <span class="line-item-label">Rent Expense</span>
+                    <span class="line-item-value">$18,000</span>
+                </div>
+                <div class="line-item">
+                    <span class="line-item-label">Utilities Expense</span>
+                    <span class="line-item-value">$6,500</span>
+                </div>
+                <div class="line-item total-line">
+                    <span class="line-item-label">Total Expenses</span>
+                    <span class="line-item-value">$164,500</span>
+                </div>
+            </div>
+
+            <div class="card net-profit-card">
+                <div class="profit-display">
+                    <span>Net Profit</span>
+                    <span>$1,700</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Balance Sheet Tab -->
+        <div id="balance-sheet" class="tab-content">
+            <div class="balance-sheet-grid">
+                <div class="assets-section">
+                    <div class="section-heading">Assets</div>
+                    
+                    <div class="asset-card">
+                        <div class="subsection-title">Current Assets</div>
+                        <div class="asset-line">
+                            <span class="asset-line-label">Cash</span>
+                            <span>$45,000</span>
+                        </div>
+                        <div class="asset-line">
+                            <span class="asset-line-label">Accounts Receivable</span>
+                            <span>$32,000</span>
+                        </div>
+                        <div class="asset-line">
+                            <span class="asset-line-label">Inventory</span>
+                            <span>$28,500</span>
+                        </div>
+                        <div class="asset-line">
+                            <span class="asset-line-label">Prepaid Expenses</span>
+                            <span>$5,200</span>
+                        </div>
+                        <div class="asset-line total-line">
+                            <span class="asset-line-label"><strong>Total Current Assets</strong></span>
+                            <span><strong>$110,700</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="asset-card">
+                        <div class="subsection-title">Fixed Assets</div>
+                        <div class="asset-line">
+                            <span class="asset-line-label">Equipment</span>
+                            <span>$75,000</span>
+                        </div>
+                        <div class="asset-line total-line">
+                            <span class="asset-line-label"><strong>Total Fixed Assets</strong></span>
+                            <span><strong>$75,000</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="total-card">
+                        <div class="total-display">
+                            <span>Total Assets</span>
+                            <span>$185,700</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="liabilities-section">
+                    <div class="section-heading">Liabilities & Equity</div>
+                    
+                    <div class="liability-card">
+                        <div class="subsection-title">Current Liabilities</div>
+                        <div class="liability-line">
+                            <span class="liability-line-label">Accounts Payable</span>
+                            <span>$18,000</span>
+                        </div>
+                        <div class="liability-line">
+                            <span class="liability-line-label">Accrued Expenses</span>
+                            <span>$8,500</span>
+                        </div>
+                        <div class="liability-line total-line">
+                            <span class="liability-line-label"><strong>Total Current Liabilities</strong></span>
+                            <span><strong>$26,500</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="liability-card">
+                        <div class="subsection-title">Long-term Liabilities</div>
+                        <div class="liability-line">
+                            <span class="liability-line-label">Loans</span>
+                            <span>$25,000</span>
+                        </div>
+                        <div class="liability-line total-line">
+                            <span class="liability-line-label"><strong>Total Long-term Liabilities</strong></span>
+                            <span><strong>$25,000</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="equity-card">
+                        <div class="subsection-title">Equity</div>
+                        <div class="asset-line">
+                            <span class="equity-line-label">Owner's Equity</span>
+                            <span>$87,500</span>
+                        </div>
+                        <div class="asset-line">
+                            <span class="equity-line-label">Retained Earnings</span>
+                            <span>$46,700</span>
+                        </div>
+                        <div class="asset-line total-line">
+                            <span class="equity-line-label"><strong>Total Equity</strong></span>
+                            <span><strong>$134,200</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="total-card liability-total-card">
+                        <div class="total-display">
+                            <span>Total Liabilities & Equity</span>
+                            <span>$185,700</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cash Flow Tab -->
+        <div id="cash-flow" class="tab-content">
+            <div class="chart-container">
+                <div class="chart-title">Cash Flow Statement</div>
+                <div class="chart-placeholder">
+                    <svg class="chart-svg" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid meet">
+                        <!-- Grid lines -->
+                        <line x1="80" y1="50" x2="80" y2="350" stroke="#e5e7eb" stroke-width="2"/>
+                        <line x1="80" y1="350" x2="1150" y2="350" stroke="#e5e7eb" stroke-width="2"/>
+                        
+                        <!-- Y-axis labels -->
+                        <text x="60" y="55" text-anchor="end" font-size="12" fill="#6b7280">15000</text>
+                        <text x="60" y="125" text-anchor="end" font-size="12" fill="#6b7280">7500</text>
+                        <text x="60" y="200" text-anchor="end" font-size="12" fill="#6b7280">0</text>
+                        <text x="60" y="275" text-anchor="end" font-size="12" fill="#6b7280">-7500</text>
+                        <text x="60" y="350" text-anchor="end" font-size="12" fill="#6b7280">-15000</text>
+                        
+                        <!-- Grid horizontal lines -->
+                        <line x1="80" y1="50" x2="1150" y2="50" stroke="#f3f4f6" stroke-width="1"/>
+                        <line x1="80" y1="125" x2="1150" y2="125" stroke="#f3f4f6" stroke-width="1"/>
+                        <line x1="80" y1="200" x2="1150" y2="200" stroke="#f3f4f6" stroke-width="1"/>
+                        <line x1="80" y1="275" x2="1150" y2="275" stroke="#f3f4f6" stroke-width="1"/>
+                        
+                        <!-- X-axis labels -->
+                        <text x="150" y="370" text-anchor="middle" font-size="12" fill="#6b7280">Apr</text>
+                        <text x="370" y="370" text-anchor="middle" font-size="12" fill="#6b7280">May</text>
+                        <text x="590" y="370" text-anchor="middle" font-size="12" fill="#6b7280">Jun</text>
+                        <text x="810" y="370" text-anchor="middle" font-size="12" fill="#6b7280">Jul</text>
+                        <text x="1030" y="370" text-anchor="middle" font-size="12" fill="#6b7280">Aug</text>
+                        <text x="1150" y="370" text-anchor="middle" font-size="12" fill="#6b7280">Sep</text>
+                        
+                        <!-- Financing Activities (Orange) -->
+                        <polyline points="150,215 370,105 590,215 810,215 1030,230 1150,215" 
+                                  fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+                        <circle cx="150" cy="215" r="4" fill="#f59e0b"/>
+                        <circle cx="370" cy="105" r="4" fill="#f59e0b"/>
+                        <circle cx="590" cy="215" r="4" fill="#f59e0b"/>
+                        <circle cx="810" cy="215" r="4" fill="#f59e0b"/>
+                        <circle cx="1030" cy="230" r="4" fill="#f59e0b"/>
+                        <circle cx="1150" cy="215" r="4" fill="#f59e0b"/>
+                        
+                        <!-- Investing Activities (Blue) -->
+                        <polyline points="150,240 370,265 590,215 810,290 1030,215 1150,255" 
+                                  fill="none" stroke="#3b82f6" stroke-width="2.5"/>
+                        <circle cx="150" cy="240" r="4" fill="#3b82f6"/>
+                        <circle cx="370" cy="265" r="4" fill="#3b82f6"/>
+                        <circle cx="590" cy="215" r="4" fill="#3b82f6"/>
+                        <circle cx="810" cy="290" r="4" fill="#3b82f6"/>
+                        <circle cx="1030" cy="215" r="4" fill="#3b82f6"/>
+                        <circle cx="1150" cy="255" r="4" fill="#3b82f6"/>
+                        
+                        <!-- Operating Activities (Teal) -->
+                        <polyline points="150,165 370,155 590,230 810,125 1030,70 1150,105" 
+                                  fill="none" stroke="#10b981" stroke-width="2.5"/>
+                        <circle cx="150" cy="165" r="4" fill="#10b981"/>
+                        <circle cx="370" cy="155" r="4" fill="#10b981"/>
+                        <circle cx="590" cy="230" r="4" fill="#10b981"/>
+                        <circle cx="810" cy="125" r="4" fill="#10b981"/>
+                        <circle cx="1030" cy="70" r="4" fill="#10b981"/>
+                        <circle cx="1150" cy="105" r="4" fill="#10b981"/>
+                    </svg>
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #f59e0b;"></div>
+                        <span>Financing Activities</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #3b82f6;"></div>
+                        <span>Investing Activities</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #10b981;"></div>
+                        <span>Operating Activities</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card operating">
+                    <div class="metric-label">Operating Activities</div>
+                    <div class="metric-value">$48,000</div>
+                </div>
+                <div class="metric-card investing">
+                    <div class="metric-label">Investing Activities</div>
+                    <div class="metric-value">$-21,000</div>
+                </div>
+                <div class="metric-card financing">
+                    <div class="metric-label">Financing Activities</div>
+                    <div class="metric-value">$5,000</div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab. classList.remove('active');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

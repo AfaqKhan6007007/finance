@@ -55,6 +55,11 @@ class InvoiceScan(View):
     @method_decorator(login_required)  # Require login to access
     def get(self, request):
         return render(request, 'finance/scan.html', {}) 
+    
+class Reports(View):
+    @method_decorator(login_required)  # Require login to access
+    def get(self, request):
+        return render(request, 'finance/reports.html', {})
 
 class Login(View):
     def get(self, request):

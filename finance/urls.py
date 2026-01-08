@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import Home, Login, Signup, Logout, Dashboard, Journal, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan
+from .views import Home, Login, Signup, Logout, Dashboard, Journal, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports
 
 urlpatterns = [
     path('home', Home.as_view(), name='finance-home'),
@@ -15,4 +15,5 @@ urlpatterns = [
     path('invoices', Invoices.as_view(), name='finance-invoices' ),
     path('receivables', Receivables.as_view(), name='finance-receivables' ),
     path('scan', InvoiceScan.as_view(), name='finance-scan' ),
+    path('reports', Reports.as_view(), name='finance-reports' ),
 ]
