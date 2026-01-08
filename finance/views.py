@@ -1,10 +1,11 @@
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
 from django. views import View
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from .forms import LoginForm, SignupForm
+from .forms import LoginForm, SignupForm, CompanyForm
+from .models import Company
 
 class Home(View):
     @method_decorator(login_required)  # Require login to access
@@ -32,10 +33,101 @@ class Ledger(View):
         return render(request, 'finance/ledger.html', {})
     
 class Companies(View):
-    @method_decorator(login_required)  # Require login to access
+    """List all companies/accounts"""
+    @method_decorator(login_required)
     def get(self, request):
-        return render(request, 'finance/companies.html', {})
+        companies = Company.objects.all()
+        
+        # Search functionality
+        search_query = request.GET.get('search', '')
+        if search_query: 
+            companies = companies.filter(name__icontains=search_query)
+        
+        # Filter by ID
+        id_filter = request.GET.get('id', '')
+        if id_filter: 
+            companies = companies.filter(id=id_filter)
+        
+        context = {
+            'companies': companies,
+            'search_query':  search_query,
+            'id_filter': id_filter,
+            'total_count': Company.objects.count(),
+        }
+        return render(request, 'finance/companies.html', context)
 
+
+class CompanyCreate(View):
+    """Create new company/account"""
+    @method_decorator(login_required)
+    def get(self, request):
+        form = CompanyForm()
+        return render(request, 'finance/company_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+    
+    @method_decorator(login_required)
+    def post(self, request):
+        form = CompanyForm(request.POST)
+        if form.is_valid():
+            company = form.save(commit=False)
+            company. created_by = request.user
+            company.save()
+            messages.success(request, f'Company "{company.name}" created successfully!')
+            return redirect('finance-companies')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+        
+        return render(request, 'finance/company_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+
+class CompanyEdit(View):
+    """Edit existing company/account"""
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        company = get_object_or_404(Company, pk=pk)
+        form = CompanyForm(instance=company)
+        return render(request, 'finance/company_form.html', {
+            'form': form,
+            'company': company,
+            'action':  'Edit',
+            'is_edit': True
+        })
+    
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        company = get_object_or_404(Company, pk=pk)
+        form = CompanyForm(request.POST, instance=company)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Company "{company.name}" updated successfully!')
+            return redirect('finance-companies')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+        
+        return render(request, 'finance/company_form.html', {
+            'form': form,
+            'company':  company,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+
+class CompanyDelete(View):
+    """Delete company/account"""
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        company = get_object_or_404(Company, pk=pk)
+        company_name = company.name
+        company.delete()
+        messages.success(request, f'Company "{company_name}" deleted successfully!')
+        return redirect('finance-companies')
 class Payables(View):
     @method_decorator(login_required)  # Require login to access
     def get(self, request):
