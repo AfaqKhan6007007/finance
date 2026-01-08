@@ -1,9 +1,9 @@
-<! DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Account - Finance</title>
+    <title>{% if is_edit %}Edit{% else %}New{% endif %} Account - Finance</title>
     <style>
         * {
             margin: 0;
@@ -258,14 +258,14 @@
     <div class="breadcrumb">
         <a href="{% url 'finance-accounts' %}">Account</a>
         <span class="breadcrumb-separator">›</span>
-        <span>New Account</span>
+        <span>{% if is_edit %}Edit{% else %}New{% endif %} Account</span>
     </div>
     
     <!-- Header -->
     <div class="form-header">
         <div class="form-title">
             <span class="menu-icon">☰</span>
-            <h1>New Account</h1>
+            <h1>{% if is_edit %}Edit{% else %}New{% endif %} Account</h1>
         </div>
         <button type="submit" form="account-form" class="btn-save">Save</button>
     </div>
@@ -379,7 +379,7 @@
                             <option value="">Select company</option>
                             {% for company in form.fields.company.queryset %}
                             <option value="{{ company.pk }}" 
-                                    {% if form.company.value == company.pk|stringformat:"s" %}selected{% endif %}>
+                                    {% if form.company.value == company.pk %}selected{% endif %}>
                                 {{ company.name }}
                             </option>
                             {% endfor %}

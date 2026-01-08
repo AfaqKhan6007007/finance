@@ -119,3 +119,5 @@ STATIC_URL = 'static/'
 
 LOGIN_REDIRECT_URL = '/accounts'
 LOGIN_URL = '/login'
+
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'

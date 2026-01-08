@@ -1,9 +1,9 @@
-<!  DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Journal Entry - Finance</title>
+    <title>{% if is_edit %}Edit{% else %}New{% endif %} Journal Entry - Finance</title>
     <style>
         * {
             margin: 0;
@@ -239,14 +239,14 @@
     <div class="breadcrumb">
         <a href="{% url 'finance-journal' %}">Journal Entry</a>
         <span class="breadcrumb-separator">›</span>
-        <span>New Journal Entry</span>
+        <span>{% if is_edit %}Edit{% else %}New{% endif %} Journal Entry</span>
     </div>
     
     <!-- Header -->
     <div class="form-header">
         <div class="form-title">
             <span class="menu-icon">☰</span>
-            <h1>New Journal Entry</h1>
+            <h1>{% if is_edit %}Edit{% else %}New{% endif %} Journal Entry</h1>
         </div>
         <button type="submit" form="journal-form" class="btn-save">Save</button>
     </div>
@@ -319,7 +319,7 @@
                             <option value="">Select account</option>
                             {% for account in form.fields.account.queryset %}
                             <option value="{{ account.pk }}" 
-                                    {% if form.account.value == account.pk|stringformat:"s" %}selected{% endif %}>
+                                    {% if form.account.value == account.pk %}selected{% endif %}>
                                 {{ account.name }}
                             </option>
                             {% endfor %}
@@ -355,11 +355,15 @@
         }, 5000);
         
         // Set today's date as default if no date is set
-        const dateInput = document.getElementById('id_date');
-        if (dateInput && !dateInput.value) {
-            const today = new Date().toISOString().split('T')[0];
-            dateInput. value = today;
+        if (!is_edit){
+            const dateInput = document.getElementById('id_date');
+            if (dateInput && !dateInput.value) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput. value = today;
+            }
         }
+        
+        
     </script>
 </body>
 </html>

@@ -7,6 +7,7 @@ from django.contrib import messages
 from .forms import LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm
 from django.db import models
 from .models import Company, Account, Invoice, JournalEntry
+from django.contrib.messages import get_messages
 
 class Accounts(View):
     """List all accounts"""
@@ -447,9 +448,14 @@ class Reports(View):
 
 class Login(View):
     def get(self, request):
-        # If user is already logged in, redirect to home
+        # If user is already logged in, redirect to accounts
         if request.user.is_authenticated:
             return redirect('finance-accounts')
+        
+        # Clear any existing messages when showing login page
+        storage = get_messages(request)
+        for _ in storage:
+            pass  # This iterates through and clears messages
         
         form = LoginForm()
         return render(request, 'finance/login.html', {'form':  form})
@@ -464,20 +470,33 @@ class Login(View):
             user = authenticate(username=username, password=password)
             
             if user is not None: 
+                # Clear any existing messages before login
+                storage = get_messages(request)
+                for _ in storage:
+                    pass
+                
                 # Log the user in
                 login(request, user)
-                messages.success(request, f'Welcome back, {user.first_name}!')
+                messages. success(request, f'Welcome back, {user.first_name}!')
                 return redirect('finance-accounts')
             else:
                 messages.error(request, 'Invalid username or password')
+        else:
+            messages.error(request, 'Please check your credentials and try again.')
         
         return render(request, 'finance/login.html', {'form':  form})
 
+
 class Signup(View):
     def get(self, request):
-        # If user is already logged in, redirect to home
+        # If user is already logged in, redirect to accounts
         if request.user.is_authenticated:
             return redirect('finance-accounts')
+        
+        # Clear any existing messages
+        storage = get_messages(request)
+        for _ in storage: 
+            pass
         
         form = SignupForm()
         return render(request, 'finance/signup.html', {'form': form})
@@ -485,6 +504,11 @@ class Signup(View):
     def post(self, request):
         form = SignupForm(request.POST)
         if form.is_valid():
+            # Clear any existing messages before signup
+            storage = get_messages(request)
+            for _ in storage:
+                pass
+            
             # Create the user (password will be automatically hashed)
             user = form.save()
             
@@ -501,8 +525,21 @@ class Signup(View):
         
         return render(request, 'finance/signup.html', {'form': form})
 
+
 class Logout(View):
     def get(self, request):
+        # Don't logout on GET, just redirect
+        if request.user. is_authenticated:
+            return redirect('finance-accounts')
+        return redirect('finance-login')
+    
+    @method_decorator(login_required)
+    def post(self, request):
+        user_name = request.user.first_name or request.user.username
+        
+        # Store the message BEFORE logout
         logout(request)
-        messages.info(request, 'You have been logged out.')
+        
+        # Add message after logout (this should work with FallbackStorage)
+        messages.success(request, f'Goodbye {user_name}! You have been logged out successfully.')
         return redirect('finance-login')

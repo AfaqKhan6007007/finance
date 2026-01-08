@@ -1,9 +1,9 @@
-<! DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Company - Finance</title>
+    <title>{% if is_edit %}Edit{% else %}New{% endif %} Company - Finance</title>
     <style>
         * {
             margin: 0;
@@ -320,14 +320,14 @@
     <div class="breadcrumb">
         <a href="{% url 'finance-companies' %}">Company</a>
         <span class="breadcrumb-separator">›</span>
-        <span>New Company</span>
+         <span>{% if is_edit %}Edit{% else %}New{% endif %} Company</span>
     </div>
     
     <!-- Header -->
     <div class="form-header">
         <div class="form-title">
             <span class="menu-icon">☰</span>
-            <h1>New Company</h1>
+            <h1>{% if is_edit %}Edit{% else %}New{% endif %} Company</h1>
         </div>
         <button type="submit" form="company-form" class="btn-save">Save</button>
     </div>
