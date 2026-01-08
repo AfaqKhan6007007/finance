@@ -441,7 +441,7 @@
             
             // Close dropdown when clicking outside
             document.addEventListener('click', function(e) {
-                if (!dropdownMenu. contains(e.target) && e.target !== userAvatar) {
+                if (!dropdownMenu.contains(e.target) && e.target !== userAvatar) {
                     dropdownMenu.classList.remove('show');
                 }
             });
@@ -471,7 +471,7 @@
         setTimeout(() => {
             const messages = document.querySelector('.messages');
             if (messages) {
-                messages.style. transition = 'opacity 0.5s';
+                messages.style.transition = 'opacity 0.5s';
                 messages.style.opacity = '0';
                 setTimeout(() => messages.remove(), 500);
             }

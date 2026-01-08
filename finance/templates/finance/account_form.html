@@ -281,6 +281,31 @@
             {% endfor %}
         </div>
         {% endif %}
+
+        <!-- ADD THIS SECTION TO SEE ERRORS -->
+    {% if form.errors %}
+    <div class="alert alert-error">
+        <strong>Form Errors Found:</strong>
+        <ul style="margin-top: 8px; margin-left: 20px; list-style: disc;">
+            {% for field in form %}
+                {% if field.errors %}
+                    <li><strong>{{ field.label }}:</strong> {{ field.errors.0 }}</li>
+                {% endif %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #fca5a5;">
+            <strong>Form Data Debug:</strong>
+            <ul style="margin-top: 4px; margin-left: 20px; font-size: 12px;">
+                <li>Company value: {{ form.company.value }}</li>
+                <li>Company data: {{ form.data.company }}</li>
+                <li>Name value: {{ form.name.value }}</li>
+            </ul>
+        </div>
+    </div>
+    {% endif %}
         
         <div class="form-card">
             <form method="post" id="account-form">
@@ -309,16 +334,18 @@
                     
                     <!-- Parent Account -->
                     <div class="form-group">
-                        <label for="id_parent_account" class="form-label required">Parent Account</label>
+                        <label for="id_parent_account" class="form-label">Parent Account</label>
                         <select name="parent_account" id="id_parent_account" class="form-control">
-                            <option value="">Select company first</option>
+                            <option value="">None (Top Level Account)</option>
                             {% for account in form.fields.parent_account.queryset %}
                             <option value="{{ account.pk }}" 
+                                    data-company="{{ account.company.pk }}"
                                     {% if form.parent_account.value == account.pk|stringformat:"s" %}selected{% endif %}>
-                                {{ account.name }}
+                                {{ account.name }}{% if account.account_number %} - {{ account.account_number }}{% endif %}
                             </option>
                             {% endfor %}
                         </select>
+                        <p class="form-help">Parent accounts will be filtered based on the selected company.  Save to refresh options if you change the company.</p>
                         {% if form.parent_account.errors %}
                             <div class="error-message">{{ form.parent_account.errors.0 }}</div>
                         {% endif %}
@@ -379,7 +406,7 @@
                             <option value="">Select company</option>
                             {% for company in form.fields.company.queryset %}
                             <option value="{{ company.pk }}" 
-                                    {% if form.company.value == company.pk %}selected{% endif %}>
+                                    {% if form.company.value == company.pk or form.data.company|add:"0" == company.pk %}selected{% endif %}>
                                 {{ company.name }}
                             </option>
                             {% endfor %}
@@ -433,54 +460,32 @@
     </div>
     
     <script>
-        // Add checkbox styling
-        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-            checkbox.classList.add('checkbox-input');
-        });
-        
-        // Auto-hide messages after 5 seconds
-        setTimeout(() => {
-            const messages = document.querySelector('.messages');
-            if (messages) {
-                messages.style. transition = 'opacity 0.5s';
-                messages.style.opacity = '0';
-                setTimeout(() => messages.remove(), 500);
-            }
-        }, 5000);
-        
-        // Dynamic parent account loading based on company selection
-        const companySelect = document.getElementById('id_company');
-        const parentAccountSelect = document.getElementById('id_parent_account');
-        
-        if (companySelect) {
-            companySelect.addEventListener('change', function() {
-                const companyId = this.value;
-                
-                // Clear parent account dropdown
-                parentAccountSelect. innerHTML = '<option value="">Loading...</option>';
-                
-                if (companyId) {
-                    // Fetch accounts for selected company
-                    fetch(`/finance/api/accounts/?company=${companyId}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            parentAccountSelect.innerHTML = '<option value="">None (Top Level Account)</option>';
-                            data.forEach(account => {
-                                const option = document.createElement('option');
-                                option.value = account.id;
-                                option.textContent = account.name;
-                                parentAccountSelect.appendChild(option);
-                            });
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            parentAccountSelect.innerHTML = '<option value="">Error loading accounts</option>';
-                        });
-                } else {
-                    parentAccountSelect.innerHTML = '<option value="">Select company first</option>';
-                }
-            });
+    // Add checkbox styling
+    document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.classList.add('checkbox-input');
+    });
+    
+    // Auto-hide messages after 5 seconds
+    setTimeout(() => {
+        const messages = document.querySelector('.messages');
+        if (messages) {
+            messages.style.transition = 'opacity 0.5s';
+            messages.style.opacity = '0';
+            setTimeout(() => messages.remove(), 500);
         }
-    </script>
+    }, 5000);
+    
+    // Show warning when company changes
+    const companySelect = document.getElementById('id_company');
+    const parentAccountSelect = document.getElementById('id_parent_account');
+    
+    if (companySelect) {
+        companySelect.addEventListener('change', function() {
+            if (parentAccountSelect.value) {
+                alert('Please note:  Changing the company will require you to reselect the parent account.  Save the form to see updated parent accounts for the new company.');
+            }
+        });
+    }
+</script>
 </body>
 </html>

@@ -527,7 +527,7 @@
     
     <script>
         // Tab switching functionality
-        const tabItems = document. querySelectorAll('.tab-item');
+        const tabItems = document.querySelectorAll('.tab-item');
         const tabContents = document.querySelectorAll('.tab-content');
         
         tabItems.forEach(tab => {
@@ -552,7 +552,7 @@
         
         function calculateTotal() {
             const beforeVat = parseFloat(amountBeforeVat.value) || 0;
-            const vat = parseFloat(totalVat. value) || 0;
+            const vat = parseFloat(totalVat.value) || 0;
             totalAmount.value = (beforeVat + vat).toFixed(2);
         }
         
@@ -567,7 +567,7 @@
         setTimeout(() => {
             const messages = document.querySelector('.messages');
             if (messages) {
-                messages.style. transition = 'opacity 0.5s';
+                messages.style.transition = 'opacity 0.5s';
                 messages.style.opacity = '0';
                 setTimeout(() => messages.remove(), 500);
             }

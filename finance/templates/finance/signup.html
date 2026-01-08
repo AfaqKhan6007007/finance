@@ -359,7 +359,7 @@
         function togglePassword(fieldName) {
             const passwordInput = document.querySelector(`input[name="${fieldName}"]`);
             if (passwordInput) {
-                passwordInput.type = passwordInput. type === 'password' ? 'text' : 'password';
+                passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
             }
         }
         
@@ -369,14 +369,14 @@
             const firstNameInput = document.querySelector('input[name="first_name"]');
             if (firstNameInput) {
                 firstNameInput.placeholder = 'John Doe';
-                firstNameInput. className = 'form-control';
+                firstNameInput.className = 'form-control';
             }
 
             // Last Name
             const lastNameInput = document.querySelector('input[name="last_name"]');
             if (lastNameInput) {
                 lastNameInput.placeholder = 'John Doe';
-                lastNameInput. className = 'form-control';
+                lastNameInput.className = 'form-control';
             }
 
             // Username
@@ -387,7 +387,7 @@
             }
 
             // Email
-            const emailInput = document. querySelector('input[name="email"]');
+            const emailInput = document.querySelector('input[name="email"]');
             if (emailInput) {
                 emailInput.placeholder = 'example@gmail.com';
                 emailInput.className = 'form-control';
@@ -415,7 +415,7 @@
                 const confirmPassword = document.querySelector('input[name="password2"]').value;
                 
                 if (password !== confirmPassword) {
-                    e. preventDefault();
+                    e.preventDefault();
                     alert('Passwords do not match! ');
                 }
             });

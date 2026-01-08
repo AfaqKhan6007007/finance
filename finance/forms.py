@@ -24,7 +24,7 @@ class SignupForm(UserCreationForm):
 class LoginForm(AuthenticationForm):
     username = forms.CharField(
         label='Email or Username',
-        widget=forms. TextInput(attrs={'placeholder': 'example@gmail.com'})
+        widget=forms.TextInput(attrs={'placeholder': 'example@gmail.com'})
     )
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={'placeholder': '••••••••••'})
@@ -45,7 +45,7 @@ class CompanyForm(forms.ModelForm):
         # Set required fields
         self.fields['name'].required = True
         self.fields['country'].required = True
-        self. fields['default_currency'].required = True
+        self.fields['default_currency'].required = True
         
         # Set optional fields
         self.fields['parent_company'].required = False
@@ -58,7 +58,7 @@ class CompanyForm(forms.ModelForm):
             'placeholder': 'Pick a date'
         })
         
-        self.fields['registration_details'].widget = forms. Textarea(attrs={
+        self.fields['registration_details'].widget = forms.Textarea(attrs={
             'rows': 4,
             'class': 'form-control',
             'placeholder': 'Company registration numbers for your reference.  Tax numbers etc.'
@@ -85,7 +85,7 @@ class AccountForm(forms.ModelForm):
         self.fields['parent_account'].empty_label = "Select company first"
         
         # Customize widgets
-        self.fields['name']. widget. attrs.update({
+        self.fields['name'].widget.attrs.update({
             'placeholder': 'Enter account name',
             'class': 'form-control'
         })
@@ -103,10 +103,16 @@ class AccountForm(forms.ModelForm):
         # Filter parent accounts based on selected company
         if self.instance.pk and self.instance.company:
             self.fields['parent_account'].queryset = Account.objects.filter(
-                company=self.instance. company
-            ).exclude(pk=self.instance. pk)
+                company=self.instance.company
+            ).exclude(pk=self.instance.pk)
+        elif self.data.get('company'):
+            # During POST with validation errors, keep the filtered accounts
+            self.fields['parent_account'].queryset = Account.objects.filter(
+                company=self.data.get('company')
+            )
         else:
-            self.fields['parent_account'].queryset = Account. objects.none()
+            # Show all accounts initially (or none)
+            self.fields['parent_account'].queryset = Account.objects.all()
 
 class InvoiceForm(forms.ModelForm):
     class Meta:
@@ -122,9 +128,9 @@ class InvoiceForm(forms.ModelForm):
         
         # Set required fields
         self.fields['invoice_id'].required = True
-        self.fields['invoice_number']. required = True
+        self.fields['invoice_number'].required = True
         self.fields['date'].required = True
-        self.fields['supplier_name']. required = True
+        self.fields['supplier_name'].required = True
         self.fields['amount_before_vat'].required = True
         self.fields['total_vat'].required = True
         
@@ -135,14 +141,14 @@ class InvoiceForm(forms.ModelForm):
         self.fields['company'].required = False
         
         # Customize date widget
-        self.fields['date']. widget = forms.DateInput(attrs={
+        self.fields['date'].widget = forms.DateInput(attrs={
             'type': 'date',
             'class': 'form-control',
             'placeholder': 'Pick a date'
         })
         
         # Add placeholders and classes
-        self.fields['invoice_id'].widget.attrs. update({
+        self.fields['invoice_id'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'Enter invoice ID'
         })
@@ -157,17 +163,17 @@ class InvoiceForm(forms.ModelForm):
             'placeholder': 'Enter supplier name'
         })
         
-        self. fields['customer_name'].widget. attrs.update({
+        self.fields['customer_name'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'Enter customer name'
         })
         
-        self.fields['supplier_vat'].widget.attrs. update({
+        self.fields['supplier_vat'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'Supplier VAT'
         })
         
-        self.fields['customer_vat'].widget.attrs. update({
+        self.fields['customer_vat'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'Customer VAT'
         })
@@ -178,13 +184,13 @@ class InvoiceForm(forms.ModelForm):
             'step': '0.01'
         })
         
-        self.fields['total_vat'].widget.attrs. update({
+        self.fields['total_vat'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': '0.00',
             'step': '0.01'
         })
         
-        self.fields['total_amount']. widget.attrs.update({
+        self.fields['total_amount'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': '0',
             'readonly': 'readonly'
@@ -200,27 +206,27 @@ class JournalEntryForm(forms.ModelForm):
         
         # Set required fields
         self.fields['date'].required = True
-        self. fields['account'].required = True
+        self.fields['account'].required = True
         
         # Set optional fields
         self.fields['entry_number'].required = False
         self.fields['company'].required = False
-        self. fields['description'].required = False
+        self.fields['description'].required = False
         
         # Customize date widget
-        self.fields['date']. widget = forms.DateInput(attrs={
+        self.fields['date'].widget = forms.DateInput(attrs={
             'type': 'date',
             'class': 'form-control',
         })
         
         # Add placeholders and classes
-        self.fields['entry_number'].widget.attrs. update({
+        self.fields['entry_number'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'Auto-generated',
             'readonly': 'readonly'
         })
         
-        self.fields['debit_amount'].widget.attrs. update({
+        self.fields['debit_amount'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': '0.00',
             'step': '0.01'
@@ -238,7 +244,7 @@ class JournalEntryForm(forms.ModelForm):
             'rows': 4
         })
         
-        self.fields['account'].widget. attrs.update({
+        self.fields['account'].widget.attrs.update({
             'class': 'form-control'
         })
         

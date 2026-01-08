@@ -1,5 +1,5 @@
 from django.shortcuts import redirect, render, get_object_or_404
-from django. views import View
+from django.views import View
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -67,6 +67,10 @@ class AccountCreate(View):
     @method_decorator(login_required)
     def post(self, request):
         form = AccountForm(request.POST)
+        
+        # Debug: Print the POST data
+        print("POST data:", request.POST)
+        
         if form.is_valid():
             account = form.save(commit=False)
             account.created_by = request.user
@@ -74,12 +78,14 @@ class AccountCreate(View):
             messages.success(request, f'Account "{account.name}" created successfully!')
             return redirect('finance-accounts')
         else:
+            # Debug: Print form errors
+            print("Form errors:", form.errors)
             messages.error(request, 'Please correct the errors below.')
         
         return render(request, 'finance/account_form.html', {
             'form': form,
             'action': 'New',
-            'is_edit':  False
+            'is_edit': False
         })
 
 
@@ -100,21 +106,26 @@ class AccountEdit(View):
     def post(self, request, pk):
         account = get_object_or_404(Account, pk=pk)
         form = AccountForm(request.POST, instance=account)
+        
+        # Debug: Print the POST data
+        print("POST data:", request.POST)
+        
         if form.is_valid():
             form.save()
             messages.success(request, f'Account "{account.name}" updated successfully!')
             return redirect('finance-accounts')
         else:
+            # Debug:  Print form errors
+            print("Form errors:", form.errors)
             messages.error(request, 'Please correct the errors below.')
         
         return render(request, 'finance/account_form.html', {
             'form': form,
             'account': account,
             'action': 'Edit',
-            'is_edit': True
+            'is_edit':  True
         })
-
-
+    
 class AccountDelete(View):
     """Delete account"""
     @method_decorator(login_required)
@@ -134,14 +145,14 @@ class Journal(View):
     """List all journal entries"""
     @method_decorator(login_required)
     def get(self, request):
-        journal_entries = JournalEntry. objects.select_related('account', 'company').all()
+        journal_entries = JournalEntry.objects.select_related('account', 'company').all()
         
         # Search functionality
         search_query = request.GET.get('search', '')
         if search_query:
             journal_entries = journal_entries.filter(
                 models.Q(entry_number__icontains=search_query) |
-                models. Q(account__name__icontains=search_query) |
+                models.Q(account__name__icontains=search_query) |
                 models.Q(description__icontains=search_query)
             )
         
@@ -202,10 +213,10 @@ class JournalEdit(View):
         form = JournalEntryForm(request.POST, instance=journal_entry)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Journal Entry "{journal_entry. entry_number}" updated successfully!')
+            messages.success(request, f'Journal Entry "{journal_entry.entry_number}" updated successfully!')
             return redirect('finance-journal')
         else:
-            messages. error(request, 'Please correct the errors below.')
+            messages.error(request, 'Please correct the errors below.')
         
         return render(request, 'finance/journal_form.html', {
             'form': form,
@@ -276,7 +287,7 @@ class CompanyCreate(View):
         form = CompanyForm(request.POST)
         if form.is_valid():
             company = form.save(commit=False)
-            company. created_by = request.user
+            company.created_by = request.user
             company.save()
             messages.success(request, f'Company "{company.name}" created successfully!')
             return redirect('finance-companies')
@@ -340,15 +351,15 @@ class Invoices(View):
     """List all invoices"""
     @method_decorator(login_required)
     def get(self, request):
-        invoices = Invoice. objects.select_related('company').all()
+        invoices = Invoice.objects.select_related('company').all()
         
         # Search functionality
-        search_query = request. GET.get('search', '')
+        search_query = request.GET.get('search', '')
         if search_query:
             invoices = invoices.filter(
                 models.Q(invoice_number__icontains=search_query) |
                 models.Q(customer_name__icontains=search_query) |
-                models. Q(supplier_name__icontains=search_query)
+                models.Q(supplier_name__icontains=search_query)
             )
         
         context = {
@@ -411,7 +422,7 @@ class InvoiceEdit(View):
             messages.success(request, f'Invoice "{invoice.invoice_number}" updated successfully!')
             return redirect('finance-invoices')
         else:
-            messages. error(request, 'Please correct the errors below.')
+            messages.error(request, 'Please correct the errors below.')
         
         return render(request, 'finance/invoice_form.html', {
             'form': form,
@@ -477,7 +488,7 @@ class Login(View):
                 
                 # Log the user in
                 login(request, user)
-                messages. success(request, f'Welcome back, {user.first_name}!')
+                messages.success(request, f'Welcome back, {user.first_name}!')
                 return redirect('finance-accounts')
             else:
                 messages.error(request, 'Invalid username or password')
@@ -519,7 +530,7 @@ class Signup(View):
             return redirect('finance-accounts')
         else:
             # Display form errors
-            for field, errors in form.errors. items():
+            for field, errors in form.errors.items():
                 for error in errors:
                     messages.error(request, f'{field}: {error}')
         
@@ -529,7 +540,7 @@ class Signup(View):
 class Logout(View):
     def get(self, request):
         # Don't logout on GET, just redirect
-        if request.user. is_authenticated:
+        if request.user.is_authenticated:
             return redirect('finance-accounts')
         return redirect('finance-login')
     

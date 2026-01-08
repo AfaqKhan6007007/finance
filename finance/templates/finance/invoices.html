@@ -516,7 +516,7 @@
         
         if (selectAll) {
             selectAll.addEventListener('change', function() {
-                rowCheckboxes. forEach(checkbox => {
+                rowCheckboxes.forEach(checkbox => {
                     checkbox.checked = selectAll.checked;
                 });
             });
@@ -526,7 +526,7 @@
         setTimeout(() => {
             const messages = document.querySelector('.messages');
             if (messages) {
-                messages.style. transition = 'opacity 0.5s';
+                messages.style.transition = 'opacity 0.5s';
                 messages.style.opacity = '0';
                 setTimeout(() => messages.remove(), 500);
             }

@@ -10,7 +10,7 @@ urlpatterns = [
     
      # ============ Account Management ============
     path('accounts/', Accounts.as_view(), name='finance-accounts'),
-    path('accounts/add/', AccountCreate. as_view(), name='finance-account-create'),
+    path('accounts/add/', AccountCreate.as_view(), name='finance-account-create'),
     path('accounts/<int:pk>/edit/', AccountEdit.as_view(), name='finance-account-edit'),
     path('accounts/<int:pk>/delete/', AccountDelete.as_view(), name='finance-account-delete'),
 
@@ -18,7 +18,7 @@ urlpatterns = [
     path('journal/', Journal.as_view(), name='finance-journal'),
     path('journal/add/', JournalCreate.as_view(), name='finance-journal-create'),
     path('journal/<int:pk>/edit/', JournalEdit.as_view(), name='finance-journal-edit'),
-    path('journal/<int:pk>/delete/', JournalDelete. as_view(), name='finance-journal-delete'),
+    path('journal/<int:pk>/delete/', JournalDelete.as_view(), name='finance-journal-delete'),
 
     # ============ Main Pages ============
     path('dashboard/', Dashboard.as_view(), name='finance-dashboard'),
@@ -36,7 +36,7 @@ urlpatterns = [
     # ============ Invoice Management ============
     path('invoices/', Invoices.as_view(), name='finance-invoices'),
     path('invoices/add/', InvoiceCreate.as_view(), name='finance-invoice-create'),
-    path('invoices/<int:pk>/edit/', InvoiceEdit. as_view(), name='finance-invoice-edit'),
+    path('invoices/<int:pk>/edit/', InvoiceEdit.as_view(), name='finance-invoice-edit'),
     path('invoices/<int:pk>/delete/', InvoiceDelete.as_view(), name='finance-invoice-delete'),
 
     # ============ Accounting Modules ============

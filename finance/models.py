@@ -1,4 +1,4 @@
-from django. db import models
+from django.db import models
 from django.contrib.auth.models import User
 
 # Remove the Login and Signup models - they're not needed! 
@@ -91,7 +91,7 @@ class Company(models.Model):
     )
     
     # Metadata
-    created_at = models. DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     
@@ -126,7 +126,7 @@ class Account(models.Model):
     # Company Relationship
     company = models.ForeignKey(
         Company,
-        on_delete=models. CASCADE,
+        on_delete=models.CASCADE,
         related_name='accounts',
         verbose_name="Company"
     )
@@ -180,7 +180,7 @@ class Account(models.Model):
     
     def __str__(self):
         if self.account_number:
-            return f"{self. account_number} - {self.name}"
+            return f"{self.account_number} - {self.name}"
         return self.name
     
 class Invoice(models.Model):
@@ -245,8 +245,8 @@ class Invoice(models.Model):
     )
     
     # Metadata
-    created_at = models. DateTimeField(auto_now_add=True)
-    updated_at = models. DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     
     class Meta:
@@ -258,8 +258,8 @@ class Invoice(models.Model):
     
     def save(self, *args, **kwargs):
         # Auto-calculate total_amount if not provided
-        if not self. total_amount:
-            self. total_amount = self.amount_before_vat + self.total_vat
+        if not self.total_amount:
+            self.total_amount = self.amount_before_vat + self.total_vat
         super().save(*args, **kwargs)
 
 class JournalEntry(models.Model):
@@ -272,7 +272,7 @@ class JournalEntry(models.Model):
     # Account Relationship
     account = models.ForeignKey(
         Account,
-        on_delete=models. CASCADE,
+        on_delete=models.CASCADE,
         related_name='journal_entries',
         verbose_name="Account"
     )
@@ -306,8 +306,8 @@ class JournalEntry(models.Model):
     )
     
     # Metadata
-    created_at = models. DateTimeField(auto_now_add=True)
-    updated_at = models. DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     
     class Meta:
@@ -320,8 +320,8 @@ class JournalEntry(models.Model):
     def save(self, *args, **kwargs):
         # Auto-generate entry number if not provided
         if not self.entry_number:
-            last_entry = JournalEntry. objects.order_by('-id').first()
-            if last_entry and last_entry.entry_number. startswith('JE'):
+            last_entry = JournalEntry.objects.order_by('-id').first()
+            if last_entry and last_entry.entry_number.startswith('JE'):
                 try:
                     last_number = int(last_entry.entry_number[2:])
                     self.entry_number = f"JE{str(last_number + 1).zfill(5)}"
