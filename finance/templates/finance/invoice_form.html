@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Company - Finance</title>
+    <title>New Invoice - Finance</title>
     <style>
         * {
             margin: 0;
@@ -12,7 +12,7 @@
         }
         
         body {
-            font-family:  -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background-color: #f9fafb;
             color: #333;
         }
@@ -21,7 +21,6 @@
             transform: translateX(-100%);
         }
 
-        /* Main Content */
         .main-content {
             max-width: 1400px;
             margin: 0 auto;
@@ -42,6 +41,8 @@
         /* Breadcrumb */
         .breadcrumb {
             padding: 16px 40px;
+            
+            
             font-size: 14px;
             color: #666;
         }
@@ -66,6 +67,8 @@
             justify-content: space-between;
             align-items: center;
             padding: 20px 40px;
+            
+            
         }
         
         .form-title {
@@ -99,7 +102,7 @@
         }
         
         .btn-save:hover {
-            background-color:  #00a281;
+            background-color: #00a281;
         }
         
         /* Tabs */
@@ -147,7 +150,7 @@
             background:  white;
             border-radius:  8px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            padding: 32px;
+            padding: 40px;
         }
         
         .tab-content {
@@ -166,7 +169,7 @@
         
         /* Form Fields */
         .form-group {
-            margin-bottom:  0;
+            margin-bottom: 0;
         }
         
         .form-group.full-width {
@@ -215,23 +218,11 @@
             padding-right: 40px;
         }
         
-        textarea.form-control {
-            resize: vertical;
-            min-height: 100px;
-        }
-        
-        .form-help {
-            font-size: 12px;
-            color: #6b7280;
-            margin-top: 6px;
-        }
-        
         /* Checkbox */
         .checkbox-group {
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-top: 8px;
         }
         
         .checkbox-input {
@@ -255,7 +246,7 @@
         
         .alert {
             padding: 12px 16px;
-            border-radius: 6px;
+            border-radius:  6px;
             margin-bottom:  12px;
             font-size: 14px;
         }
@@ -275,24 +266,7 @@
         .error-message {
             color: #dc2626;
             font-size: 12px;
-            margin-top: 4px;
-        }
-        
-        /* Section Separator */
-        .section-separator {
-            grid-column: 1 / -1;
-            height: 1px;
-            background-color:  #e5e7eb;
-            margin: 16px 0;
-        }
-        
-        .section-title {
-            grid-column: 1 / -1;
-            font-size:  15px;
-            font-weight:  600;
-            color: #333;
-            margin-top: 16px;
-            margin-bottom:  8px;
+            margin-top:  4px;
         }
         
         @media (max-width: 768px) {
@@ -313,32 +287,31 @@
 <body>
     {% include "finance/header.html" %}
     {% include "finance/sidenav.html" %}
-    
-    <!-- Main Content -->
     <div class="main-content">
     <!-- Breadcrumb -->
     <div class="breadcrumb">
-        <a href="{% url 'finance-companies' %}">Company</a>
+        <a href="{% url 'finance-invoices' %}">Invoice</a>
         <span class="breadcrumb-separator">›</span>
-        <span>New Company</span>
+        <span>New Invoice</span>
     </div>
     
     <!-- Header -->
     <div class="form-header">
         <div class="form-title">
             <span class="menu-icon">☰</span>
-            <h1>New Company</h1>
+            <h1>New Invoice</h1>
         </div>
-        <button type="submit" form="company-form" class="btn-save">Save</button>
+        <button type="submit" form="invoice-form" class="btn-save">Save</button>
     </div>
     
     <!-- Tabs -->
     <div class="tabs">
         <ul class="tab-list">
             <li class="tab-item active" data-tab="details">Details</li>
-            <li class="tab-item" data-tab="accounts">Accounts</li>
-            <li class="tab-item" data-tab="buying-selling">Buying and Selling</li>
-            <li class="tab-item" data-tab="stock">Stock and Manufacturing</li>
+            <li class="tab-item" data-tab="payment">Payment</li>
+            <li class="tab-item" data-tab="address">Address & Contact</li>
+            <li class="tab-item" data-tab="terms">Terms</li>
+            <li class="tab-item" data-tab="more">More Info</li>
         </ul>
     </div>
     
@@ -355,172 +328,195 @@
         {% endif %}
         
         <div class="form-card">
-            <form method="post" id="company-form">
+            <form method="post" id="invoice-form">
                 {% csrf_token %}
                 
                 <!-- Details Tab -->
                 <div class="tab-content active" id="details">
                     <div class="form-grid">
-                        <!-- Company Name -->
+                        <!-- Invoice ID -->
                         <div class="form-group">
-                            <label for="id_name" class="form-label required">Company Name</label>
-                            <input type="text" name="name" id="id_name" class="form-control" 
-                                   value="{{ form.name.value|default:'' }}" required>
-                            {% if form.name.errors %}
-                                <div class="error-message">{{ form.name.errors.0 }}</div>
+                            <label for="id_invoice_id" class="form-label required">Invoice ID</label>
+                            <input type="text" name="invoice_id" id="id_invoice_id" class="form-control" 
+                                   value="{{ form.invoice_id.value|default:'' }}" required>
+                            {% if form.invoice_id.errors %}
+                                <div class="error-message">{{ form.invoice_id.errors.0 }}</div>
                             {% endif %}
                         </div>
                         
-                        <!-- Country -->
+                        <!-- Customer Name -->
                         <div class="form-group">
-                            <label for="id_country" class="form-label required">Country</label>
-                            <select name="country" id="id_country" class="form-control" required>
-                                <option value="">Select country</option>
-                                <option value="Pakistan" {% if form.country.value == "Pakistan" %}selected{% endif %}>Pakistan</option>
-                                <option value="United States" {% if form.country.value == "United States" %}selected{% endif %}>United States</option>
-                                <option value="United Kingdom" {% if form.country.value == "United Kingdom" %}selected{% endif %}>United Kingdom</option>
-                                <option value="Saudi Arabia" {% if form.country.value == "Saudi Arabia" %}selected{% endif %}>Saudi Arabia</option>
-                                <option value="UAE" {% if form.country.value == "UAE" %}selected{% endif %}>UAE</option>
-                                <option value="India" {% if form.country.value == "India" %}selected{% endif %}>India</option>
-                            </select>
-                            {% if form.country.errors %}
-                                <div class="error-message">{{ form.country.errors.0 }}</div>
+                            <label for="id_customer_name" class="form-label required">Customer Name</label>
+                            <input type="text" name="customer_name" id="id_customer_name" class="form-control" 
+                                   placeholder="Enter customer name"
+                                   value="{{ form.customer_name.value|default:'' }}" required>
+                            {% if form.customer_name.errors %}
+                                <div class="error-message">{{ form.customer_name.errors.0 }}</div>
                             {% endif %}
                         </div>
                         
-                        <!-- Abbreviation -->
+                        <!-- Invoice Number -->
                         <div class="form-group">
-                            <label for="id_abbreviation" class="form-label required">Abbreviation</label>
-                            <input type="text" name="abbreviation" id="id_abbreviation" class="form-control" 
-                                   value="{{ form.abbreviation.value|default:'' }}">
-                            {% if form.abbreviation.errors %}
-                                <div class="error-message">{{ form.abbreviation.errors.0 }}</div>
+                            <label for="id_invoice_number" class="form-label required">Invoice Number</label>
+                            <input type="text" name="invoice_number" id="id_invoice_number" class="form-control" 
+                                   value="{{ form.invoice_number.value|default:'' }}" required>
+                            {% if form.invoice_number.errors %}
+                                <div class="error-message">{{ form.invoice_number.errors.0 }}</div>
                             {% endif %}
                         </div>
                         
-                        <!-- Date of Establishment -->
+                        <!-- Customer VAT -->
                         <div class="form-group">
-                            <label for="id_date_of_establishment" class="form-label">Date of Establishment</label>
-                            <input type="date" name="date_of_establishment" id="id_date_of_establishment" 
-                                   class="form-control" value="{{ form.date_of_establishment.value|default:'' }}">
-                            {% if form.date_of_establishment.errors %}
-                                <div class="error-message">{{ form.date_of_establishment.errors.0 }}</div>
+                            <label for="id_customer_vat" class="form-label">Customer VAT</label>
+                            <input type="text" name="customer_vat" id="id_customer_vat" class="form-control" 
+                                   placeholder="Customer VAT"
+                                   value="{{ form.customer_vat.value|default:'' }}">
+                            {% if form.customer_vat.errors %}
+                                <div class="error-message">{{ form.customer_vat.errors.0 }}</div>
                             {% endif %}
                         </div>
                         
-                        <!-- Default Currency -->
+                        <!-- Date -->
                         <div class="form-group">
-                            <label for="id_default_currency" class="form-label required">Default Currency</label>
-                            <select name="default_currency" id="id_default_currency" class="form-control" required>
-                                <option value="USD" {% if form.default_currency.value == "USD" or not form.default_currency.value %}selected{% endif %}>USD</option>
-                                <option value="SAR" {% if form.default_currency.value == "SAR" %}selected{% endif %}>SAR</option>
-                                <option value="PKR" {% if form.default_currency.value == "PKR" %}selected{% endif %}>PKR</option>
-                                <option value="EUR" {% if form.default_currency.value == "EUR" %}selected{% endif %}>EUR</option>
-                                <option value="GBP" {% if form.default_currency.value == "GBP" %}selected{% endif %}>GBP</option>
-                                <option value="AED" {% if form.default_currency.value == "AED" %}selected{% endif %}>AED</option>
-                            </select>
-                            {% if form.default_currency.errors %}
-                                <div class="error-message">{{ form.default_currency.errors.0 }}</div>
+                            <label for="id_date" class="form-label required">Date</label>
+                            <input type="date" name="date" id="id_date" class="form-control" 
+                                   value="{{ form.date.value|date:'Y-m-d'|default:'' }}" required>
+                            {% if form.date.errors %}
+                                <div class="error-message">{{ form.date.errors.0 }}</div>
                             {% endif %}
                         </div>
                         
-                        <!-- Default Letter Head -->
+                        <!-- Total VAT -->
                         <div class="form-group">
-                            <label for="id_default_letter_head" class="form-label">Default Letter Head</label>
-                            <input type="text" name="default_letter_head" id="id_default_letter_head" 
-                                   class="form-control" value="{{ form.default_letter_head.value|default:'' }}">
-                            {% if form.default_letter_head.errors %}
-                                <div class="error-message">{{ form.default_letter_head.errors.0 }}</div>
+                            <label for="id_total_vat" class="form-label required">Total VAT</label>
+                            <input type="number" step="0.01" name="total_vat" id="id_total_vat" class="form-control" 
+                                   placeholder="0.00"
+                                   value="{{ form.total_vat.value|default:'0.00' }}" required>
+                            {% if form.total_vat.errors %}
+                                <div class="error-message">{{ form.total_vat.errors.0 }}</div>
                             {% endif %}
                         </div>
                         
-                        <!-- Tax ID -->
+                        <!-- Supplier Name -->
                         <div class="form-group">
-                            <label for="id_tax_id" class="form-label">Tax ID</label>
-                            <input type="text" name="tax_id" id="id_tax_id" class="form-control" 
-                                   value="{{ form.tax_id.value|default:'' }}">
-                            {% if form.tax_id.errors %}
-                                <div class="error-message">{{ form.tax_id.errors.0 }}</div>
+                            <label for="id_supplier_name" class="form-label required">Supplier Name</label>
+                            <input type="text" name="supplier_name" id="id_supplier_name" class="form-control" 
+                                   placeholder="Enter supplier name"
+                                   value="{{ form.supplier_name.value|default:'' }}" required>
+                            {% if form.supplier_name.errors %}
+                                <div class="error-message">{{ form.supplier_name.errors.0 }}</div>
                             {% endif %}
                         </div>
                         
-                        <!-- Parent Company -->
+                        <!-- Total Amount -->
                         <div class="form-group">
-                            <label for="id_parent_company" class="form-label">Parent Company</label>
-                            <select name="parent_company" id="id_parent_company" class="form-control">
-                                <option value="">Select parent company</option>
-                                {% for company in form.fields.parent_company.queryset %}
-                                <option value="{{ company.pk }}" {% if form.parent_company.value == company.pk|stringformat:"s" %}selected{% endif %}>
+                            <label for="id_total_amount" class="form-label">Total Amount</label>
+                            <input type="number" step="0.01" name="total_amount" id="id_total_amount" class="form-control" 
+                                   placeholder="0"
+                                   value="{{ form.total_amount.value|default:'0' }}" readonly>
+                            {% if form.total_amount.errors %}
+                                <div class="error-message">{{ form.total_amount.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Supplier VAT -->
+                        <div class="form-group">
+                            <label for="id_supplier_vat" class="form-label">Supplier VAT</label>
+                            <input type="text" name="supplier_vat" id="id_supplier_vat" class="form-control" 
+                                   placeholder="Supplier VAT"
+                                   value="{{ form.supplier_vat.value|default:'' }}">
+                            {% if form.supplier_vat.errors %}
+                                <div class="error-message">{{ form.supplier_vat.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- QR Code Present Checkbox -->
+                        <div class="form-group">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="qr_code_present" id="id_qr_code_present" 
+                                       class="checkbox-input" {% if form.qr_code_present.value %}checked{% endif %}>
+                                <label for="id_qr_code_present" class="checkbox-label">QR Code Present</label>
+                            </div>
+                        </div>
+                        
+                        <!-- Amount Before VAT -->
+                        <div class="form-group">
+                            <label for="id_amount_before_vat" class="form-label required">Amount Before VAT</label>
+                            <input type="number" step="0.01" name="amount_before_vat" id="id_amount_before_vat" class="form-control" 
+                                   placeholder="0.00"
+                                   value="{{ form.amount_before_vat.value|default:'0.00' }}" required>
+                            {% if form.amount_before_vat.errors %}
+                                <div class="error-message">{{ form.amount_before_vat.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Empty cell -->
+                        <div></div>
+                    </div>
+                </div>
+                
+                <!-- Payment Tab -->
+                <div class="tab-content" id="payment">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <p style="color: #666; font-size:  14px;">Payment information will be available here.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Address & Contact Tab -->
+                <div class="tab-content" id="address">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <p style="color: #666; font-size: 14px;">Address and contact details will be available here.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Terms Tab -->
+                <div class="tab-content" id="terms">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <p style="color:  #666; font-size: 14px;">Terms and conditions will be available here.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- More Info Tab -->
+                <div class="tab-content" id="more">
+                    <div class="form-grid">
+                        <!-- Company -->
+                        <div class="form-group">
+                            <label for="id_company" class="form-label">Company</label>
+                            <select name="company" id="id_company" class="form-control">
+                                <option value="">Select company</option>
+                                {% for company in form.fields.company.queryset %}
+                                <option value="{{ company.pk }}" 
+                                        {% if form.company.value == company.pk|stringformat:"s" %}selected{% endif %}>
                                     {{ company.name }}
                                 </option>
                                 {% endfor %}
                             </select>
-                            {% if form.parent_company.errors %}
-                                <div class="error-message">{{ form.parent_company.errors.0 }}</div>
+                            {% if form.company.errors %}
+                                <div class="error-message">{{ form.company.errors.0 }}</div>
                             {% endif %}
                         </div>
                         
-                        <!-- Domain -->
+                        <!-- Status -->
                         <div class="form-group">
-                            <label for="id_domain" class="form-label">Domain</label>
-                            <input type="text" name="domain" id="id_domain" class="form-control" 
-                                   value="{{ form.domain.value|default:'' }}">
-                            {% if form.domain.errors %}
-                                <div class="error-message">{{ form.domain.errors.0 }}</div>
+                            <label for="id_status" class="form-label">Status</label>
+                            <select name="status" id="id_status" class="form-control">
+                                {% for value, label in form.fields.status.choices %}
+                                <option value="{{ value }}" 
+                                        {% if form.status.value == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.status.errors %}
+                                <div class="error-message">{{ form.status.errors.0 }}</div>
                             {% endif %}
-                        </div>
-                        
-                        <!-- Is Parent Company Checkbox -->
-                        <div class="form-group">
-                            <label class="form-label">&nbsp;</label>
-                            <div class="checkbox-group">
-                                <input type="checkbox" name="is_parent_company" id="id_is_parent_company" 
-                                       class="checkbox-input" {% if form.is_parent_company.value %}checked{% endif %}>
-                                <label for="id_is_parent_company" class="checkbox-label">Is Parent Company (Group)</label>
-                            </div>
-                            {% if form.is_parent_company.errors %}
-                                <div class="error-message">{{ form.is_parent_company.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="section-separator"></div>
-                        
-                        <!-- Registration Details -->
-                        <div class="form-group full-width">
-                            <label for="id_registration_details" class="form-label">Registration Details</label>
-                            <textarea name="registration_details" id="id_registration_details" 
-                                      class="form-control" placeholder="Company registration numbers for your reference.  Tax numbers etc. ">{{ form.registration_details.value|default:'' }}</textarea>
-                            <p class="form-help">Company registration numbers for your reference. Tax numbers etc.</p>
-                            {% if form.registration_details.errors %}
-                                <div class="error-message">{{ form.registration_details.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Accounts Tab -->
-                <div class="tab-content" id="accounts">
-                    <div class="form-grid">
-                        <div class="form-group full-width">
-                            <p style="color: #666; font-size:  14px;">Accounts configuration will be available here. </p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Buying and Selling Tab -->
-                <div class="tab-content" id="buying-selling">
-                    <div class="form-grid">
-                        <div class="form-group full-width">
-                            <p style="color: #666; font-size:  14px;">Buying and selling settings will be available here.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Stock and Manufacturing Tab -->
-                <div class="tab-content" id="stock">
-                    <div class="form-grid">
-                        <div class="form-group full-width">
-                            <p style="color: #666; font-size: 14px;">Stock and manufacturing options will be available here.</p>
                         </div>
                     </div>
                 </div>
@@ -531,7 +527,7 @@
     
     <script>
         // Tab switching functionality
-        const tabItems = document.querySelectorAll('. tab-item');
+        const tabItems = document. querySelectorAll('.tab-item');
         const tabContents = document.querySelectorAll('.tab-content');
         
         tabItems.forEach(tab => {
@@ -548,6 +544,24 @@
                 document.getElementById(tabId).classList.add('active');
             });
         });
+        
+        // Auto-calculate total amount
+        const amountBeforeVat = document.getElementById('id_amount_before_vat');
+        const totalVat = document.getElementById('id_total_vat');
+        const totalAmount = document.getElementById('id_total_amount');
+        
+        function calculateTotal() {
+            const beforeVat = parseFloat(amountBeforeVat.value) || 0;
+            const vat = parseFloat(totalVat. value) || 0;
+            totalAmount.value = (beforeVat + vat).toFixed(2);
+        }
+        
+        if (amountBeforeVat && totalVat && totalAmount) {
+            amountBeforeVat.addEventListener('input', calculateTotal);
+            totalVat.addEventListener('input', calculateTotal);
+            // Calculate on page load
+            calculateTotal();
+        }
         
         // Auto-hide messages after 5 seconds
         setTimeout(() => {

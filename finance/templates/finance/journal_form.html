@@ -1,0 +1,365 @@
+<!  DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Journal Entry - Finance</title>
+    <style>
+        * {
+            margin: 0;
+            padding:  0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f9fafb;
+            color: #333;
+        }
+        body.sidebar-collapsed .sidebar {
+            transform: translateX(-100%);
+        }
+        
+        /* Main Content */
+        .main-content {
+            max-width:    1400px;
+            margin:  0 auto;
+            padding:   32px 24px;
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s ease, width 0.3s ease;
+        }
+
+        body.sidebar-collapsed .header {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        body.sidebar-collapsed .main-content {
+            margin-left: 0;
+        }
+        /* Breadcrumb */
+        .breadcrumb {
+            padding: 16px 40px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .breadcrumb a {
+            color: #666;
+            text-decoration: none;
+        }
+        
+        .breadcrumb a:hover {
+            color: #00b894;
+        }
+        
+        .breadcrumb-separator {
+            margin: 0 8px;
+            color: #999;
+        }
+        
+        /* Header */
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            
+        }
+        
+        .form-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .menu-icon {
+            font-size: 24px;
+            color: #00b894;
+            cursor: pointer;
+        }
+        
+        .form-title h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #00b894;
+        }
+        
+        .btn-save {
+            padding: 10px 32px;
+            background-color:   #00b894;
+            color: white;
+            border:  none;
+            border-radius:  4px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-save:hover {
+            background-color: #00a281;
+        }
+        
+        /* Form Container */
+        .form-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 40px;
+        }
+        
+        .form-card {
+            background:   white;
+            border-radius:   8px;
+            box-shadow:  0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px 32px;
+        }
+        
+        /* Form Fields */
+        .form-group {
+            margin-bottom: 0;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight:   600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .form-label.required::after {
+            content: " *";
+            color: #dc2626;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+            background-color: white;
+            transition: border-color 0.2s;
+        }
+        
+        .form-control:focus {
+            outline:   none;
+            border-color:   #00b894;
+            box-shadow: 0 0 0 3px rgba(0, 184, 148, 0.1);
+        }
+        
+        .form-control::placeholder {
+            color: #9ca3af;
+        }
+        
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 40px;
+        }
+        
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .form-help {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 6px;
+            font-style: italic;
+        }
+        
+        /* Messages */
+        .messages {
+            margin-bottom: 24px;
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom:   12px;
+            font-size: 14px;
+        }
+        
+        .alert-success {
+            background-color:   #d1fae5;
+            color:   #059669;
+            border-left: 4px solid #059669;
+        }
+        
+        .alert-error {
+            background-color: #fee2e2;
+            color:   #dc2626;
+            border-left: 4px solid #dc2626;
+        }
+        
+        .error-message {
+            color: #dc2626;
+            font-size: 12px;
+            margin-top:  4px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+            
+            .form-card {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include "finance/header.html" %}
+    {% include "finance/sidenav.html" %}
+    
+    <!-- Main Content -->
+    <div class="main-content">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="{% url 'finance-journal' %}">Journal Entry</a>
+        <span class="breadcrumb-separator">›</span>
+        <span>New Journal Entry</span>
+    </div>
+    
+    <!-- Header -->
+    <div class="form-header">
+        <div class="form-title">
+            <span class="menu-icon">☰</span>
+            <h1>New Journal Entry</h1>
+        </div>
+        <button type="submit" form="journal-form" class="btn-save">Save</button>
+    </div>
+    
+    <!-- Form Container -->
+    <div class="form-container">
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <div class="form-card">
+            <form method="post" id="journal-form">
+                {% csrf_token %}
+                
+                <div class="form-grid">
+                    <!-- Entry Number -->
+                    <div class="form-group">
+                        <label for="id_entry_number" class="form-label">Entry Number</label>
+                        <input type="text" name="entry_number" id="id_entry_number" class="form-control" 
+                               placeholder="Auto-generated"
+                               value="{{ form.entry_number.value|default:'Auto-generated' }}" readonly>
+                        <p class="form-help">This number will be automatically generated</p>
+                        {% if form.entry_number.errors %}
+                            <div class="error-message">{{ form.entry_number.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Debit Amount -->
+                    <div class="form-group">
+                        <label for="id_debit_amount" class="form-label">Debit Amount</label>
+                        <input type="number" step="0.01" name="debit_amount" id="id_debit_amount" class="form-control" 
+                               placeholder="0.00"
+                               value="{{ form.debit_amount.value|default:'0.00' }}">
+                        {% if form.debit_amount.errors %}
+                            <div class="error-message">{{ form.debit_amount.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Date -->
+                    <div class="form-group">
+                        <label for="id_date" class="form-label required">Date</label>
+                        <input type="date" name="date" id="id_date" class="form-control" 
+                               value="{{ form.date.value|date:'Y-m-d'|default:'' }}" required>
+                        {% if form.date.errors %}
+                            <div class="error-message">{{ form.date.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Credit Amount -->
+                    <div class="form-group">
+                        <label for="id_credit_amount" class="form-label">Credit Amount</label>
+                        <input type="number" step="0.01" name="credit_amount" id="id_credit_amount" class="form-control" 
+                               placeholder="0.00"
+                               value="{{ form.credit_amount.value|default:'0.00' }}">
+                        {% if form.credit_amount.errors %}
+                            <div class="error-message">{{ form.credit_amount.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Account -->
+                    <div class="form-group">
+                        <label for="id_account" class="form-label required">Account</label>
+                        <select name="account" id="id_account" class="form-control" required>
+                            <option value="">Select account</option>
+                            {% for account in form.fields.account.queryset %}
+                            <option value="{{ account.pk }}" 
+                                    {% if form.account.value == account.pk|stringformat:"s" %}selected{% endif %}>
+                                {{ account.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if form.account.errors %}
+                            <div class="error-message">{{ form.account.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Description (Full Width) -->
+                    <div class="form-group full-width">
+                        <label for="id_description" class="form-label">Description</label>
+                        <textarea name="description" id="id_description" class="form-control" 
+                                  placeholder="Enter description for this journal entry">{{ form.description.value|default:'' }}</textarea>
+                        {% if form.description.errors %}
+                            <div class="error-message">{{ form.description.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    </div>
+    <script>
+        // Auto-hide messages after 5 seconds
+        setTimeout(() => {
+            const messages = document.querySelector('.messages');
+            if (messages) {
+                messages.style. transition = 'opacity 0.5s';
+                messages.style. opacity = '0';
+                setTimeout(() => messages.remove(), 500);
+            }
+        }, 5000);
+        
+        // Set today's date as default if no date is set
+        const dateInput = document.getElementById('id_date');
+        if (dateInput && !dateInput.value) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput. value = today;
+        }
+    </script>
+</body>
+</html>

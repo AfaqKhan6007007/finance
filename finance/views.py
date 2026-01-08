@@ -4,13 +4,125 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from .forms import LoginForm, SignupForm, CompanyForm
-from .models import Company
+from .forms import LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm
+from django.db import models
+from .models import Company, Account, Invoice, JournalEntry
 
-class Home(View):
-    @method_decorator(login_required)  # Require login to access
+class Accounts(View):
+    """List all accounts"""
+    @method_decorator(login_required)
     def get(self, request):
-        return render(request, 'finance/home.html', {})
+        accounts = Account.objects.select_related('company', 'parent_account').all()
+        
+        # Search functionality
+        search_query = request.GET.get('search', '')
+        if search_query:
+            accounts = accounts.filter(name__icontains=search_query)
+        
+        # Filter by ID
+        id_filter = request.GET.get('id', '')
+        if id_filter: 
+            accounts = accounts.filter(id=id_filter)
+        
+        # Filter by Account Number
+        account_number_filter = request.GET.get('account_number', '')
+        if account_number_filter:
+            accounts = accounts.filter(account_number__icontains=account_number_filter)
+        
+        # Filter by Company
+        company_filter = request.GET.get('company', '')
+        if company_filter: 
+            accounts = accounts.filter(company_id=company_filter)
+        
+        # Filter by Account Type
+        account_type_filter = request.GET.get('account_type', '')
+        if account_type_filter:
+            accounts = accounts.filter(account_type=account_type_filter)
+        
+        context = {
+            'accounts': accounts,
+            'search_query': search_query,
+            'id_filter': id_filter,
+            'account_number_filter': account_number_filter,
+            'company_filter': company_filter,
+            'account_type_filter': account_type_filter,
+            'total_count': Account.objects.count(),
+            'companies': Company.objects.all(),  # For filter dropdown
+        }
+        return render(request, 'finance/accounts.html', context)
+
+
+class AccountCreate(View):
+    """Create new account"""
+    @method_decorator(login_required)
+    def get(self, request):
+        form = AccountForm()
+        return render(request, 'finance/account_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+    
+    @method_decorator(login_required)
+    def post(self, request):
+        form = AccountForm(request.POST)
+        if form.is_valid():
+            account = form.save(commit=False)
+            account.created_by = request.user
+            account.save()
+            messages.success(request, f'Account "{account.name}" created successfully!')
+            return redirect('finance-accounts')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+        
+        return render(request, 'finance/account_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit':  False
+        })
+
+
+class AccountEdit(View):
+    """Edit existing account"""
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        account = get_object_or_404(Account, pk=pk)
+        form = AccountForm(instance=account)
+        return render(request, 'finance/account_form.html', {
+            'form': form,
+            'account': account,
+            'action':  'Edit',
+            'is_edit': True
+        })
+    
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        account = get_object_or_404(Account, pk=pk)
+        form = AccountForm(request.POST, instance=account)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Account "{account.name}" updated successfully!')
+            return redirect('finance-accounts')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+        
+        return render(request, 'finance/account_form.html', {
+            'form': form,
+            'account': account,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+
+class AccountDelete(View):
+    """Delete account"""
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        account = get_object_or_404(Account, pk=pk)
+        account_name = account.name
+        account.delete()
+        messages.success(request, f'Account "{account_name}" deleted successfully!')
+        return redirect('finance-accounts')
 
 class Dashboard(View):
     @method_decorator(login_required)  # Require login to access
@@ -18,9 +130,99 @@ class Dashboard(View):
         return render(request, 'finance/dashboard.html', {})
 
 class Journal(View):
-    @method_decorator(login_required)  # Require login to access
+    """List all journal entries"""
+    @method_decorator(login_required)
     def get(self, request):
-        return render(request, 'finance/journal.html', {})
+        journal_entries = JournalEntry. objects.select_related('account', 'company').all()
+        
+        # Search functionality
+        search_query = request.GET.get('search', '')
+        if search_query:
+            journal_entries = journal_entries.filter(
+                models.Q(entry_number__icontains=search_query) |
+                models. Q(account__name__icontains=search_query) |
+                models.Q(description__icontains=search_query)
+            )
+        
+        context = {
+            'journal_entries': journal_entries,
+            'search_query': search_query,
+            'total_count': JournalEntry.objects.count(),
+        }
+        return render(request, 'finance/journal.html', context)
+
+
+class JournalCreate(View):
+    """Create new journal entry"""
+    @method_decorator(login_required)
+    def get(self, request):
+        form = JournalEntryForm()
+        return render(request, 'finance/journal_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+    
+    @method_decorator(login_required)
+    def post(self, request):
+        form = JournalEntryForm(request.POST)
+        if form.is_valid():
+            journal_entry = form.save(commit=False)
+            journal_entry.created_by = request.user
+            journal_entry.save()
+            messages.success(request, f'Journal Entry "{journal_entry.entry_number}" created successfully!')
+            return redirect('finance-journal')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+        
+        return render(request, 'finance/journal_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+
+class JournalEdit(View):
+    """Edit existing journal entry"""
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        journal_entry = get_object_or_404(JournalEntry, pk=pk)
+        form = JournalEntryForm(instance=journal_entry)
+        return render(request, 'finance/journal_form.html', {
+            'form':  form,
+            'journal_entry': journal_entry,
+            'action': 'Edit',
+            'is_edit': True
+        })
+    
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        journal_entry = get_object_or_404(JournalEntry, pk=pk)
+        form = JournalEntryForm(request.POST, instance=journal_entry)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Journal Entry "{journal_entry. entry_number}" updated successfully!')
+            return redirect('finance-journal')
+        else:
+            messages. error(request, 'Please correct the errors below.')
+        
+        return render(request, 'finance/journal_form.html', {
+            'form': form,
+            'journal_entry': journal_entry,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+
+class JournalDelete(View):
+    """Delete journal entry"""
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        journal_entry = get_object_or_404(JournalEntry, pk=pk)
+        entry_number = journal_entry.entry_number
+        journal_entry.delete()
+        messages.success(request, f'Journal Entry "{entry_number}" deleted successfully!')
+        return redirect('finance-journal')
 
 class TrialBalance(View):
     @method_decorator(login_required)  # Require login to access
@@ -134,9 +336,99 @@ class Payables(View):
         return render(request, 'finance/payables.html', {})    
 
 class Invoices(View):
-    @method_decorator(login_required)  # Require login to access
+    """List all invoices"""
+    @method_decorator(login_required)
     def get(self, request):
-        return render(request, 'finance/invoices.html', {}) 
+        invoices = Invoice. objects.select_related('company').all()
+        
+        # Search functionality
+        search_query = request. GET.get('search', '')
+        if search_query:
+            invoices = invoices.filter(
+                models.Q(invoice_number__icontains=search_query) |
+                models.Q(customer_name__icontains=search_query) |
+                models. Q(supplier_name__icontains=search_query)
+            )
+        
+        context = {
+            'invoices':  invoices,
+            'search_query': search_query,
+            'total_count': Invoice.objects.count(),
+        }
+        return render(request, 'finance/invoices.html', context)
+
+
+class InvoiceCreate(View):
+    """Create new invoice"""
+    @method_decorator(login_required)
+    def get(self, request):
+        form = InvoiceForm()
+        return render(request, 'finance/invoice_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+    
+    @method_decorator(login_required)
+    def post(self, request):
+        form = InvoiceForm(request.POST)
+        if form.is_valid():
+            invoice = form.save(commit=False)
+            invoice.created_by = request.user
+            invoice.save()
+            messages.success(request, f'Invoice "{invoice.invoice_number}" created successfully!')
+            return redirect('finance-invoices')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+        
+        return render(request, 'finance/invoice_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit':  False
+        })
+
+
+class InvoiceEdit(View):
+    """Edit existing invoice"""
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        invoice = get_object_or_404(Invoice, pk=pk)
+        form = InvoiceForm(instance=invoice)
+        return render(request, 'finance/invoice_form.html', {
+            'form': form,
+            'invoice': invoice,
+            'action':  'Edit',
+            'is_edit': True
+        })
+    
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        invoice = get_object_or_404(Invoice, pk=pk)
+        form = InvoiceForm(request.POST, instance=invoice)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Invoice "{invoice.invoice_number}" updated successfully!')
+            return redirect('finance-invoices')
+        else:
+            messages. error(request, 'Please correct the errors below.')
+        
+        return render(request, 'finance/invoice_form.html', {
+            'form': form,
+            'invoice': invoice,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+
+class InvoiceDelete(View):
+    """Delete invoice"""
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        invoice = get_object_or_404(Invoice, pk=pk)
+        invoice_number = invoice.invoice_number
+        invoice.delete()
+        messages.success(request, f'Invoice "{invoice_number}" deleted successfully!')
+        return redirect('finance-invoices')
 
 class Receivables(View):
     @method_decorator(login_required)  # Require login to access
@@ -157,7 +449,7 @@ class Login(View):
     def get(self, request):
         # If user is already logged in, redirect to home
         if request.user.is_authenticated:
-            return redirect('finance-home')
+            return redirect('finance-accounts')
         
         form = LoginForm()
         return render(request, 'finance/login.html', {'form':  form})
@@ -175,7 +467,7 @@ class Login(View):
                 # Log the user in
                 login(request, user)
                 messages.success(request, f'Welcome back, {user.first_name}!')
-                return redirect('finance-home')
+                return redirect('finance-accounts')
             else:
                 messages.error(request, 'Invalid username or password')
         
@@ -185,7 +477,7 @@ class Signup(View):
     def get(self, request):
         # If user is already logged in, redirect to home
         if request.user.is_authenticated:
-            return redirect('finance-home')
+            return redirect('finance-accounts')
         
         form = SignupForm()
         return render(request, 'finance/signup.html', {'form': form})
@@ -200,7 +492,7 @@ class Signup(View):
             login(request, user)
             
             messages.success(request, f'Account created successfully! Welcome, {user.first_name}!')
-            return redirect('finance-home')
+            return redirect('finance-accounts')
         else:
             # Display form errors
             for field, errors in form.errors. items():

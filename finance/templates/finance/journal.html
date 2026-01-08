@@ -1,188 +1,31 @@
-<!DOCTYPE html>
+<! DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Journal - Finance</title>
+    <title>Journal Entries - Finance</title>
     <style>
         * {
             margin: 0;
-            padding:   0;
+            padding: 0;
             box-sizing: border-box;
         }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background-color: #f9fafb;
-            color:  #1f2937;
+            color:   #1f2937;
         }
         
         body.sidebar-collapsed .sidebar {
             transform: translateX(-100%);
         }
-        /* Header */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 24px;
-            background-color:  white;
-            border-bottom: 1px solid #e5e7eb;
-            position: sticky;
-            top: 0;
-            margin-left: var(--sidebar-width);
-            width: calc(100% - var(--sidebar-width));
-            height: var(--topbar-height);
-            transition: margin-left 0.3s ease, width 0.3s ease;
-        }
-        
-        .hamburger {
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        .hamburger span {
-            width: 28px;
-            height: 3px;
-            background-color:   #00a896;
-            border-radius: 2px;
-        }
-        
-        .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        
-        .logo {
-            width: 32px;
-            height: 32px;
-        }
-        
-        .brand-name {
-            font-size:  16px;
-            font-weight:   600;
-            color: #374151;
-        }
-        
-        .user-menu {
-            position: relative;
-        }
-        
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background:   linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color:   white;
-            font-weight:  600;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        
-        .user-avatar:hover {
-            transform:  scale(1.05);
-        }
-        
-        .dropdown-menu {
-            position: absolute;
-            top: 50px;
-            right: 0;
-            background:  white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            min-width: 200px;
-            display: none;
-            z-index: 1000;
-            overflow: hidden;
-        }
-        
-        .dropdown-menu.show {
-            display: block;
-            animation: slideDown 0.2s ease-out;
-        }
-        
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform:  translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform:  translateY(0);
-            }
-        }
-        
-        .dropdown-header {
-            padding: 16px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .dropdown-user-name {
-            font-weight:  600;
-            color: #1f2937;
-            font-size: 14px;
-        }
-        
-        .dropdown-user-email {
-            color: #6b7280;
-            font-size: 12px;
-            margin-top: 4px;
-        }
-        
-        .dropdown-item {
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            color: #374151;
-            text-decoration: none;
-            font-size: 14px;
-        }
-        
-        .dropdown-item:hover {
-            background-color: #f9fafb;
-        }
-        
-        .dropdown-item svg {
-            width: 18px;
-            height: 18px;
-            stroke: #6b7280;
-        }
-        
-        .dropdown-divider {
-            height: 1px;
-            background-color:  #e5e7eb;
-            margin: 8px 0;
-        }
-        
-        .dropdown-item.logout {
-            color: #dc2626;
-        }
-        
-        .dropdown-item.logout svg {
-            stroke: #dc2626;
-        }
-        
-        .dropdown-item.logout:hover {
-            background-color: #fee2e2;
-        }
         
         /* Main Content */
         .main-content {
-            max-width:   1400px;
-            margin: 0 auto;
-            padding:  32px 24px;
+            max-width:    1400px;
+            margin:  0 auto;
+            padding:   32px 24px;
             margin-left: var(--sidebar-width);
             transition: margin-left 0.3s ease, width 0.3s ease;
         }
@@ -205,7 +48,7 @@
         
         .page-title-section h1 {
             font-size: 32px;
-            font-weight: 700;
+            font-weight:  700;
             color: #00a896;
             margin-bottom: 8px;
         }
@@ -223,43 +66,45 @@
         .btn {
             padding: 10px 20px;
             border-radius: 6px;
-            font-size:   14px;
+            font-size:    14px;
             font-weight: 600;
             cursor: pointer;
             border: 1px solid #d1d5db;
-            background:  white;
+            background:   white;
             display: flex;
             align-items: center;
             gap: 8px;
             transition: all 0.2s;
+            text-decoration: none;
+            color: #374151;
         }
         
         .btn:hover {
-            background-color:   #f9fafb;
+            background-color:    #f9fafb;
         }
         
         .btn-primary {
-            background-color:   #00a896;
-            color: white;
+            background-color:    #00a896;
+            color:  white;
             border: none;
         }
         
         .btn-primary:hover {
-            background-color:   #008c7a;
+            background-color:    #008c7a;
         }
         
         /* Search and Filters */
         .search-section {
-            background:  white;
+            background:   white;
             padding: 24px;
-            border-radius:  8px;
+            border-radius:   8px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             margin-bottom: 24px;
         }
     
         .search-bar {
             width: 100%;
-            padding: 12px 16px 12px 44px;
+            padding:  12px 16px 12px 44px;
             border: 1px solid #d1d5db;
             border-radius: 6px;
             font-size: 14px;
@@ -269,42 +114,14 @@
         }
         
         .search-bar:focus {
-            outline:   none;
-            border-color:   #00a896;
-        }
-        
-        .filters {
-            display: flex;
-            gap: 12px;
-            margin-top: 16px;
-            flex-wrap: wrap;
-        }
-        
-        .filter-select {
-            padding: 10px 36px 10px 16px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 14px;
-            background-color: white;
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position:  right 12px center;
-        }
-        
-        .filter-input {
-            padding: 10px 16px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 14px;
-            min-width: 150px;
+            outline:    none;
+            border-color:    #00a896;
         }
         
         /* Table */
         .table-container {
-            background: white;
-            border-radius: 8px;
+            background:  white;
+            border-radius:  8px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
@@ -329,7 +146,7 @@
         }
         
         th:first-child {
-            width:  40px;
+            width:   40px;
         }
         
         td {
@@ -348,37 +165,14 @@
             cursor: pointer;
         }
         
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size:  12px;
+        .debit-amount {
+            color:  #2563eb;
             font-weight: 600;
         }
         
-        .badge-equity {
-            background-color: #ede9fe;
-            color: #7c3aed;
-        }
-        
-        .badge-expense {
-            background-color:  #fee2e2;
-            color:  #dc2626;
-        }
-        
-        .badge-income {
-            background-color: #dbeafe;
-            color: #2563eb;
-        }
-        
-        .badge-liability {
-            background-color: #fee2e2;
-            color:   #dc2626;
-        }
-        
-        .badge-asset {
-            background-color:  #d1fae5;
+        .credit-amount {
             color: #059669;
+            font-weight:  600;
         }
         
         .time-badge {
@@ -399,17 +193,25 @@
             color: #6b7280;
             cursor: pointer;
             font-size: 13px;
+            text-decoration: none;
+            background:  none;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
         }
         
         .icon-btn:hover {
             color: #00a896;
+            background-color: #f0fdfa;
         }
-        
-        .pagination {
-            text-align: right;
-            padding: 16px;
-            color: #6b7280;
-            font-size: 14px;
+
+        .icon-btn-delete {
+            color: #dc2626;
+        }
+
+        .icon-btn-delete:hover {
+            background-color: #fee2e2;
         }
         
         /* Floating Action Button */
@@ -419,14 +221,15 @@
             right: 32px;
             width: 56px;
             height: 56px;
-            background-color:  #00a896;
-            border-radius:  50%;
+            background-color:   #00a896;
+            border-radius:   50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor:  pointer;
-            box-shadow:  0 4px 12px rgba(0, 168, 150, 0.4);
+            cursor:   pointer;
+            box-shadow:   0 4px 12px rgba(0, 168, 150, 0.4);
             transition: transform 0.2s;
+            text-decoration: none;
         }
         
         .fab:hover {
@@ -438,13 +241,77 @@
             height: 24px;
             fill: white;
         }
+
+        /* Messages */
+        .messages {
+            margin-bottom: 24px;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom:  12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .alert-success {
+            background-color:  #d1fae5;
+            color: #059669;
+            border-left: 4px solid #059669;
+        }
+
+        .alert-error {
+            background-color: #fee2e2;
+            color:   #dc2626;
+            border-left: 4px solid #dc2626;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            opacity: 0.5;
+            stroke: currentColor;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom:   8px;
+            color: #6b7280;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
     </style>
 </head>
 <body>
     {% include "finance/header.html" %}
     {% include "finance/sidenav.html" %}
+    
     <!-- Main Content -->
     <div class="main-content">
+        <!-- Messages -->
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <!-- Page Header -->
         <div class="page-header">
             <div class="page-title-section">
@@ -465,21 +332,24 @@
                     </svg>
                     Export
                 </button>
-                <button class="btn btn-primary">
+                <a href="{% url 'finance-journal-create' %}" class="btn btn-primary">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"/>
                         <line x1="12" y1="8" x2="12" y2="16"/>
                         <line x1="8" y1="12" x2="16" y2="12"/>
                     </svg>
-                    Add Journal Entries
-                </button>
+                    Add Journal Entry
+                </a>
             </div>
         </div>
 
         <!-- Search and Filters -->
         <div class="search-section">
-            <input type="text" class="search-bar" placeholder="Search by account name, ID, or number...">
-            
+            <form method="get" action="{% url 'finance-journal' %}">
+                <input type="text" name="search" class="search-bar" 
+                       placeholder="Search by entry number, account, or description..." 
+                       value="{{ search_query }}">
+            </form>
         </div>
 
         <!-- Table -->
@@ -487,148 +357,125 @@
             <table>
                 <thead>
                     <tr>
-                        <th><input type="checkbox" class="checkbox"></th>
+                        <th><input type="checkbox" class="checkbox" id="select-all"></th>
                         <th>ID</th>
                         <th>Posting Date</th>
                         <th>Account</th>
                         <th>Debit</th>
                         <th>Credit</th>
                         <th>Description</th>
-                        <th style="text-align: left;">15 of 44</th>
+                        <th style="text-align: left;">
+                            {{ journal_entries|length }} of {{ total_count }}
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
+                    {% for entry in journal_entries %}
                     <tr>
-                        <td><input type="checkbox" class="checkbox"></td>
-                        <td>JE00005</td>
-                        <td>01/12/2025</td>
-                        <td>Sales Account</td>
-                        <td style="color:#2563eb">SAR 200.00</td>
-                        <td style="color: green">SAR 200.00</td>
-                        <td>Test Entry</td>
+                        <td><input type="checkbox" class="checkbox row-checkbox"></td>
+                        <td>{{ entry.entry_number }}</td>
+                        <td>{{ entry.date|date:"m/d/Y" }}</td>
+                        <td>{{ entry.account.name }}</td>
+                        <td class="debit-amount">SAR {{ entry.debit_amount|floatformat:2 }}</td>
+                        <td class="credit-amount">SAR {{ entry.credit_amount|floatformat:2 }}</td>
+                        <td>{{ entry.description|truncatewords:10|default:"-" }}</td>
                         <td>
                             <div class="action-icons">
-                                <span class="time-badge">1mo</span>
-                                <span class="icon-btn">💬 0</span>
-                                <span class="icon-btn">♡</span>
+                                <span class="time-badge">{{ entry.created_at|timesince }} ago</span>
+                                <a href="{% url 'finance-journal-edit' entry.pk %}" class="icon-btn">
+                                    ✏️ Edit
+                                </a>
+                                <form method="post" action="{% url 'finance-journal-delete' entry.pk %}" 
+                                      style="display:   inline;" 
+                                      onsubmit="return confirm('Are you sure you want to delete journal entry {{ entry.entry_number }}?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="icon-btn icon-btn-delete">
+                                        🗑️ Delete
+                                    </button>
+                                </form>
                             </div>
                         </td>
                     </tr>
+                    {% empty %}
                     <tr>
-                        <td><input type="checkbox" class="checkbox"></td>
-                        <td>JE00004</td>
-                        <td>01/12/2025</td>
-                        <td>Sales Account</td>
-                        <td style="color:#2563eb">SAR 200.00</td>
-                        <td style="color: green">SAR 200.00</td>
-                        <td>Test Entry</td>
-                        <td>
-                            <div class="action-icons">
-                                <span class="time-badge">1mo</span>
-                                <span class="icon-btn">💬 0</span>
-                                <span class="icon-btn">♡</span>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                                </svg>
+                                <h3>No Journal Entries Found</h3>
+                                <p>
+                                    {% if search_query %}
+                                        No journal entries match your search criteria.  
+                                    {% else %}
+                                        Get started by creating your first journal entry.
+                                    {% endif %}
+                                </p>
+                                
                             </div>
                         </td>
                     </tr>
-                    <tr>
-                        <td><input type="checkbox" class="checkbox"></td>
-                        <td>JE00003</td>
-                        <td>01/12/2025</td>
-                        <td>Sales Account</td>
-                        <td style="color:#2563eb">SAR 200.00</td>
-                        <td style="color: green">SAR 200.00</td>
-                        <td>Test Entry</td>
-                        <td>
-                            <div class="action-icons">
-                                <span class="time-badge">1mo</span>
-                                <span class="icon-btn">💬 0</span>
-                                <span class="icon-btn">♡</span>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><input type="checkbox" class="checkbox"></td>
-                        <td>JE00002</td>
-                        <td>01/12/2025</td>
-                        <td>Sales Account</td>
-                        <td style="color:#2563eb">SAR 200.00</td>
-                        <td style="color: green">SAR 200.00</td>
-                        <td>Test Entry</td>
-                        <td>
-                            <div class="action-icons">
-                                <span class="time-badge">1mo</span>
-                                <span class="icon-btn">💬 0</span>
-                                <span class="icon-btn">♡</span>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><input type="checkbox" class="checkbox"></td>
-                        <td>JE00001</td>
-                        <td>01/12/2025</td>
-                        <td>Sales Account</td>
-                        <td style="color:#2563eb">SAR 200.00</td>
-                        <td style="color: green">SAR 200.00</td>
-                        <td>Test Entry</td>
-                        <td>
-                            <div class="action-icons">
-                                <span class="time-badge">1mo</span>
-                                <span class="icon-btn">💬 0</span>
-                                <span class="icon-btn">♡</span>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><input type="checkbox" class="checkbox"></td>
-                        <td>JE00006</td>
-                        <td>01/12/2025</td>
-                        <td>Sales Account</td>
-                        <td style="color:#2563eb">SAR 200.00</td>
-                        <td style="color: green">SAR 200.00</td>
-                        <td>Test Entry</td>
-                        <td>
-                            <div class="action-icons">
-                                <span class="time-badge">1mo</span>
-                                <span class="icon-btn">💬 0</span>
-                                <span class="icon-btn">♡</span>
-                            </div>
-                        </td>
-                    </tr>
-                    
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 
     <!-- Floating Action Button -->
-    <div class="fab">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.  9 2-2V4c0-1.1-.9-2-2-2z" fill="white"/>
+    <a href="{% url 'finance-journal-create' %}" class="fab">
+        <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 5v14M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round"/>
         </svg>
-    </div>
+    </a>
 
     <script>
         // User menu dropdown toggle
         const userAvatar = document.getElementById('userAvatar');
         const dropdownMenu = document.getElementById('dropdownMenu');
         
-        userAvatar.addEventListener('click', function(e) {
-            e.stopPropagation();
-            dropdownMenu.classList.toggle('show');
-        });
+        if (userAvatar && dropdownMenu) {
+            userAvatar.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('show');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!dropdownMenu. contains(e.target) && e.target !== userAvatar) {
+                    dropdownMenu.classList.remove('show');
+                }
+            });
+        }
         
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!dropdownMenu.contains(e.target) && e.target !== userAvatar) {
-                dropdownMenu.classList.remove('show');
-            }
-        });
-        
+        // Sidebar toggle
         const hamburger = document.querySelector('.hamburger');
+        if (hamburger) {
+            hamburger.addEventListener('click', function () {
+                document.body.classList.toggle('sidebar-collapsed');
+            });
+        }
 
-        hamburger.addEventListener('click', function () {
-            document.body.classList.toggle('sidebar-collapsed');
-        });
+        // Select all checkboxes
+        const selectAll = document.getElementById('select-all');
+        const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+        
+        if (selectAll) {
+            selectAll.addEventListener('change', function() {
+                rowCheckboxes.forEach(checkbox => {
+                    checkbox.checked = selectAll.checked;
+                });
+            });
+        }
+
+        // Auto-hide messages after 5 seconds
+        setTimeout(() => {
+            const messages = document.querySelector('.messages');
+            if (messages) {
+                messages.style. transition = 'opacity 0.5s';
+                messages.style.opacity = '0';
+                setTimeout(() => messages.remove(), 500);
+            }
+        }, 5000);
     </script>
 </body>
 </html>
