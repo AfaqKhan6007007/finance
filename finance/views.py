@@ -8,7 +8,7 @@ from .forms import LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm,
 from django.db import models
 from .models import Company, Account, Invoice, JournalEntry
 from django.contrib.messages import get_messages
-from django.db. models import Sum, Q
+from django.db.models import Sum, Q
 from datetime import datetime, timedelta
 from decimal import Decimal
 import math
@@ -163,15 +163,15 @@ class Dashboard(View):
         net_profit = total_revenue - total_expenses
         
         # Calculate Cash on Hand (Asset accounts balance)
-        asset_debits = JournalEntry.objects. filter(
+        asset_debits = JournalEntry.objects.filter(
             account__account_type='asset'
         ).aggregate(total=Sum('debit_amount'))['total'] or Decimal('0.00')
         
-        asset_credits = JournalEntry. objects.filter(
+        asset_credits = JournalEntry.objects.filter(
             account__account_type='asset'
         ).aggregate(total=Sum('credit_amount'))['total'] or Decimal('0.00')
         
-        cash_on_hand = asset_debits - asset_credits
+        cash_on_hand = asset_credits - asset_debits
         
         # Get previous month data for comparison
         today = datetime.now()
@@ -180,7 +180,7 @@ class Dashboard(View):
         first_day_previous_month = last_day_previous_month.replace(day=1)
         
         # Current month revenue (for comparison)
-        current_revenue = JournalEntry.objects. filter(
+        current_revenue = JournalEntry.objects.filter(
             account__account_type='income',
             date__gte=first_day_current_month
         ).aggregate(total=Sum('credit_amount'))['total'] or Decimal('0.00')
@@ -246,7 +246,7 @@ class Dashboard(View):
                 percentage = 0
             
             # Calculate SVG circle parameters
-            circumference = 2 * math. pi * 40  # radius = 40
+            circumference = 2 * math.pi * 40  # radius = 40
             dash_length = (percentage / 100) * circumference
             dash_offset = -cumulative_percent / 100 * circumference
             
@@ -266,6 +266,40 @@ class Dashboard(View):
         recent_entries = JournalEntry.objects.select_related(
             'account', 'company'
         ).order_by('-date', '-created_at')[:10]
+         # ===== DEBUG: ADD THIS BEFORE context = {...} =====
+        print("\n" + "="*60)
+        print("DASHBOARD DEBUG INFO")
+        print("="*60)
+        
+        # Check account types
+        from django.db.models import Count
+        account_type_counts = Account.objects.values('account_type').annotate(count=Count('id'))
+        print("\n📊 Accounts by Type:")
+        for item in account_type_counts: 
+            print(f"  {item['account_type'] or 'NO TYPE SET'}: {item['count']} accounts")
+        
+        # Check journal entries
+        print(f"\n📝 Total Journal Entries: {JournalEntry.objects.count()}")
+        
+        # Check entries with income accounts
+        income_entries = JournalEntry.objects.filter(account__account_type='income')
+        print(f"\n💰 Income Entries: {income_entries.count()}")
+        for entry in income_entries[: 3]: 
+            print(f"  - {entry.entry_number}: {entry.account.name} | Credit: ${entry.credit_amount} | Debit: ${entry.debit_amount}")
+        
+        # Check entries with expense accounts
+        expense_entries = JournalEntry.objects.filter(account__account_type='expense')
+        print(f"\n💸 Expense Entries: {expense_entries.count()}")
+        for entry in expense_entries[: 3]:
+            print(f"  - {entry.entry_number}: {entry.account.name} | Debit: ${entry.debit_amount} | Credit: ${entry.credit_amount}")
+        
+        # Show ALL journal entries with their account types
+        print(f"\n📋 First 5 Journal Entries:")
+        for entry in JournalEntry.objects.all()[:5]:
+            print(f"  {entry.entry_number}: Account={entry.account.name} (Type: {entry.account.account_type or 'NO TYPE'}) | Debit=${entry.debit_amount} | Credit=${entry.credit_amount}")
+        
+        print("\n" + "="*60 + "\n")
+        # ===== END DEBUG =====
         
         context = {
             'total_revenue': total_revenue,
@@ -310,12 +344,12 @@ class Dashboard(View):
             month_date = today - timedelta(days=30 * i)
             month_start = month_date.replace(day=1)
             
-            if month_start. month == 12:
+            if month_start.month == 12:
                 month_end = month_start.replace(year=month_start.year + 1, month=1, day=1) - timedelta(days=1)
             else:
                 month_end = month_start.replace(month=month_start.month + 1, day=1) - timedelta(days=1)
             
-            income = JournalEntry.objects. filter(
+            income = JournalEntry.objects.filter(
                 account__account_type='income',
                 date__gte=month_start,
                 date__lte=month_end
@@ -564,7 +598,7 @@ class Payables(View):
         from decimal import Decimal
         
         # Get all invoices
-        all_invoices = Invoice.objects. select_related('company').all()
+        all_invoices = Invoice.objects.select_related('company').all()
         
         # Calculate Total Payables (unpaid invoices:  draft + sent)
         unpaid_invoices = all_invoices.filter(Q(status='draft') | Q(status='sent'))
@@ -596,7 +630,7 @@ class Payables(View):
         overdue_count = overdue_invoices.count()
         
         # Filter by status from dropdown
-        status_filter = request. GET.get('status', 'All Invoices')
+        status_filter = request.GET.get('status', 'All Invoices')
         
         if status_filter == 'Paid':
             filtered_invoices = all_invoices.filter(status='paid')
@@ -609,9 +643,9 @@ class Payables(View):
         
         # Prepare invoice list with due dates
         invoice_list = []
-        for invoice in filtered_invoices. order_by('-date'):
+        for invoice in filtered_invoices.order_by('-date'):
             # Calculate due date (30 days from invoice date)
-            due_date = invoice. date + timedelta(days=30)
+            due_date = invoice.date + timedelta(days=30)
             
             # Determine status for display
             if invoice.status == 'paid':
