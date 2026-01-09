@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<! DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,7 @@
     <style>
         * {
             margin: 0;
-            padding: 0;
+            padding:  0;
             box-sizing: border-box;
         }
 
@@ -31,16 +31,16 @@
         }
 
         .main-content {
-            max-width:   1400px;
-            margin: 0 auto;
-            padding:  32px 24px;
+            max-width:    1400px;
+            margin:  0 auto;
+            padding:   32px 24px;
             margin-left: var(--sidebar-width);
             transition: margin-left 0.3s ease, width 0.3s ease;
             z-index: 1;
         }
 
         .main-content h1 {
-            font-size:  32px;
+            font-size:   32px;
             font-weight: 600;
             margin-bottom: 8px;
         }
@@ -54,14 +54,14 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
-            margin-bottom:  30px;
+            margin-bottom:   30px;
         }
 
         .metric-card {
             background: white;
             border-radius: 12px;
             padding: 24px;
-            box-shadow:  0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow:   0 1px 3px rgba(0, 0, 0, 0.1);
             position: relative;
         }
 
@@ -85,18 +85,18 @@
 
         .icon.red {
             background-color: #ffd4d4;
-            color:  #ff6b6b;
+            color:   #ff6b6b;
         }
 
         .metric-label {
             font-size: 14px;
             color: #666;
-            margin-bottom: 8px;
+            margin-bottom:  8px;
         }
 
         .metric-value {
             font-size: 36px;
-            font-weight:  700;
+            font-weight:   700;
             margin-bottom: 8px;
         }
 
@@ -117,9 +117,9 @@
 
         .charts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); /* Changed from 500px */
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
             gap: 20px;
-            margin-bottom:  30px;
+            margin-bottom:   30px;
         }
 
         .chart-card {
@@ -130,7 +130,7 @@
         }
 
         .chart-card h2 {
-            font-size:  20px;
+            font-size:   20px;
             font-weight: 600;
             margin-bottom: 24px;
         }
@@ -143,7 +143,7 @@
             gap: 20px;
             margin-bottom: 20px;
             max-width: 100%;
-            overflow-x: auto; /* Added this to allow horizontal scroll on small screens */
+            overflow-x: auto;
         }
 
         .bar-group {
@@ -151,7 +151,7 @@
             flex-direction: column;
             align-items: center;
             gap: 8px;
-            flex:  1;
+            flex:   1;
         }
 
         .bars {
@@ -166,6 +166,7 @@
         .bar {
             width: 40px;
             border-radius: 4px 4px 0 0;
+            min-height: 2px;
         }
 
         .bar.income {
@@ -177,7 +178,7 @@
         }
 
         .bar-label {
-            font-size:  14px;
+            font-size:   14px;
             color: #666;
         }
 
@@ -197,7 +198,7 @@
         .legend-color {
             width: 16px;
             height: 16px;
-            border-radius:  2px;
+            border-radius:   2px;
         }
 
         .pie-chart-container {
@@ -211,44 +212,19 @@
         .pie-chart {
             width: 300px;
             height: 300px;
-            border-radius: 50%;
+            border-radius:  50%;
         }
 
         .pie-labels {
             position: absolute;
             width: 100%;
-            height:  100%;
+            height:   100%;
         }
 
         .pie-label {
             position: absolute;
             font-size: 16px;
-            font-weight:  500;
-        }
-
-        .pie-label.salaries {
-            top: 1%;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #52c77c;
-        }
-
-        .pie-label.operating {
-            bottom: 30%;
-            left: 20%;
-            color: #4a7cff;
-        }
-
-        .pie-label.rent {
-            right: 15%;
-            bottom: 35%;
-            color: #f5a623;
-        }
-
-        .pie-label.utilities {
-            right: 10%;
-            top: 40%;
-            color: #ff6b6b;
+            font-weight:   500;
         }
 
         .journal-section {
@@ -259,9 +235,42 @@
         }
 
         .journal-section h2 {
-            font-size: 20px;
+            font-size:  20px;
             font-weight: 600;
             margin-bottom: 20px;
+        }
+
+        .journal-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .journal-table th {
+            text-align: left;
+            padding: 12px;
+            background-color: #f9fafb;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .journal-table td {
+            padding: 12px;
+            font-size: 14px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .journal-table tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .amount-debit {
+            color: #ff6b6b;
+        }
+
+        .amount-credit {
+            color: #52c77c;
         }
 
         /* Floating Action Button */
@@ -271,12 +280,12 @@
             right: 32px;
             width: 56px;
             height: 56px;
-            background-color:  #00a896;
-            border-radius:  50%;
+            background-color:   #00a896;
+            border-radius:   50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor:  pointer;
+            cursor:   pointer;
             box-shadow:  0 4px 12px rgba(0, 168, 150, 0.4);
             transition: transform 0.2s;
         }
@@ -291,29 +300,29 @@
             fill: white;
         }
 
-        @media (max-width: 1100px) { /* Added this breakpoint */
-    .charts-grid {
-        grid-template-columns: 1fr;
-    }
-}
+        @media (max-width: 1100px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
 
-@media (max-width: 768px) {
-    .charts-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .metrics-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .bar-chart { /* Added this */
-        gap: 10px;
-    }
-    
-    .bar { /* Added this */
-        width:  30px;
-    }
-}
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .bar-chart {
+                gap: 10px;
+            }
+            
+            .bar {
+                width:   30px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -322,153 +331,151 @@
     <div class="main-content">
         <h1>Dashboard</h1>
         <p style="margin-bottom: 20px;">Overview of your financial performance</p>
-    
 
-    <div class="metrics-grid">
-        <div class="metric-card">
-            <div class="icon green">📈</div>
-            <div class="metric-label">Total Revenue</div>
-            <div class="metric-value">$166,200</div>
-            <div class="metric-change positive">
-                <span>↑</span>
-                <span>+12.5% vs last month</span>
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="icon green">📈</div>
+                <div class="metric-label">Total Revenue</div>
+                <div class="metric-value">${{ total_revenue|floatformat:0|default:"0" }}</div>
+                <div class="metric-change {% if revenue_change >= 0 %}positive{% else %}negative{% endif %}">
+                    <span>{% if revenue_change >= 0 %}↑{% else %}↓{% endif %}</span>
+                    <span>{% if revenue_change >= 0 %}+{% endif %}{{ revenue_change }}% vs last month</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="icon red">📉</div>
+                <div class="metric-label">Total Expenses</div>
+                <div class="metric-value">${{ total_expenses|floatformat:0|default:"0" }}</div>
+                <div class="metric-change {% if expense_change <= 0 %}positive{% else %}negative{% endif %}">
+                    <span>{% if expense_change >= 0 %}↑{% else %}↓{% endif %}</span>
+                    <span>{% if expense_change >= 0 %}+{% endif %}{{ expense_change }}% vs last month</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="icon {% if net_profit >= 0 %}green{% else %}red{% endif %}">💲</div>
+                <div class="metric-label">Net Profit</div>
+                <div class="metric-value">${{ net_profit|floatformat:0|default:"0" }}</div>
+                <div class="metric-change {% if profit_change >= 0 %}positive{% else %}negative{% endif %}">
+                    <span>{% if profit_change >= 0 %}↑{% else %}↓{% endif %}</span>
+                    <span>{% if profit_change >= 0 %}+{% endif %}{{ profit_change }}% vs last month</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Cash on Hand</div>
+                <div class="metric-value">${{ cash_on_hand|floatformat:0|default:"0" }}</div>
+                <div class="icon green">💰</div>
             </div>
         </div>
 
-        <div class="metric-card">
-            <div class="icon red">📉</div>
-            <div class="metric-label">Total Expenses</div>
-            <div class="metric-value">$164,500</div>
-            <div class="metric-change negative">
-                <span>↓</span>
-                <span>-3.2% vs last month</span>
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h2>Monthly Income vs Expense</h2>
+                <div class="bar-chart">
+                    {% if monthly_data %}
+                        {% for month in monthly_data %}
+                        <div class="bar-group">
+                            <div class="bars">
+                                <div class="bar income" style="height: {{ month.income_height }}%;"></div>
+                                <div class="bar expense" style="height: {{ month.expense_height }}%;"></div>
+                            </div>
+                            <div class="bar-label">{{ month.month }}</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p style="color: #666; text-align: center; width: 100%;">No data available</p>
+                    {% endif %}
+                </div>
+                <div class="chart-legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #ff6b6b;"></div>
+                        <span>Expense</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #52c77c;"></div>
+                        <span>Income</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h2>Expense Breakdown by Category</h2>
+                {% if pie_chart_data %}
+                <div class="pie-chart-container">
+                    <svg class="pie-chart" viewBox="0 0 100 100">
+                        {% for item in pie_chart_data %}
+                        <circle cx="50" cy="50" r="40" fill="transparent" 
+                                stroke="{{ item.color }}" stroke-width="80"
+                                stroke-dasharray="{{ item.dash_array }}"
+                                stroke-dashoffset="{{ item.dash_offset }}"
+                                transform="rotate(-90 50 50)"/>
+                        {% endfor %}
+                    </svg>
+                    <div class="pie-labels">
+                        {% for item in pie_chart_data %}
+                        <div class="pie-label" style="color: {{ item.color }}; {% for key, value in item.position.items %}{{ key }}: {{ value }};{% endfor %}">
+                            {{ item.name|truncatewords:2 }} {{ item.percentage }}%
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <p style="color: #666; text-align: center; padding: 40px 0;">No expense data available. </p>
+                {% endif %}
             </div>
         </div>
 
-        <div class="metric-card">
-            <div class="icon green">💲</div>
-            <div class="metric-label">Net Profit</div>
-            <div class="metric-value">$1,700</div>
-            <div class="metric-change positive">
-                <span>↑</span>
-                <span>+18.7% vs last month</span>
-            </div>
+        <div class="journal-section">
+            <h2>Recent Journal Entries</h2>
+            {% if recent_entries %}
+            <table class="journal-table">
+                <thead>
+                    <tr>
+                        <th>Entry #</th>
+                        <th>Date</th>
+                        <th>Account</th>
+                        <th>Debit</th>
+                        <th>Credit</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in recent_entries %}
+                    <tr>
+                        <td>{{ entry.entry_number }}</td>
+                        <td>{{ entry.date|date:"M d, Y" }}</td>
+                        <td>{{ entry.account.name }}</td>
+                        <td class="amount-debit">
+                            {% if entry.debit_amount > 0 %}
+                            ${{ entry.debit_amount|floatformat:2 }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="amount-credit">
+                            {% if entry.credit_amount > 0 %}
+                            ${{ entry.credit_amount|floatformat:2 }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>{{ entry.description|truncatewords:10|default:"-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p style="color: #666;">No recent journal entries to display.</p>
+            {% endif %}
         </div>
 
-        <div class="metric-card">
-            <div class="metric-label">Cash on Hand</div>
-            <div class="metric-value">$45,000</div>
-            <div class="icon green">💰</div>
+        <div class="fab">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-. 9 2-2V4c0-1.1-.9-2-2-2z" fill="white"/>
+            </svg>
         </div>
-    </div>
-
-    <div class="charts-grid">
-        <div class="chart-card">
-            <h2>Monthly Income vs Expense</h2>
-            <div class="bar-chart">
-                <div class="bar-group">
-                    <div class="bars">
-                        <div class="bar income" style="height: 40%;"></div>
-                        <div class="bar expense" style="height: 30%;"></div>
-                    </div>
-                    <div class="bar-label">Apr</div>
-                </div>
-                <div class="bar-group">
-                    <div class="bars">
-                        <div class="bar income" style="height:  65%;"></div>
-                        <div class="bar expense" style="height: 38%;"></div>
-                    </div>
-                    <div class="bar-label">May</div>
-                </div>
-                <div class="bar-group">
-                    <div class="bars">
-                        <div class="bar income" style="height: 85%;"></div>
-                        <div class="bar expense" style="height: 58%;"></div>
-                    </div>
-                    <div class="bar-label">Jun</div>
-                </div>
-                <div class="bar-group">
-                    <div class="bars">
-                        <div class="bar income" style="height: 70%;"></div>
-                        <div class="bar expense" style="height: 45%;"></div>
-                    </div>
-                    <div class="bar-label">Jul</div>
-                </div>
-                <div class="bar-group">
-                    <div class="bars">
-                        <div class="bar income" style="height: 95%;"></div>
-                        <div class="bar expense" style="height: 52%;"></div>
-                    </div>
-                    <div class="bar-label">Aug</div>
-                </div>
-                <div class="bar-group">
-                    <div class="bars">
-                        <div class="bar income" style="height: 100%;"></div>
-                        <div class="bar expense" style="height: 62%;"></div>
-                    </div>
-                    <div class="bar-label">Sep</div>
-                </div>
-            </div>
-            <div class="chart-legend">
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: #ff6b6b;"></div>
-                    <span>Expense</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: #52c77c;"></div>
-                    <span>Income</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="chart-card">
-            <h2>Expense Breakdown by Category</h2>
-            <div class="pie-chart-container">
-                <svg class="pie-chart" viewBox="0 0 100 100">
-                    <!-- Salaries 52% -->
-                    <circle cx="50" cy="50" r="40" fill="transparent" 
-                            stroke="#52c77c" stroke-width="80"
-                            stroke-dasharray="163.36 314.16"
-                            transform="rotate(-90 50 50)"/>
-                    <!-- Operating 33% -->
-                    <circle cx="50" cy="50" r="40" fill="transparent" 
-                            stroke="#4a7cff" stroke-width="80"
-                            stroke-dasharray="103.67 314.16"
-                            stroke-dashoffset="-163.36"
-                            transform="rotate(-90 50 50)"/>
-                    <!-- Rent 11% -->
-                    <circle cx="50" cy="50" r="40" fill="transparent" 
-                            stroke="#f5a623" stroke-width="80"
-                            stroke-dasharray="34.56 314.16"
-                            stroke-dashoffset="-267.03"
-                            transform="rotate(-90 50 50)"/>
-                    <!-- Utilities 4% -->
-                    <circle cx="50" cy="50" r="40" fill="transparent" 
-                            stroke="#ff6b6b" stroke-width="80"
-                            stroke-dasharray="12.57 314.16"
-                            stroke-dashoffset="-301.59"
-                            transform="rotate(-90 50 50)"/>
-                </svg>
-                <div class="pie-labels">
-                    <div class="pie-label salaries">Salaries 52%</div>
-                    <div class="pie-label operating">Operating 33%</div>
-                    <div class="pie-label rent">Rent 11%</div>
-                    <div class="pie-label utilities">Utilities 4%</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="journal-section">
-        <h2>Recent Journal Entries</h2>
-        <p style="color: #666;">No recent journal entries to display.</p>
-    </div>
-
-    <div class="fab">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="white"/>
-        </svg>
-    </div>
     </div>
 </body>
 </html>

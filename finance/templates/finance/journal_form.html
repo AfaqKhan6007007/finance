@@ -272,8 +272,9 @@
                     <div class="form-group">
                         <label for="id_entry_number" class="form-label">Entry Number</label>
                         <input type="text" name="entry_number" id="id_entry_number" class="form-control" 
-                               placeholder="Auto-generated"
-                               value="{{ form.entry_number.value|default:'Auto-generated' }}" readonly>
+                            placeholder="Auto-generated"
+                            value="{% if is_edit and journal_entry %}{{ journal_entry.entry_number }}{% endif %}" 
+                            readonly>
                         <p class="form-help">This number will be automatically generated</p>
                         {% if form.entry_number.errors %}
                             <div class="error-message">{{ form.entry_number.errors.0 }}</div>

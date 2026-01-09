@@ -8,6 +8,10 @@ from .forms import LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm,
 from django.db import models
 from .models import Company, Account, Invoice, JournalEntry
 from django.contrib.messages import get_messages
+from django.db. models import Sum, Q
+from datetime import datetime, timedelta
+from decimal import Decimal
+import math
 
 class Accounts(View):
     """List all accounts"""
@@ -137,10 +141,219 @@ class AccountDelete(View):
         return redirect('finance-accounts')
 
 class Dashboard(View):
-    @method_decorator(login_required)  # Require login to access
+    @method_decorator(login_required)
     def get(self, request):
-        return render(request, 'finance/dashboard.html', {})
-
+        
+        
+        # Calculate Total Revenue (Income accounts - credit side)
+        total_revenue = JournalEntry.objects.filter(
+            account__account_type='income'
+        ).aggregate(
+            total=Sum('credit_amount')
+        )['total'] or Decimal('0.00')
+        
+        # Calculate Total Expenses (Expense accounts - debit side)
+        total_expenses = JournalEntry.objects.filter(
+            account__account_type='expense'
+        ).aggregate(
+            total=Sum('debit_amount')
+        )['total'] or Decimal('0.00')
+        
+        # Calculate Net Profit
+        net_profit = total_revenue - total_expenses
+        
+        # Calculate Cash on Hand (Asset accounts balance)
+        asset_debits = JournalEntry.objects. filter(
+            account__account_type='asset'
+        ).aggregate(total=Sum('debit_amount'))['total'] or Decimal('0.00')
+        
+        asset_credits = JournalEntry. objects.filter(
+            account__account_type='asset'
+        ).aggregate(total=Sum('credit_amount'))['total'] or Decimal('0.00')
+        
+        cash_on_hand = asset_debits - asset_credits
+        
+        # Get previous month data for comparison
+        today = datetime.now()
+        first_day_current_month = today.replace(day=1)
+        last_day_previous_month = first_day_current_month - timedelta(days=1)
+        first_day_previous_month = last_day_previous_month.replace(day=1)
+        
+        # Current month revenue (for comparison)
+        current_revenue = JournalEntry.objects. filter(
+            account__account_type='income',
+            date__gte=first_day_current_month
+        ).aggregate(total=Sum('credit_amount'))['total'] or Decimal('0.00')
+        
+        # Previous month revenue
+        prev_revenue = JournalEntry.objects.filter(
+            account__account_type='income',
+            date__gte=first_day_previous_month,
+            date__lte=last_day_previous_month
+        ).aggregate(total=Sum('credit_amount'))['total'] or Decimal('0.00')
+        
+        # Current month expenses
+        current_expenses = JournalEntry.objects.filter(
+            account__account_type='expense',
+            date__gte=first_day_current_month
+        ).aggregate(total=Sum('debit_amount'))['total'] or Decimal('0.00')
+        
+        # Previous month expenses
+        prev_expenses = JournalEntry.objects.filter(
+            account__account_type='expense',
+            date__gte=first_day_previous_month,
+            date__lte=last_day_previous_month
+        ).aggregate(total=Sum('debit_amount'))['total'] or Decimal('0.00')
+        
+        # Calculate percentage changes
+        revenue_change = self.calculate_percentage_change(prev_revenue, current_revenue)
+        expense_change = self.calculate_percentage_change(prev_expenses, current_expenses)
+        
+        prev_profit = prev_revenue - prev_expenses
+        current_profit = current_revenue - current_expenses
+        profit_change = self.calculate_percentage_change(prev_profit, current_profit)
+        
+        # Get monthly income vs expense data (last 6 months)
+        monthly_data = self.get_monthly_data(6)
+        
+        # Get expense breakdown by category (for pie chart)
+        expense_breakdown = JournalEntry.objects.filter(
+            account__account_type='expense'
+        ).values(
+            'account__name'
+        ).annotate(
+            total=Sum('debit_amount')
+        ).order_by('-total')[:4]  # Top 4 categories
+        
+        # Calculate total for percentages
+        total_expense_sum = sum(item['total'] for item in expense_breakdown) if expense_breakdown else 0
+        
+        # Prepare pie chart data
+        pie_chart_data = []
+        colors = ['#52c77c', '#4a7cff', '#f5a623', '#ff6b6b']
+        positions = [
+            {'top': '1%', 'left': '50%', 'transform': 'translateX(-50%)'},
+            {'bottom': '30%', 'left': '20%'},
+            {'right': '15%', 'bottom': '35%'},
+            {'right': '10%', 'top': '40%'}
+        ]
+        
+        cumulative_percent = 0
+        for idx, item in enumerate(expense_breakdown):
+            if total_expense_sum > 0:
+                percentage = (float(item['total']) / float(total_expense_sum)) * 100
+            else:
+                percentage = 0
+            
+            # Calculate SVG circle parameters
+            circumference = 2 * math. pi * 40  # radius = 40
+            dash_length = (percentage / 100) * circumference
+            dash_offset = -cumulative_percent / 100 * circumference
+            
+            pie_chart_data.append({
+                'name': item['account__name'],
+                'total': item['total'],
+                'percentage': round(percentage, 0),
+                'color': colors[idx] if idx < len(colors) else '#999',
+                'position': positions[idx] if idx < len(positions) else positions[0],
+                'dash_array': f"{dash_length:.2f} {circumference:.2f}",
+                'dash_offset': f"{dash_offset:.2f}",
+            })
+            
+            cumulative_percent += percentage
+        
+        # Get recent journal entries (last 10)
+        recent_entries = JournalEntry.objects.select_related(
+            'account', 'company'
+        ).order_by('-date', '-created_at')[:10]
+        
+        context = {
+            'total_revenue': total_revenue,
+            'total_expenses': total_expenses,
+            'net_profit': net_profit,
+            'cash_on_hand': cash_on_hand,
+            'revenue_change': revenue_change,
+            'expense_change': expense_change,
+            'profit_change': profit_change,
+            'monthly_data': monthly_data,
+            'pie_chart_data': pie_chart_data,
+            'recent_entries': recent_entries,
+        }
+        
+        return render(request, 'finance/dashboard.html', context)
+    
+    def calculate_percentage_change(self, old_value, new_value):
+        """Calculate percentage change between two values"""
+        if old_value == 0:
+            if new_value > 0:
+                return 100.0
+            return 0.0
+        
+        change = ((new_value - old_value) / old_value) * 100
+        return round(change, 1)
+    
+    def get_monthly_data(self, months=6):
+        """Get income and expense data for the last N months"""
+        from datetime import datetime, timedelta
+        from decimal import Decimal
+        
+        monthly_data = []
+        today = datetime.now()
+        
+        # Find max values for scaling
+        max_income = Decimal('1')
+        max_expense = Decimal('1')
+        
+        # First pass: collect data and find max values
+        temp_data = []
+        for i in range(months - 1, -1, -1):
+            month_date = today - timedelta(days=30 * i)
+            month_start = month_date.replace(day=1)
+            
+            if month_start. month == 12:
+                month_end = month_start.replace(year=month_start.year + 1, month=1, day=1) - timedelta(days=1)
+            else:
+                month_end = month_start.replace(month=month_start.month + 1, day=1) - timedelta(days=1)
+            
+            income = JournalEntry.objects. filter(
+                account__account_type='income',
+                date__gte=month_start,
+                date__lte=month_end
+            ).aggregate(total=Sum('credit_amount'))['total'] or Decimal('0.00')
+            
+            expense = JournalEntry.objects.filter(
+                account__account_type='expense',
+                date__gte=month_start,
+                date__lte=month_end
+            ).aggregate(total=Sum('debit_amount'))['total'] or Decimal('0.00')
+            
+            max_income = max(max_income, income)
+            max_expense = max(max_expense, expense)
+            
+            temp_data.append({
+                'month': month_start.strftime('%b'),
+                'income': income,
+                'expense': expense,
+            })
+        
+        # Second pass: calculate heights as percentages
+        max_value = max(max_income, max_expense)
+        
+        for data in temp_data:
+            income_height = int((float(data['income']) / float(max_value)) * 100) if max_value > 0 else 5
+            expense_height = int((float(data['expense']) / float(max_value)) * 100) if max_value > 0 else 5
+            
+            # Ensure minimum height of 5% for visibility
+            income_height = max(income_height, 5) if data['income'] > 0 else 0
+            expense_height = max(expense_height, 5) if data['expense'] > 0 else 0
+            
+            monthly_data.append({
+                'month': data['month'],
+                'income_height': income_height,
+                'expense_height':  expense_height,
+            })
+        
+        return monthly_data
 class Journal(View):
     """List all journal entries"""
     @method_decorator(login_required)
@@ -342,11 +555,127 @@ class CompanyDelete(View):
         company.delete()
         messages.success(request, f'Company "{company_name}" deleted successfully!')
         return redirect('finance-companies')
+    
 class Payables(View):
-    @method_decorator(login_required)  # Require login to access
+    @method_decorator(login_required)
     def get(self, request):
-        return render(request, 'finance/payables.html', {})    
-
+        from django.db.models import Sum, Count, Avg, Q, F, ExpressionWrapper, fields
+        from datetime import datetime, timedelta
+        from decimal import Decimal
+        
+        # Get all invoices
+        all_invoices = Invoice.objects. select_related('company').all()
+        
+        # Calculate Total Payables (unpaid invoices:  draft + sent)
+        unpaid_invoices = all_invoices.filter(Q(status='draft') | Q(status='sent'))
+        total_payables = unpaid_invoices.aggregate(
+            total=Sum('total_amount')
+        )['total'] or Decimal('0.00')
+        
+        # Calculate Paid Invoices total
+        paid_invoices_total = all_invoices.filter(status='paid').aggregate(
+            total=Sum('total_amount')
+        )['total'] or Decimal('0.00')
+        
+        # Calculate Overdue Invoices (assuming 30 days payment term)
+        today = datetime.now().date()
+        overdue_date = today - timedelta(days=30)
+        overdue_invoices = unpaid_invoices.filter(date__lt=overdue_date)
+        overdue_total = overdue_invoices.aggregate(
+            total=Sum('total_amount')
+        )['total'] or Decimal('0.00')
+        
+        # Calculate Average Payment Period
+        # For paid invoices, calculate days between invoice date and when it was marked paid
+        # This is a simplified calculation - you might want to add a payment_date field
+        avg_payment_period = 45  # Default value, you can calculate this if you add payment_date field
+        
+        # Count invoices by status
+        paid_count = all_invoices.filter(status='paid').count()
+        pending_count = all_invoices.filter(Q(status='draft') | Q(status='sent')).count()
+        overdue_count = overdue_invoices.count()
+        
+        # Filter by status from dropdown
+        status_filter = request. GET.get('status', 'All Invoices')
+        
+        if status_filter == 'Paid':
+            filtered_invoices = all_invoices.filter(status='paid')
+        elif status_filter == 'Pending':
+            filtered_invoices = unpaid_invoices.filter(date__gte=overdue_date)
+        elif status_filter == 'Overdue':
+            filtered_invoices = overdue_invoices
+        else: 
+            filtered_invoices = all_invoices
+        
+        # Prepare invoice list with due dates
+        invoice_list = []
+        for invoice in filtered_invoices. order_by('-date'):
+            # Calculate due date (30 days from invoice date)
+            due_date = invoice. date + timedelta(days=30)
+            
+            # Determine status for display
+            if invoice.status == 'paid':
+                display_status = 'Paid'
+            elif invoice.date < overdue_date and invoice.status != 'paid':
+                display_status = 'Overdue'
+            else:
+                display_status = 'Pending'
+            
+            invoice_list.append({
+                'invoice_number': invoice.invoice_number,
+                'vendor': invoice.supplier_name,
+                'date':  invoice.date,
+                'due_date': due_date,
+                'amount':  invoice.total_amount,
+                'status': display_status,
+                'payment_method': 'Bank Transfer',  # You can add this field to your model
+            })
+        
+        # Get vendor breakdown for chart (top 6 vendors by payables)
+        vendor_breakdown = unpaid_invoices.values('supplier_name').annotate(
+            total=Sum('total_amount'),
+            count=Count('id')
+        ).order_by('-total')[:6]
+        
+        # Calculate max value for chart scaling
+        max_vendor_amount = vendor_breakdown[0]['total'] if vendor_breakdown else 0
+        
+        # Prepare vendor chart data with percentages
+        vendor_chart_data = []
+        for vendor in vendor_breakdown:
+            if max_vendor_amount > 0:
+                percentage = (float(vendor['total']) / float(max_vendor_amount)) * 100
+            else:
+                percentage = 0
+            
+            vendor_chart_data.append({
+                'name': vendor['supplier_name'],
+                'total': vendor['total'],
+                'percentage': percentage,
+            })
+        
+        # Pad with empty vendors if less than 6
+        while len(vendor_chart_data) < 6:
+            vendor_chart_data.append({
+                'name': f'Vendor {len(vendor_chart_data) + 1}',
+                'total': 0,
+                'percentage': 0,
+            })
+        
+        context = {
+            'total_payables': total_payables,
+            'paid_invoices_total': paid_invoices_total,
+            'overdue_total': overdue_total,
+            'avg_payment_period': avg_payment_period,
+            'paid_count': paid_count,
+            'pending_count': pending_count,
+            'overdue_count': overdue_count,
+            'invoice_list': invoice_list,
+            'vendor_chart_data': vendor_chart_data,
+            'status_filter': status_filter,
+        }
+        
+        return render(request, 'finance/payables.html', context)
 class Invoices(View):
     """List all invoices"""
     @method_decorator(login_required)
