@@ -349,21 +349,28 @@ class Supplier(models.Model):
     SUPPLIER_TYPE_CHOICES = [
         ('company', 'Company'),
         ('individual', 'Individual'),
-        ('other', 'Other'),
+        ('partnership', 'Partnership'),
     ]
 
     GST_CATEGORY_CHOICES = [
-        ('registered', 'Registered'),
+        ('registered', 'Registered Regular'),
+        ('registered_composition', 'Registered Composition'),
         ('unregistered', 'Unregistered'),
-        ('composition', 'Composition'),
-        ('consumer', 'Consumer'),
+        ('sez', 'SEZ'),
+        ('overseas', 'Overseas'),
+        ('deemed_export', 'Deemed Export'),
+        ('uin', 'UIN Holders'),
+        ('tax_deductor', 'Tax Deductor'),
+        ('tax_collector', 'Tax Collector'),
+        ('input_service_distributor', 'Input Service Distributor'),
+        
     ]
 
     # Basic
     gstin_uin = models.CharField(max_length=30, blank=True, verbose_name="GSTIN / UIN", help_text="Optional GSTIN for autofill")
     name = models.CharField(max_length=200, verbose_name="Supplier Name")
     supplier_type = models.CharField(max_length=20, choices=SUPPLIER_TYPE_CHOICES, default='company', verbose_name="Supplier Type")
-    gst_category = models.CharField(max_length=20, choices=GST_CATEGORY_CHOICES, default='unregistered', verbose_name="GST Category")
+    gst_category = models.CharField(max_length=40, choices=GST_CATEGORY_CHOICES, default='unregistered', verbose_name="GST Category")
 
     # Primary contact details
     contact_first_name = models.CharField(max_length=100, blank=True, verbose_name="First Name")
