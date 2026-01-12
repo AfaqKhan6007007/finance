@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Accounts Receivable - Finance</title>
     <style>
         * {
@@ -402,25 +402,45 @@
 
         .legend {
             display: flex;
-            justify-content: center;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             margin-top: 20px;
             font-size: 14px;
             color: #10b981;
+            justify-content: center;
         }
 
+        /* Wrapper holding the line and dot so they can overlap */
+        .legend-mark {
+            position: relative;
+            width: 36px;   /* total visual width for the mark */
+            height: 14px;  /* visual height to center the dot over the line */
+            display: inline-block;
+        }
+
+        /* Horizontal line centered vertically inside legend-mark */
+        .legend-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 2px;
+            background-color: #10b981;
+            transform: translateY(-50%);
+            border-radius: 2px;
+        }
+
+        /* Dot positioned on top of the line (centered) */
         .legend-dot {
-            width: 8px;
-            height: 8px;
+            position: absolute;
+            left: 50%;                /* change to 50% to put dot in middle */
+            top: 50%;
+            width: 10px;
+            height: 10px;
             background-color: #10b981;
             border-radius: 50%;
-        }
-
-        .legend-line {
-            width: 20px;
-            height: 2px;
-            background-color:  #10b981;
+            transform: translate(-50%, -50%); /* center on the chosen point */
+            box-shadow: 0 0 0 2px #fff;       /* white border so dot stands out on line */
         }
 
         /* SVG Line and Points */
@@ -475,43 +495,40 @@
     {% include "finance/sidenav.html" %}
     <div class="main-content">
         <h1>Accounts Receivable</h1>
-        <p style="margin-bottom: 20px;">Manage supplier invoices and payments</p>
-        
+        <p style="margin-bottom: 20px;">Manage customer invoices and payments</p>
 
+        <!-- Metrics Grid -->
         <div class="metrics-grid">
-        <div class="metric-card">
-            <div class="icon green">💲</div>
-            <div class="metric-label">Total Payables</div>
-            <div class="metric-value">$166,200</div>
-            
+            <div class="metric-card">
+                <div class="icon green">💲</div>
+                <div class="metric-label">Total Receivables</div>
+                <div class="metric-value">${{ total_receivables|floatformat:0 }}</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="icon green">💲</div>
+                <div class="metric-label">Paid Invoices</div>
+                <div class="metric-value">${{ paid_invoices_total|floatformat:0 }}</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="icon red">⚠️</div>
+                <div class="metric-label">Overdue Invoices</div>
+                <div class="metric-value">${{ overdue_total|floatformat:0 }}</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Avg Payment Period</div>
+                <div class="metric-value">{{ avg_payment_period }} days</div>
+                <div class="icon green">💰</div>
+            </div>
         </div>
 
-        <div class="metric-card">
-            <div class="icon green">💲</div>
-            <div class="metric-label">Paid Invoices</div>
-            <div class="metric-value">$164,500</div>
-            
-        </div>
-
-        <div class="metric-card">
-            <div class="icon green">💲</div>
-            <div class="metric-label">Overdue Invoices</div>
-            <div class="metric-value">$1,700</div>
-        </div>
-
-        <div class="metric-card">
-            <div class="metric-label">Avg Payment Period</div>
-            <div class="metric-value">45 days</div>
-            <div class="icon green">💰</div>
-        </div>
-        </div>
         <div>
-            
-
             <div class="journal-section" style="margin-bottom: 2%;">
                 <div class="graph-container">
                     <div class="chart-wrapper">
-                        <!-- Y-axis labels -->
+                        <!-- Y-axis labels (static) -->
                         <div class="y-axis">
                             <div class="y-label">80000</div>
                             <div class="y-label">60000</div>
@@ -531,68 +548,58 @@
                                 <div class="grid-line"></div>
                             </div>
 
-                            <!-- Line graph -->
-                            <svg class="line-graph" viewBox="0 0 1000 260" preserveAspectRatio="none">
-                                <!-- Line path -->
-                                <polyline 
+                            <!-- Line graph polyline uses the points computed in the view -->
+                            <svg class="line-graph" viewBox="0 0 1000 260" preserveAspectRatio="none" aria-hidden="true" style="position:absolute; top:0; left:0;">
+                                <polyline
                                     class="line-path"
-                                    points="0,130 166,145 333,80 500,115 667,140 833,100 1000,50"
+                                    points="{{ polyline_points }}"
                                     vector-effect="non-scaling-stroke"
                                 />
-                                
-                                <!-- Data points (these need to scale properly) -->
-                            </svg>
-
-                            <!-- Data points with proper positioning -->
-                            <svg class="line-graph" viewBox="0 0 1000 260" preserveAspectRatio="xMidYMid meet" style="position: absolute; top: 0; left: 0;">
-                                <circle class="data-point" cx="0" cy="130" r="5" />
-                                <circle class="data-point" cx="166" cy="145" r="5" />
-                                <circle class="data-point" cx="333" cy="80" r="5" />
-                                <circle class="data-point" cx="500" cy="115" r="5" />
-                                <circle class="data-point" cx="667" cy="140" r="5" />
-                                <circle class="data-point" cx="833" cy="100" r="5" />
-                                <circle class="data-point" cx="1000" cy="50" r="5" />
-                            </svg>
+                                {% for c in chart_circles %}
+                                    <circle class="data-point" cx="{{ c.x }}" cy="{{ c.y }}" r="5" />
+                                {% endfor %}
+                                </svg>
                         </div>
 
-                        <!-- X-axis labels -->
+                        <!-- X-axis labels generated from monthly_chart_data -->
                         <div class="x-axis">
-                            <div class="x-label">Apr</div>
-                            <div class="x-label">May</div>
-                            <div class="x-label">Jun</div>
-                            <div class="x-label">Jul</div>
-                            <div class="x-label">Aug</div>
-                            <div class="x-label">Sep</div>
+                            {% for item in monthly_chart_data %}
+                                <div class="x-label">{{ item.month }}</div>
+                            {% endfor %}
                         </div>
                     </div>
 
                     <!-- Legend -->
                     <div class="legend">
-                        <div class="legend-line"></div>
-                        <div class="legend-dot"></div>
+                        <div class="legend-mark" aria-hidden="true">
+                            <div class="legend-line"></div>
+                            <div class="legend-dot"></div>
+                        </div>
                         <span>Receivables</span>
                     </div>
                 </div>
             </div>
 
             <div class="journal-section" style="background-color: white;border: none;margin-bottom: 2%;">
-                <div class="dropdown-container">
+                <!-- Filter form (GET) -->
+                <form id="status-form" method="get" class="dropdown-container" aria-label="Filter invoices by status">
                     <label for="account-select">Filter by Status:</label>
-                    <select id="account-select" name="account">
-                        <option value="All Invoices" selected>All Invoices</option>
-                        <option value="Paid">Paid</option>
-                        <option value="Pending">Pending</option>
-                        <option value="Overdue">Overdue</option>
+                    <select id="account-select" name="status">
+                        <option value="All Invoices" {% if status_filter == 'All Invoices' %}selected{% endif %}>All Invoices</option>
+                        <option value="Paid" {% if status_filter == 'Paid' %}selected{% endif %}>Paid</option>
+                        <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending</option>
+                        <option value="Overdue" {% if status_filter == 'Overdue' %}selected{% endif %}>Overdue</option>
                     </select>
-                </div>
+                </form>
             </div>
+
             <!-- Table -->
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
                             <th style="white-space: nowrap;width: 12%;">Invoice No</th>
-                            <th>Vendor</th>
+                            <th>Customer</th>
                             <th>Date</th>
                             <th>Due Date</th>
                             <th>Amount</th>
@@ -601,90 +608,65 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td style="font-weight: bold;">PAY-001</td>
-                            <td>ABC Supplies</td>
-                            <td>2025-09-30</td>
-                            <td>2025-10-30</td>
-                            <td>$1,200</td>
-                            <td><span class="badge badge-equity">Pending</span></td>
-                            <td>Bank Transfer</td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight: bold;">PAY-001</td>
-                            <td>ABC Supplies</td>
-                            <td>2025-09-30</td>
-                            <td>2025-10-30</td>
-                            <td>$1,200</td>
-                            <td><span class="badge badge-equity">Pending</span></td>
-                            <td>Bank Transfer</td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight: bold;">PAY-001</td>
-                            <td>ABC Supplies</td>
-                            <td>2025-09-30</td>
-                            <td>2025-10-30</td>
-                            <td>$1,200</td>
-                            <td><span class="badge badge-equity">Pending</span></td>
-                            <td>Bank Transfer</td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight: bold;">PAY-001</td>
-                            <td>ABC Supplies</td>
-                            <td>2025-09-30</td>
-                            <td>2025-10-30</td>
-                            <td>$1,200</td>
-                            <td><span class="badge badge-equity">Pending</span></td>
-                            <td>Bank Transfer</td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight: bold;">PAY-001</td>
-                            <td>ABC Supplies</td>
-                            <td>2025-09-30</td>
-                            <td>2025-10-30</td>
-                            <td>$1,200</td>
-                            <td><span class="badge badge-equity">Pending</span></td>
-                            <td>Bank Transfer</td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight: bold;">PAY-001</td>
-                            <td>ABC Supplies</td>
-                            <td>2025-09-30</td>
-                            <td>2025-10-30</td>
-                            <td>$1,200</td>
-                            <td><span class="badge badge-equity">Pending</span></td>
-                            <td>Bank Transfer</td>
-                        </tr>
-                        
+                        {% for inv in invoice_list %}
+                            <tr>
+                                <td style="font-weight: bold;">{{ inv.invoice_number }}</td>
+                                <td>{{ inv.vendor }}</td>
+                                <td>{{ inv.date|date:"Y-m-d" }}</td>
+                                <td>{{ inv.due_date|date:"Y-m-d" }}</td>
+                                <td>${{ inv.amount|floatformat:0 }}</td>
+                                <td>
+                                    {% if inv.status == 'Paid' %}
+                                        <span class="badge badge-income">Paid</span>
+                                    {% elif inv.status == 'Overdue' %}
+                                        <span class="badge badge-expense">Overdue</span>
+                                    {% else %}
+                                        <span class="badge badge-equity">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ inv.payment_method }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" style="text-align:center; padding: 24px;">No invoices found.</td>
+                            </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
-    
+
         <div class="metrics-grid" style="margin-top: 2%;">
             <div class="metric-card" style="background-color: #cbffbe;display: flex;justify-content: space-between;">
                 <div class="metric-label">Paid</div>
-                <div class="metric-value">3</div>
+                <div class="metric-value">{{ paid_count }}</div>
             </div>
-            
+
             <div class="metric-card" style="background-color: #fcffd4;display: flex;justify-content: space-between;">
                 <div class="metric-label">Pending</div>
-                <div class="metric-value">3</div>
+                <div class="metric-value">{{ pending_count }}</div>
             </div>
 
             <div class="metric-card" style="background-color: #ffc4c4;display: flex;justify-content: space-between;">
                 <div class="metric-label">Overdue</div>
-                <div class="metric-value">3</div>
+                <div class="metric-value">{{ overdue_count }}</div>
             </div>
-            
         </div>
-        <!-- Floating Action Button -->
 
-        <div class="fab">
+        <!-- Floating Action Button -->
+        <div class="fab" role="button" aria-label="Create new invoice">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="white"/>
             </svg>
         </div>
     </div>
+
+    <script>
+        // Auto-submit filter when selection changes
+        document.getElementById('account-select').addEventListener('change', function() {
+            // Submit the parent form (GET)
+            document.getElementById('status-form').submit();
+        });
+    </script>
 </body>
 </html>

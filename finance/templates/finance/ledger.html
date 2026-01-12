@@ -566,17 +566,10 @@
         <div class="journal-section" style="background-color: white;border: none;">
             <div class="dropdown-container">
                 <label for="account-select">Select Account</label>
-                <select id="account-select" name="account">
-                    <option value="sales-revenue">Sales Revenue</option>
-                    <option value="cash-on-hand" selected>Cash on Hand</option>
-                    <option value="accounts-payable">Accounts Payable</option>
-                    <option value="sales-revenue-2">Sales Revenue</option>
-                    <option value="service-revenue">Service Revenue</option>
-                    <option value="rent-expense">Rent Expense</option>
-                    <option value="salaries-expense">Salaries Expense</option>
-                    <option value="utilities-expense">Utilities Expense</option>
-                    <option value="accounts-receivable">Accounts Receivable</option>
-                    <option value="equipment">Equipment</option>
+                <select id="account-select" name="account" onchange="if(this.value){ window.location = '?account=' + this.value; }">
+                    {% for acc in accounts %}
+                        <option value="{{ acc.id }}" {% if selected_account and acc.id == selected_account.id %}selected{% endif %}>{{ acc.name }}</option>
+                    {% endfor %}
                 </select>
             </div>
         </div>
@@ -596,58 +589,32 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
+                    {% if entries %}
+                        {% for e in entries %}
+                        <tr>
+                            <td>{{ e.date }}</td>
+                            <td>{{ e.description }}</td>
                         
-                        <td>2025-09-01</td>
-                        <td>Cash received from client</td>
-                    
-                        <td style="color:#eb2525b2">SAR 200.00</td>
-                        <td style="color: green">SAR 200.00</td>
-                        <td style="font-weight: 600;">$45,000</td>
-                        
-                    </tr>
-                    <tr>
-                        
-                        <td>2025-09-01</td>
-                        <td>Cash received from client</td>
-                    
-                        <td style="color:#eb2525b2">SAR 200.00</td>
-                        <td style="color: green">SAR 200.00</td>
-                        <td style="font-weight: 600;">$45,000</td>
-                        
-                    </tr>
-                    <tr>
-                        
-                        <td>2025-09-01</td>
-                        <td>Cash received from client</td>
-                    
-                        <td style="color:#eb2525b2">SAR 200.00</td>
-                        <td style="color: green">SAR 200.00</td>
-                        <td style="font-weight: 600;">$45,000</td>
-                        
-                    </tr>
-                    <tr>
-                        
-                        <td>2025-09-01</td>
-                        <td>Cash received from client</td>
-                    
-                        <td style="color:#eb2525b2">SAR 200.00</td>
-                        <td style="color: green">SAR 200.00</td>
-                        <td style="font-weight: 600;">$45,000</td>
-                        
-                    </tr>
-                    <tr>
-                        
-                        <td>2025-09-01</td>
-                        <td>Cash received from client</td>
-                    
-                        <td style="color:#eb2525b2">SAR 200.00</td>
-                        <td style="color: green">SAR 200.00</td>
-                        <td style="font-weight: 600;">$45,000</td>
-                        
-                    </tr>
-                   
-                    
+                            <td style="color:#eb2525b2">
+                                {% if e.debit %}
+                                    {{ currency_symbol }} {{ e.debit|floatformat:2 }}
+                                {% endif %}
+                            </td>
+                            <td style="color: green">
+                                {% if e.credit %}
+                                    {{ currency_symbol }} {{ e.credit|floatformat:2 }}
+                                {% endif %}
+                            </td>
+                            <td style="font-weight: 600;">{{ currency_symbol }} {{ e.balance|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" style="padding:24px;text-align:center;color:#6b7280;">
+                                No journal entries for this account.
+                            </td>
+                        </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
@@ -655,10 +622,16 @@
         <div class="journal-section" style="background-color: rgb(248, 255, 248);border: 1px solid #c6e6c6;display: flex;justify-content: space-between;margin-top: 2%;">
             <div>
                 <h2 style="color: #008c7a;">Closing Balance</h2>
-                <p style="color: #63bdb1;">Cash on Hand</p>
+                <p style="color: #63bdb1;">
+                    {% if selected_account %}
+                        {{ selected_account.name }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </p>
             </div>
             <div>
-                <h1 style="font-weight: 700;color: #00443b;">$45,000</h1>
+                <h1 style="font-weight: 700;color: #00443b;">{{ currency_symbol }} {{ closing_balance|floatformat:2 }}</h1>
             </div>
             
         </div>
@@ -675,24 +648,26 @@
         // User menu dropdown toggle
         const userAvatar = document.getElementById('userAvatar');
         const dropdownMenu = document.getElementById('dropdownMenu');
-        
-        userAvatar.addEventListener('click', function(e) {
-            e.stopPropagation();
-            dropdownMenu.classList.toggle('show');
-        });
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!dropdownMenu.contains(e.target) && e.target !== userAvatar) {
-                dropdownMenu.classList.remove('show');
-            }
-        });
+        if (userAvatar && dropdownMenu) {
+            userAvatar.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('show');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!dropdownMenu.contains(e.target) && e.target !== userAvatar) {
+                    dropdownMenu.classList.remove('show');
+                }
+            });
+        }
         
         const hamburger = document.querySelector('.hamburger');
-
-        hamburger.addEventListener('click', function () {
-            document.body.classList.toggle('sidebar-collapsed');
-        });
+        if (hamburger) {
+            hamburger.addEventListener('click', function () {
+                document.body.classList.toggle('sidebar-collapsed');
+            });
+        }
     </script>
 </body>
 </html>

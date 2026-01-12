@@ -12,6 +12,8 @@ from django.db.models import Sum, Q
 from datetime import datetime, timedelta
 from decimal import Decimal
 import math
+from django.db.models.functions import Coalesce
+from django.db.models import Value as V, DecimalField
 
 class Accounts(View):
     """List all accounts"""
@@ -484,14 +486,121 @@ class JournalDelete(View):
         return redirect('finance-journal')
 
 class TrialBalance(View):
-    @method_decorator(login_required)  # Require login to access
+    @method_decorator(login_required)
     def get(self, request):
-        return render(request, 'finance/trial.html', {})
+        """
+        Build a trial balance table using the correct related_name 'journal_entries'
+        and ensure Coalesce uses a Decimal fallback and output_field=DecimalField().
+        """
+        # Annotate accounts with summed debits/credits (Coalesce to default 0.00 as Decimal)
+        accounts_qs = Account.objects.all().annotate(
+            total_debit=Coalesce(Sum('journal_entries__debit_amount'), V(Decimal('0.00')), output_field=DecimalField()),
+            total_credit=Coalesce(Sum('journal_entries__credit_amount'), V(Decimal('0.00')), output_field=DecimalField()),
+        ).order_by('account_number', 'name')
+
+        accounts_list = []
+        total_debits = Decimal('0.00')
+        total_credits = Decimal('0.00')
+
+        for acc in accounts_qs:
+            # total_debit/total_credit are Decimal-compatible now
+            debit = Decimal(acc.total_debit) if acc.total_debit is not None else Decimal('0.00')
+            credit = Decimal(acc.total_credit) if acc.total_credit is not None else Decimal('0.00')
+
+            accounts_list.append({
+                'code': getattr(acc, 'account_number', '') or '',
+                'name': acc.name,
+                'type': (acc.account_type.capitalize() if acc.account_type else 'Unknown'),
+                'debit': debit,
+                'credit': credit,
+                'balance': debit - credit,
+            })
+
+            total_debits += debit
+            total_credits += credit
+
+        discrepancy = total_debits - total_credits
+
+        context = {
+            'accounts_list': accounts_list,
+            'total_debits': total_debits,
+            'total_credits': total_credits,
+            'discrepancy': discrepancy,
+        }
+
+        return render(request, 'finance/trial.html', context)
     
 class Ledger(View):
     @method_decorator(login_required)  # Require login to access
     def get(self, request):
-        return render(request, 'finance/ledger.html', {})
+        """
+        Render the ledger page with:
+          - accounts: list for the account dropdown
+          - selected_account: Account instance
+          - entries: list of dicts {date, description, debit, credit, balance}
+          - closing_balance: final running balance (Decimal)
+          - currency_symbol: from account if available, else fallback '$'
+        Balance calculation:
+          - For asset/expense accounts: balance increases with debit, decreases with credit
+          - For other account types (liability/equity/income): balance increases with credit, decreases with debit
+        """
+        account_id = request.GET.get('account')
+        accounts = Account.objects.all().order_by('name')
+        selected_account = None
+        entries = []
+        closing_balance = Decimal('0.00')
+        currency_symbol = '$'
+
+        # Select account (use provided account id or the first account)
+        if account_id:
+            try:
+                selected_account = Account.objects.get(pk=account_id)
+            except Account.DoesNotExist:
+                selected_account = None
+
+        if not selected_account and accounts.exists():
+            selected_account = accounts.first()
+
+        if selected_account:
+            # Optional: if your Account model has a currency or symbol field
+            currency_symbol = getattr(selected_account, 'currency_symbol', getattr(selected_account, 'currency', '$'))
+
+            # Fetch journal entries ordered from oldest -> newest to compute running balance
+            journal_qs = JournalEntry.objects.filter(account=selected_account).order_by('date', 'created_at')
+
+            # Decide whether debits increase balance (typical for assets & expenses)
+            increase_by_debit = (selected_account.account_type in ['asset', 'expense'])
+
+            running = Decimal('0.00')
+
+            for je in journal_qs:
+                debit = je.debit_amount or Decimal('0.00')
+                credit = je.credit_amount or Decimal('0.00')
+
+                if increase_by_debit:
+                    running = running + debit - credit
+                else:
+                    running = running + credit - debit
+
+                entries.append({
+                    'date': je.date,
+                    'description': je.description,
+                    'debit': debit,
+                    'credit': credit,
+                    'balance': running,
+                })
+
+            closing_balance = running
+
+        context = {
+            'accounts': accounts,
+            'selected_account': selected_account,
+            'entries': entries,
+            'closing_balance': closing_balance,
+            'currency_symbol': currency_symbol or '$',
+        }
+
+        return render(request, 'finance/ledger.html', context)
     
 class Companies(View):
     """List all companies/accounts"""
@@ -806,10 +915,140 @@ class InvoiceDelete(View):
         return redirect('finance-invoices')
 
 class Receivables(View):
-    @method_decorator(login_required)  # Require login to access
+    @method_decorator(login_required)
     def get(self, request):
-        return render(request, 'finance/receivables.html', {}) 
-    
+        from django.db.models import Sum, Count, Avg, Q, F, ExpressionWrapper, fields
+        from datetime import datetime, timedelta
+        from decimal import Decimal
+        
+        # Get all customer invoices (receivables are invoices FROM customers)
+        all_invoices = Invoice.objects.select_related('company').filter(
+            customer_name__isnull=False
+        ).exclude(customer_name='')
+        
+        # If you don't have a field to distinguish, just use all invoices
+        # all_invoices = Invoice.objects. select_related('company').all()
+        
+        # Calculate Total Receivables (unpaid invoices:  draft + sent)
+        unpaid_invoices = all_invoices.filter(Q(status='draft') | Q(status='sent'))
+        total_receivables = unpaid_invoices.aggregate(
+            total=Sum('total_amount')
+        )['total'] or Decimal('0.00')
+        
+        # Calculate Paid Invoices total
+        paid_invoices_total = all_invoices. filter(status='paid').aggregate(
+            total=Sum('total_amount')
+        )['total'] or Decimal('0.00')
+        
+        # Calculate Overdue Invoices (assuming 30 days payment term)
+        today = datetime.now().date()
+        overdue_date = today - timedelta(days=30)
+        overdue_invoices = unpaid_invoices.filter(date__lt=overdue_date)
+        overdue_total = overdue_invoices.aggregate(
+            total=Sum('total_amount')
+        )['total'] or Decimal('0.00')
+        
+        # Calculate Average Payment Period
+        avg_payment_period = 45  # Default value
+        
+        # Count invoices by status
+        paid_count = all_invoices. filter(status='paid').count()
+        pending_count = all_invoices.filter(Q(status='draft') | Q(status='sent')).count()
+        overdue_count = overdue_invoices.count()
+        
+        # Filter by status from dropdown
+        status_filter = request.GET. get('status', 'All Invoices')
+        
+        if status_filter == 'Paid':
+            filtered_invoices = all_invoices.filter(status='paid')
+        elif status_filter == 'Pending': 
+            filtered_invoices = unpaid_invoices.filter(date__gte=overdue_date)
+        elif status_filter == 'Overdue':
+            filtered_invoices = overdue_invoices
+        else: 
+            filtered_invoices = all_invoices
+        
+        # Prepare invoice list with due dates
+        invoice_list = []
+        for invoice in filtered_invoices. order_by('-date'):
+            # Calculate due date (30 days from invoice date)
+            due_date = invoice.date + timedelta(days=30)
+            
+            # Determine status for display
+            if invoice.status == 'paid':
+                display_status = 'Paid'
+            elif invoice.date < overdue_date and invoice.status != 'paid':
+                display_status = 'Overdue'
+            else:
+                display_status = 'Pending'
+            
+            invoice_list.append({
+                'invoice_number': invoice.invoice_number,
+                'vendor':  invoice.customer_name or 'N/A',  # Customer name for receivables
+                'date': invoice.date,
+                'due_date': due_date,
+                'amount': invoice.total_amount,
+                'status': display_status,
+                'payment_method': 'Bank Transfer',
+            })
+        
+        # Get monthly receivables data for chart (last 6 months)
+        monthly_chart_data = []
+        for i in range(5, -1, -1):  # 6 months
+            month_date = today - timedelta(days=30 * i)
+            month_start = month_date.replace(day=1)
+            
+            if month_start.month == 12:
+                month_end = month_start.replace(year=month_start.year + 1, month=1, day=1) - timedelta(days=1)
+            else:
+                month_end = month_start.replace(month=month_start.month + 1, day=1) - timedelta(days=1)
+            
+            month_receivables = all_invoices.filter(
+                date__gte=month_start,
+                date__lte=month_end
+            ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+            
+            monthly_chart_data.append({
+                'month': month_start.strftime('%b'),
+                'amount': float(month_receivables),
+            })
+        
+        # Find max value for scaling
+        max_amount = max([item['amount'] for item in monthly_chart_data]) if monthly_chart_data else 1
+        if max_amount == 0:
+            max_amount = 1
+        
+        # Calculate SVG path points (scale to 260 height, 1000 width)
+        chart_height = 260
+        chart_width = 1000
+        points = []
+        circles = []
+        
+        for idx, data in enumerate(monthly_chart_data):
+            x = (idx / 5) * chart_width  # 6 points across 1000 width
+            # Invert Y because SVG coordinates start from top
+            y = chart_height - ((data['amount'] / max_amount) * chart_height)
+            points.append(f"{x},{y}")
+            circles.append({'x': x, 'y': y})
+        
+        polyline_points = ' '.join(points)
+        
+        context = {
+            'total_receivables': total_receivables,
+            'paid_invoices_total': paid_invoices_total,
+            'overdue_total':  overdue_total,
+            'avg_payment_period': avg_payment_period,
+            'paid_count': paid_count,
+            'pending_count': pending_count,
+            'overdue_count': overdue_count,
+            'invoice_list': invoice_list,
+            'status_filter': status_filter,
+            'polyline_points': polyline_points,
+            'chart_circles': circles,
+            'monthly_chart_data': monthly_chart_data,
+        }
+        
+        return render(request, 'finance/receivables.html', context)   
 class InvoiceScan(View):
     @method_decorator(login_required)  # Require login to access
     def get(self, request):
