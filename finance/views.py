@@ -4,9 +4,9 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from .forms import LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm
+from .forms import LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm
 from django.db import models
-from .models import Company, Account, Invoice, JournalEntry
+from .models import Company, Account, Invoice, JournalEntry, Supplier
 from django.contrib.messages import get_messages
 from django.db.models import Sum, Q
 from datetime import datetime, timedelta
@@ -914,6 +914,97 @@ class InvoiceDelete(View):
         invoice.delete()
         messages.success(request, f'Invoice "{invoice_number}" deleted successfully!')
         return redirect('finance-invoices')
+
+class Suppliers(View):
+    """List all suppliers"""
+    @method_decorator(login_required)
+    def get(self, request):
+        suppliers = Supplier.objects.select_related('company', 'created_by').all().order_by('-created_at')
+
+        search_query = request.GET.get('search', '')
+        if search_query:
+            suppliers = suppliers.filter(
+                models.Q(name__icontains=search_query) |
+                models.Q(contact_email__icontains=search_query) |
+                models.Q(contact_mobile__icontains=search_query)
+            )
+
+        context = {
+            'suppliers': suppliers,
+            'search_query': search_query,
+            'total_count': Supplier.objects.count(),
+        }
+        return render(request, 'finance/suppliers.html', context)
+
+
+class SupplierCreate(View):
+    """Create new supplier"""
+    @method_decorator(login_required)
+    def get(self, request):
+        form = SupplierForm()
+        return render(request, 'finance/supplier_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_modal': True,  # template can render as modal if desired
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = SupplierForm(request.POST)
+        if form.is_valid():
+            supplier = form.save(commit=False)
+            supplier.created_by = request.user
+            supplier.save()
+            messages.success(request, f'Supplier "{supplier.name}" created successfully!')
+            return redirect('finance-suppliers')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/supplier_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_modal': True,
+        })
+
+
+class SupplierEdit(View):
+    """Edit supplier"""
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        supplier = get_object_or_404(Supplier, pk=pk)
+        form = SupplierForm(instance=supplier)
+        return render(request, 'finance/supplier_form.html', {
+            'form': form,
+            'supplier': supplier,
+            'action': 'Edit',
+            'is_modal': False,
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        supplier = get_object_or_404(Supplier, pk=pk)
+        form = SupplierForm(request.POST, instance=supplier)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Supplier "{supplier.name}" updated successfully!')
+            return redirect('finance-suppliers')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/supplier_form.html', {
+            'form': form,
+            'supplier': supplier,
+            'action': 'Edit',
+            'is_modal': False,
+        })
+
+
+class SupplierDelete(View):
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        supplier = get_object_or_404(Supplier, pk=pk)
+        name = supplier.name
+        supplier.delete()
+        messages.success(request, f'Supplier "{name}" deleted successfully!')
+        return redirect('finance-suppliers')
 
 class Receivables(View):
     @method_decorator(login_required)

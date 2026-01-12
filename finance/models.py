@@ -330,3 +330,56 @@ class JournalEntry(models.Model):
             else:
                 self.entry_number = "JE00001"
         super().save(*args, **kwargs)
+
+class Supplier(models.Model):
+    SUPPLIER_TYPE_CHOICES = [
+        ('company', 'Company'),
+        ('individual', 'Individual'),
+        ('other', 'Other'),
+    ]
+
+    GST_CATEGORY_CHOICES = [
+        ('registered', 'Registered'),
+        ('unregistered', 'Unregistered'),
+        ('composition', 'Composition'),
+        ('consumer', 'Consumer'),
+    ]
+
+    # Basic
+    gstin_uin = models.CharField(max_length=30, blank=True, verbose_name="GSTIN / UIN", help_text="Optional GSTIN for autofill")
+    name = models.CharField(max_length=200, verbose_name="Supplier Name")
+    supplier_type = models.CharField(max_length=20, choices=SUPPLIER_TYPE_CHOICES, default='company', verbose_name="Supplier Type")
+    gst_category = models.CharField(max_length=20, choices=GST_CATEGORY_CHOICES, default='unregistered', verbose_name="GST Category")
+
+    # Primary contact details
+    contact_first_name = models.CharField(max_length=100, blank=True, verbose_name="First Name")
+    contact_last_name = models.CharField(max_length=100, blank=True, verbose_name="Last Name")
+    contact_email = models.EmailField(max_length=254, blank=True, verbose_name="Email ID")
+    contact_mobile = models.CharField(max_length=30, blank=True, verbose_name="Mobile Number")
+
+    # Address
+    preferred_billing = models.BooleanField(default=False, verbose_name="Preferred Billing Address")
+    preferred_shipping = models.BooleanField(default=False, verbose_name="Preferred Shipping Address")
+    postal_code = models.CharField(max_length=20, blank=True, verbose_name="Postal Code")
+    city = models.CharField(max_length=120, blank=True, verbose_name="City/Town")
+    address_line1 = models.CharField(max_length=255, blank=True, verbose_name="Address Line 1")
+    address_line2 = models.CharField(max_length=255, blank=True, verbose_name="Address Line 2")
+    state = models.CharField(max_length=100, blank=True, verbose_name="State/Province")
+    country = models.CharField(max_length=100, blank=True, default='Pakistan', verbose_name="Country")
+
+    # Relationship to Company (optional)
+    company = models.ForeignKey('Company', on_delete=models.SET_NULL, null=True, blank=True, related_name='suppliers')
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Supplier"
+        verbose_name_plural = "Suppliers"
+        ordering = ['-created_at']
+        unique_together = [('company', 'name')]
+
+    def __str__(self):
+        return self.name
