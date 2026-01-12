@@ -8,6 +8,17 @@
         /* Adapted from account_form style for a full-page supplier form */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background:#f9fafb; color:#333; }
+        body.sidebar-collapsed .sidebar {
+            transform: translateX(-100%);
+        }
+        body.sidebar-collapsed .header {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        body.sidebar-collapsed .main-content {
+            margin-left: 0;
+        }
         .main-content { max-width:1400px; margin:0 auto; padding:32px 24px; margin-left: var(--sidebar-width); transition: margin-left 0.3s ease, width 0.3s ease; }
         .breadcrumb { padding:16px 0; color:#666; font-size:14px; }
         .form-header { display:flex; justify-content:space-between; align-items:center; padding:12px 0; }
@@ -216,6 +227,13 @@
                 setTimeout(() => messages.remove(), 500);
             }
         }, 5000);
+        // Sidebar toggle
+        const hamburger = document.querySelector('.hamburger');
+        if (hamburger) {
+            hamburger.addEventListener('click', function () {
+                document.body.classList.toggle('sidebar-collapsed');
+            });
+        }
     </script>
 </body>
 </html>
