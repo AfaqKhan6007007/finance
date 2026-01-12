@@ -824,25 +824,25 @@ class Invoices(View):
     """List all invoices"""
     @method_decorator(login_required)
     def get(self, request):
-        invoices = Invoice.objects.select_related('company').all()
-        
+        # Eager-load supplier and company to avoid N+1 queries
+        invoices = Invoice.objects.select_related('company', 'supplier').all()
+
         # Search functionality
         search_query = request.GET.get('search', '')
         if search_query:
             invoices = invoices.filter(
                 models.Q(invoice_number__icontains=search_query) |
                 models.Q(customer_name__icontains=search_query) |
-                models.Q(supplier_name__icontains=search_query)
+                models.Q(supplier__name__icontains=search_query)  # search supplier name via FK
             )
-        
+
         context = {
             'invoices':  invoices,
             'search_query': search_query,
             'total_count': Invoice.objects.count(),
         }
         return render(request, 'finance/invoices.html', context)
-
-
+    
 class InvoiceCreate(View):
     """Create new invoice"""
     @method_decorator(login_required)

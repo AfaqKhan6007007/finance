@@ -198,7 +198,14 @@ class Invoice(models.Model):
     date = models.DateField(verbose_name="Invoice Date")
     
     # Supplier Information
-    supplier_name = models.CharField(max_length=200, verbose_name="Supplier Name")
+    supplier = models.ForeignKey(
+        'Supplier',
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name='invoices',
+        verbose_name="Supplier",
+    )
     supplier_vat = models.CharField(max_length=50, blank=True, verbose_name="Supplier VAT")
     
     # Customer Information
@@ -254,12 +261,19 @@ class Invoice(models.Model):
         ordering = ['-date', '-created_at']
     
     def __str__(self):
-        return f"{self.invoice_number} - {self.customer_name}"
+        return f"{self.invoice_number} - {self.supplier.name if self.supplier else 'Unknown Supplier'}"
     
     def save(self, *args, **kwargs):
+        # If supplier_vat blank and supplier has gstin_uin, copy it
+        if self.supplier and not self.supplier_vat:
+            gst = getattr(self.supplier, 'gstin_uin', None)
+            if gst:
+                self.supplier_vat = gst
+
         # Auto-calculate total_amount if not provided
         if not self.total_amount:
-            self.total_amount = self.amount_before_vat + self.total_vat
+            self.total_amount = (self.amount_before_vat or 0) + (self.total_vat or 0)
+
         super().save(*args, **kwargs)
 
 class JournalEntry(models.Model):

@@ -119,84 +119,28 @@ class InvoiceForm(forms.ModelForm):
     class Meta:
         model = Invoice
         fields = [
-            'invoice_id', 'invoice_number', 'date', 'supplier_name', 'supplier_vat',
+            'invoice_id', 'invoice_number', 'date', 'supplier', 'supplier_vat',
             'customer_name', 'customer_vat', 'amount_before_vat', 'total_vat',
             'total_amount', 'qr_code_present', 'company', 'status'
         ]
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
-        # Set required fields
-        self.fields['invoice_id'].required = True
-        self.fields['invoice_number'].required = True
-        self.fields['date'].required = True
-        self.fields['supplier_name'].required = True
-        self.fields['amount_before_vat'].required = True
-        self.fields['total_vat'].required = True
-        
-        # Set optional fields
-        self.fields['customer_vat'].required = False
-        self.fields['supplier_vat'].required = False
-        self.fields['total_amount'].required = False
-        self.fields['company'].required = False
-        
-        # Customize date widget
-        self.fields['date'].widget = forms.DateInput(attrs={
-            'type': 'date',
-            'class': 'form-control',
-            'placeholder': 'Pick a date'
-        })
-        
-        # Add placeholders and classes
-        self.fields['invoice_id'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Enter invoice ID'
-        })
-        
-        self.fields['invoice_number'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Enter invoice number'
-        })
-        
-        self.fields['supplier_name'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Enter supplier name'
-        })
-        
-        self.fields['customer_name'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Enter customer name'
-        })
-        
-        self.fields['supplier_vat'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Supplier VAT'
-        })
-        
-        self.fields['customer_vat'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Customer VAT'
-        })
-        
-        self.fields['amount_before_vat'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder':  '0.00',
-            'step': '0.01'
-        })
-        
-        self.fields['total_vat'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': '0.00',
-            'step': '0.01'
-        })
-        
-        self.fields['total_amount'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': '0',
-            'readonly': 'readonly'
-        })
 
+        # Supplier: choose from existing suppliers
+        self.fields['supplier'].queryset = Supplier.objects.all().order_by('name')
+        self.fields['supplier'].widget.attrs.update({'class': 'form-control'})
+        self.fields['supplier'].required = True
+
+        # Widgets and placeholders
+        self.fields['invoice_id'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Enter invoice ID'})
+        self.fields['invoice_number'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Enter invoice number'})
+        self.fields['date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+        self.fields['supplier_vat'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Supplier VAT (autofilled)'})
+        self.fields['amount_before_vat'].widget.attrs.update({'class': 'form-control', 'placeholder': '0.00', 'step': '0.01'})
+        self.fields['total_vat'].widget.attrs.update({'class': 'form-control', 'placeholder': '0.00', 'step': '0.01'})
+        self.fields['total_amount'].widget.attrs.update({'class': 'form-control', 'placeholder': '0.00', 'readonly': 'readonly'})
+        self.fields['company'].widget.attrs.update({'class': 'form-control'})
 class JournalEntryForm(forms.ModelForm):
     class Meta:
         model = JournalEntry

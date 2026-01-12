@@ -399,13 +399,19 @@
                         
                         <!-- Supplier Name -->
                         <div class="form-group">
-                            <label for="id_supplier_name" class="form-label required">Supplier Name</label>
-                            <input type="text" name="supplier_name" id="id_supplier_name" class="form-control" 
-                                   placeholder="Enter supplier name"
-                                   value="{{ form.supplier_name.value|default:'' }}" required>
-                            {% if form.supplier_name.errors %}
-                                <div class="error-message">{{ form.supplier_name.errors.0 }}</div>
+                            <label for="id_supplier" class="form-label required">Supplier</label>
+                            <select id="id_supplier" name="supplier" class="form-control" required>
+                                <option value="">-- select supplier --</option>
+                                {% for s in form.fields.supplier.queryset %}
+                                    <option value="{{ s.pk }}" {% if form.supplier.value == s.pk|stringformat:"s" %}selected{% endif %}>
+                                        {{ s.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.supplier.errors %}
+                                <div class="error-message">{{ form.supplier.errors.0 }}</div>
                             {% endif %}
+                            
                         </div>
                         
                         <!-- Total Amount -->
