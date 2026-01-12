@@ -10,6 +10,7 @@ from .models import Company, Account, Invoice, JournalEntry
 from django.contrib.messages import get_messages
 from django.db.models import Sum, Q
 from datetime import datetime, timedelta
+from django.utils import timezone
 from decimal import Decimal
 import math
 from django.db.models.functions import Coalesce
@@ -1053,12 +1054,257 @@ class InvoiceScan(View):
     @method_decorator(login_required)  # Require login to access
     def get(self, request):
         return render(request, 'finance/scan.html', {}) 
-    
 class Reports(View):
     @method_decorator(login_required)  # Require login to access
     def get(self, request):
-        return render(request, 'finance/reports.html', {})
+        """
+        Compute dynamic data for the reports page (profit & loss, balance sheet, cash flow).
+        Precompute label X positions for the cashflow chart to avoid template arithmetic.
 
+        NOTE: totals passed for display are absolute (non-negative) to avoid showing
+        a negative sign for aggregate totals. Individual account balances keep their sign.
+        """
+        now = timezone.now()
+        # --- Profit & Loss (Income Statement) ---
+        income_qs = JournalEntry.objects.filter(account__account_type='income')
+        revenue_by_account = income_qs.values('account__name').annotate(
+            total=Coalesce(Sum('credit_amount'), V(Decimal('0.00')), output_field=DecimalField())
+        ).order_by('-total')
+
+        revenue_items = []
+        total_revenue = Decimal('0.00')
+        for r in revenue_by_account:
+            amt = Decimal(r['total'] or 0)
+            revenue_items.append({'label': r['account__name'], 'amount': amt})
+            total_revenue += amt
+
+        expense_qs = JournalEntry.objects.filter(account__account_type='expense')
+        expense_by_account = expense_qs.values('account__name').annotate(
+            total=Coalesce(Sum('debit_amount'), V(Decimal('0.00')), output_field=DecimalField())
+        ).order_by('-total')
+
+        expense_items = []
+        total_expenses = Decimal('0.00')
+        for e in expense_by_account:
+            amt = Decimal(e['total'] or 0)
+            expense_items.append({'label': e['account__name'], 'amount': amt})
+            total_expenses += amt
+
+        net_profit = total_revenue - total_expenses
+
+        revenue_display = revenue_items[:4] if revenue_items else [{'label': 'Sales Revenue', 'amount': Decimal('0.00')}]
+        expense_display = expense_items[:5] if expense_items else [{'label': 'Salaries Expense', 'amount': Decimal('0.00')}]
+
+        # --- Balance Sheet ---
+        asset_qs = Account.objects.filter(account_type='asset').annotate(
+            debit_sum=Coalesce(Sum('journal_entries__debit_amount'), V(Decimal('0.00')), output_field=DecimalField()),
+            credit_sum=Coalesce(Sum('journal_entries__credit_amount'), V(Decimal('0.00')), output_field=DecimalField()),
+        )
+
+        assets_list = []
+        total_assets = Decimal('0.00')
+        for a in asset_qs:
+            debit = Decimal(a.debit_sum or 0)
+            credit = Decimal(a.credit_sum or 0)
+            balance = debit - credit  # signed balance
+            display_balance = abs(balance)
+            assets_list.append({
+                'name': a.name,
+                'balance': balance,                    # keep raw signed value if needed
+                'display_balance': display_balance,    # non-negative value for UI
+                'is_negative': balance < 0,            # flag for styling/formatting
+            })
+            total_assets += balance
+
+        liability_qs = Account.objects.filter(account_type='liability').annotate(
+            debit_sum=Coalesce(Sum('journal_entries__debit_amount'), V(Decimal('0.00')), output_field=DecimalField()),
+            credit_sum=Coalesce(Sum('journal_entries__credit_amount'), V(Decimal('0.00')), output_field=DecimalField()),
+        )
+
+        liabilities_list = []
+        total_liabilities = Decimal('0.00')
+        for l in liability_qs:
+            debit = Decimal(l.debit_sum or 0)
+            credit = Decimal(l.credit_sum or 0)
+            balance = credit - debit  # signed balance (normal credit balance)
+            display_balance = abs(balance)   # non-negative for UI
+            liabilities_list.append({
+                'name': l.name,
+                'balance': balance,                # keep signed value if needed elsewhere
+                'display_balance': display_balance,
+                'is_negative': balance < 0,        # flag for styling
+            })
+            total_liabilities += balance
+
+        equity_qs = Account.objects.filter(account_type='equity').annotate(
+            debit_sum=Coalesce(Sum('journal_entries__debit_amount'), V(Decimal('0.00')), output_field=DecimalField()),
+            credit_sum=Coalesce(Sum('journal_entries__credit_amount'), V(Decimal('0.00')), output_field=DecimalField()),
+        )
+
+        equity_list = []
+        total_equity = Decimal('0.00')
+        for q in equity_qs:
+            debit = Decimal(q.debit_sum or 0)
+            credit = Decimal(q.credit_sum or 0)
+            balance = credit - debit
+            display_balance = abs(balance)
+            equity_list.append({
+                'name': q.name,
+                'balance': balance,
+                'display_balance': display_balance,
+                'is_negative': balance < 0,
+            })
+            total_equity += balance
+
+        total_liabilities_and_equity = total_liabilities + total_equity
+
+        # Make non-negative "display" totals so totals appear positive in the UI
+        display_total_assets = abs(total_assets)
+        display_total_liabilities = abs(total_liabilities)
+        display_total_equity = abs(total_equity)
+        display_total_liabilities_and_equity = abs(total_liabilities_and_equity)
+
+        # --- Cash Flow (last 6 months) ---
+        months = 6
+        cashflow_months = []
+        cashflow_operating = []
+        cashflow_investing = []
+        cashflow_financing = []
+
+        def month_range_from_date(ref_date):
+            start = ref_date.replace(day=1)
+            if start.month == 12:
+                end = start.replace(year=start.year + 1, month=1, day=1) - timedelta(days=1)
+            else:
+                end = start.replace(month=start.month + 1, day=1) - timedelta(days=1)
+            return start, end
+
+        for i in range(months - 1, -1, -1):
+            month_date = (now - timedelta(days=30 * i)).date()
+            m_start, m_end = month_range_from_date(month_date)
+
+            income_month = JournalEntry.objects.filter(
+                account__account_type='income',
+                date__gte=m_start,
+                date__lte=m_end
+            ).aggregate(total=Coalesce(Sum('credit_amount'), V(Decimal('0.00')), output_field=DecimalField()))['total'] or Decimal('0.00')
+
+            expense_month = JournalEntry.objects.filter(
+                account__account_type='expense',
+                date__gte=m_start,
+                date__lte=m_end
+            ).aggregate(total=Coalesce(Sum('debit_amount'), V(Decimal('0.00')), output_field=DecimalField()))['total'] or Decimal('0.00')
+
+            operating = Decimal(income_month) - Decimal(expense_month)
+
+            asset_debits = JournalEntry.objects.filter(
+                account__account_type='asset',
+                date__gte=m_start,
+                date__lte=m_end
+            ).aggregate(total=Coalesce(Sum('debit_amount'), V(Decimal('0.00')), output_field=DecimalField()))['total'] or Decimal('0.00')
+
+            asset_credits = JournalEntry.objects.filter(
+                account__account_type='asset',
+                date__gte=m_start,
+                date__lte=m_end
+            ).aggregate(total=Coalesce(Sum('credit_amount'), V(Decimal('0.00')), output_field=DecimalField()))['total'] or Decimal('0.00')
+
+            investing = Decimal(asset_debits) - Decimal(asset_credits)
+
+            liab_debits = JournalEntry.objects.filter(
+                account__account_type='liability',
+                date__gte=m_start,
+                date__lte=m_end
+            ).aggregate(total=Coalesce(Sum('debit_amount'), V(Decimal('0.00')), output_field=DecimalField()))['total'] or Decimal('0.00')
+
+            liab_credits = JournalEntry.objects.filter(
+                account__account_type='liability',
+                date__gte=m_start,
+                date__lte=m_end
+            ).aggregate(total=Coalesce(Sum('credit_amount'), V(Decimal('0.00')), output_field=DecimalField()))['total'] or Decimal('0.00')
+
+            eq_debits = JournalEntry.objects.filter(
+                account__account_type='equity',
+                date__gte=m_start,
+                date__lte=m_end
+            ).aggregate(total=Coalesce(Sum('debit_amount'), V(Decimal('0.00')), output_field=DecimalField()))['total'] or Decimal('0.00')
+
+            eq_credits = JournalEntry.objects.filter(
+                account__account_type='equity',
+                date__gte=m_start,
+                date__lte=m_end
+            ).aggregate(total=Coalesce(Sum('credit_amount'), V(Decimal('0.00')), output_field=DecimalField()))['total'] or Decimal('0.00')
+
+            financing = (Decimal(liab_credits) - Decimal(liab_debits)) + (Decimal(eq_credits) - Decimal(eq_debits))
+
+            cashflow_months.append(m_start.strftime('%b'))
+            cashflow_operating.append(float(operating))
+            cashflow_investing.append(float(investing))
+            cashflow_financing.append(float(financing))
+
+        # Prepare polylines
+        def make_polyline(data_list, chart_width=1000, chart_height=260):
+            if not data_list:
+                return ''
+            max_val = max(abs(v) for v in data_list) or 1
+            points = []
+            for idx, val in enumerate(data_list):
+                x = (idx / (len(data_list) - 1)) * chart_width if len(data_list) > 1 else chart_width / 2
+                mid = chart_height / 2
+                y = mid - ((val / max_val) * (chart_height / 2))
+                points.append(f"{int(x+150)},{int(y)}")  # offset by 150 to match SVG axis
+            return ' '.join(points)
+
+        poly_operating = make_polyline(cashflow_operating)
+        poly_investing = make_polyline(cashflow_investing)
+        poly_financing = make_polyline(cashflow_financing)
+
+        operating_metric = Decimal(cashflow_operating[-1]) if cashflow_operating else Decimal('0.00')
+        investing_metric = Decimal(cashflow_investing[-1]) if cashflow_investing else Decimal('0.00')
+        financing_metric = Decimal(cashflow_financing[-1]) if cashflow_financing else Decimal('0.00')
+
+        # Compute label X positions (no template math needed)
+        label_positions = []
+        n = len(cashflow_months) or 1
+        for idx in range(n):
+            x = int(150 + (idx / (n - 1) * 1000)) if n > 1 else int(150 + 1000 / 2)
+            label_positions.append({'label': cashflow_months[idx], 'x': x})
+
+        recent_entries = JournalEntry.objects.select_related('account', 'company').order_by('-date', '-created_at')[:10]
+        display_financing_activities = abs(financing_metric)
+        context = {
+            'revenue_items': revenue_display,
+            'expense_items': expense_display,
+            'total_revenue': total_revenue,
+            'total_expenses': total_expenses,
+            'net_profit': net_profit,
+            'assets_list': assets_list,
+            'liabilities_list': liabilities_list,
+            'equity_list': equity_list,
+            # Keep raw totals if you need them for calculations, but pass display totals too
+            'total_assets': total_assets,
+            'total_liabilities': total_liabilities,
+            'total_equity': total_equity,
+            'total_liabilities_and_equity': total_liabilities_and_equity,
+            'display_total_assets': display_total_assets,
+            'display_total_liabilities': display_total_liabilities,
+            'display_total_equity': display_total_equity,
+            'display_total_liabilities_and_equity': display_total_liabilities_and_equity,
+            'cashflow_months': cashflow_months,
+            'cashflow_operating': cashflow_operating,
+            'cashflow_investing': cashflow_investing,
+            'cashflow_financing': cashflow_financing,
+            'poly_operating': poly_operating,
+            'poly_investing': poly_investing,
+            'poly_financing': poly_financing,
+            'operating_metric': operating_metric,
+            'investing_metric': investing_metric,
+            'financing_metric': display_financing_activities,
+            'cashflow_labels': label_positions,
+            'recent_entries': recent_entries,
+        }
+
+        return render(request, 'finance/reports.html', context)
 class Login(View):
     def get(self, request):
         # If user is already logged in, redirect to accounts
