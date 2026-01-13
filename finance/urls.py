@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CustomerCreate, CustomerDelete, CustomerEdit, Customers, Login, Signup, Logout, Dashboard, Journal, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete
+from .views import CustomerCreate, CustomerDelete, CustomerEdit, Customers, Login, Signup, Logout, Dashboard, Journal, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
 
 urlpatterns = [
      # ============ Authentication ============
@@ -40,6 +40,7 @@ urlpatterns = [
     path('ledger/', Ledger.as_view(), name='finance-ledger'),
     path('reports/', Reports.as_view(), name='finance-reports'),
     path('scan/', InvoiceScan.as_view(), name='finance-scan'),
+    path('scan/scan/', create_invoice, name='finance-invoice-scan'),
     
     # ============ Company/Account Management ============
     path('companies/', Companies.as_view(), name='finance-companies'),
@@ -52,7 +53,7 @@ urlpatterns = [
     path('invoices/add/', InvoiceCreate.as_view(), name='finance-invoice-create'),
     path('invoices/<int:pk>/edit/', InvoiceEdit.as_view(), name='finance-invoice-edit'),
     path('invoices/<int:pk>/delete/', InvoiceDelete.as_view(), name='finance-invoice-delete'),
-
+    
     # ============ Accounting Modules ============
     path('payables/', Payables.as_view(), name='finance-payables'),
     path('receivables/', Receivables.as_view(), name='finance-receivables'),

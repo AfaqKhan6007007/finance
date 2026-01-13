@@ -1,3 +1,7 @@
+import io
+from xml.parsers.expat import model
+import os
+from django.conf import settings
 from django.shortcuts import redirect, render, get_object_or_404
 from django.views import View
 from django.contrib.auth import login, authenticate, logout
@@ -15,6 +19,26 @@ from decimal import Decimal
 import math
 from django.db.models.functions import Coalesce
 from django.db.models import Value as V, DecimalField
+from PIL import Image
+import numpy as np
+import base64
+import cv2
+import pdfplumber
+import statistics
+import fitz
+import re
+import json
+from google.cloud import vision, storage
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import arabic_reshaper
+from bidi.algorithm import get_display
+from openai import OpenAI
+from pdfminer.high_level import extract_text
+
+client_openai = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 class Accounts(View):
     """List all accounts"""
@@ -1283,7 +1307,8 @@ class Receivables(View):
 class InvoiceScan(View):
     @method_decorator(login_required)  # Require login to access
     def get(self, request):
-        return render(request, 'finance/scan.html', {}) 
+        invoices = Invoice.objects.all().order_by('-date')
+        return render(request, 'finance/scan.html', {'invoices': invoices}) 
 class Reports(View):
     @method_decorator(login_required)  # Require login to access
     def get(self, request):
@@ -1535,6 +1560,765 @@ class Reports(View):
         }
 
         return render(request, 'finance/reports.html', context)
+    
+def create_invoice(request):
+    if request.method == 'POST':
+        files = request.FILES.getlist('files')
+        new_count = 0
+        repeated_count = 0
+        print(files)
+        for  idx, file in enumerate(files):
+            split_invoice_str = request.POST.get(f'split_flag_{idx}', 'false')
+            split_invoice = split_invoice_str.lower() == 'true'
+            try:
+                result = upload_invoice_for_project(file,split_invoice)
+                created = result.get("created", 0)
+                duplicates = result.get("duplicates", 0)
+                new_count = new_count + created
+                repeated_count = repeated_count + duplicates
+            except Exception as e:
+                messages.warning(request, f"An error occurred while uploading the invoice")
+                print(f"Error uploading invoice: {e}")
+        messages.success(request, f"Invoices uploaded. New: {new_count}, Duplicates: {repeated_count}")
+        return redirect('finance-invoice-scan')
+    return redirect('finance-scan')
+
+def is_qr_code_present(image_data):
+    """
+    Takes image data (bytes) and returns True if 'qr_code' class is detected.
+    """
+    image = Image.open(io.BytesIO(image_data)).convert('RGB')
+    results = model(image)
+
+    for box in results[0].boxes:
+        class_id = int(box.cls[0].item())
+        class_name = model.names[class_id]
+        if class_name == 'qr_code':
+            return True
+    return False
+
+def extract_qr_code(image_data):
+    """Detects and extracts QR code content using OpenCV."""
+    try:
+        nparr = np.frombuffer(image_data, np.uint8)
+        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+        detector = cv2.QRCodeDetector()
+        data, bbox, _ = detector.detectAndDecode(image)
+
+        if bbox is not None and data:
+            return data  # Already decoded string
+
+    except Exception as e:
+        print(f"Error extracting QR code: {e}")
+
+    return None
+
+def decode_tlv_qr(qr_string):
+    """
+    Decodes the extracted QR code data (Base64-encoded TLV format) 
+    used in Saudi Arabia's E-Invoice QR system.
+    """
+    try:
+        qr_bytes = base64.b64decode(qr_string)
+        fields = []
+        i = 0
+
+        def to_float(value):
+            """Convert a value to float safely."""
+            try:
+                return float(value) if value else None
+            except ValueError:
+                return None  # If conversion fails, return None instead of crashing
+        
+        while i < len(qr_bytes):
+            tag = qr_bytes[i]
+            length = qr_bytes[i + 1]
+            value = qr_bytes[i + 2 : i + 2 + length].decode('utf-8')
+            fields.append(value)
+            i += 2 + length
+
+        return {
+            "Supplier Name": fields[0] if len(fields) > 0 else None,
+            "Supplier VAT": fields[1] if len(fields) > 1 else None,
+            "Invoice Date": fields[2] if len(fields) > 2 else None,
+            "Total Amount After VAT": to_float(fields[3]) if len(fields) > 3 else None,
+            "VAT Amount": to_float(fields[4]) if len(fields) > 4 else None
+        }
+
+    except Exception as e:
+        return {"Error": str(e)}
+
+def convert_date_format(date_str): 
+    """Converts various date formats (e.g., DD-MM-YYYY, DD/MM/YYYY, YYYY-MM-DD) to YYYY-MM-DD."""
+    for fmt in ("%d-%m-%Y", "%d/%m/%Y", "%Y-%m-%d", "%Y/%m/%d", "%d-%b-%Y"):
+        try:
+            return datetime.strptime(date_str, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    return None
+
+def extract_text_from_pdf(file_path):
+    text = ""
+    with pdfplumber.open(file_path) as pdf:
+        for page in pdf.pages:
+            text += page.extract_text() + "\n"
+    return text
+
+def pdf_to_images(pdf_bytes):
+    """Convert PDF pages to images using PyMuPDF."""
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")  # Read PDF from memory
+    images = []
+    for page_num in range(len(doc)):
+        pix = doc[page_num].get_pixmap(matrix=fitz.Matrix(2, 2))  # Increase DPI
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        images.append(img)
+    return images
+
+def initialize_vision_client():
+    return vision.ImageAnnotatorClient()
+def get_dominant_text_angle(response):
+    angles = []
+    for page in response.full_text_annotation.pages:
+        for block in page.blocks:
+            for paragraph in block.paragraphs:
+                for word in paragraph.words:
+                    vertices = word.bounding_box.vertices
+                    if len(vertices) >= 2:
+                        dx = vertices[1].x - vertices[0].x
+                        dy = vertices[1].y - vertices[0].y
+                        angle = math.degrees(math.atan2(dy, dx))
+                        angles.append(angle)
+
+    if not angles:
+        return 0
+
+    # Normalize angles to be between -90 and +90
+    normalized_angles = [((a + 90) % 180) - 90 for a in angles]
+    median_angle = statistics.median(normalized_angles)
+    return median_angle
+def correct_image_orientation(image_path, angle_threshold=45):
+    from PIL import Image
+
+    client = initialize_vision_client()
+    response = detect_text_blocks(image_path, client)
+    angle = get_dominant_text_angle(response)
+
+    if abs(angle) > angle_threshold:
+        with Image.open(image_path) as img:
+            rotated_img = img.rotate(-90, expand=True)
+            rotated_path = "rotated_temp_image.jpg"
+            rotated_img.save(rotated_path)
+        return rotated_path
+    return image_path
+def get_image_size(image_path):
+    with Image.open(image_path) as img:
+        return img.size
+
+def detect_text_blocks(image_path, client):
+    with io.open(image_path, 'rb') as image_file:
+        content = image_file.read()
+        image = vision.Image(content=content)
+    response = client.document_text_detection(image=image)
+    return response
+
+def setup_pdf_canvas(image_width, image_height, output_pdf_path):    
+    if image_width > image_height:
+        page_size = landscape(A4)
+    else:
+        page_size = A4
+
+    pdf_width, pdf_height = page_size
+    scale_x = pdf_width / image_width
+    scale_y = pdf_height / image_height
+
+    c = canvas.Canvas(output_pdf_path, pagesize=page_size)
+    return c, pdf_width, pdf_height, scale_x, scale_y
+
+def register_font():
+    print(settings.STATICFILES_DIRS)
+    font_path = os.path.join(settings.STATICFILES_DIRS[0], 'assets', 'fonts', 'DejaVuSans.ttf')
+    if os.path.exists(font_path):
+        pdfmetrics.registerFont(TTFont("ArabicFont", font_path))
+        return "ArabicFont"
+    return "Helvetica"
+
+def check_horizontal_overlap(x_left, x_right, line_y, registered_lines, threshold=5):
+    for y, boxes in registered_lines:
+        if abs(y - line_y) <= threshold:
+            for existing_left, existing_right in boxes:
+                if not (x_right < existing_left or x_left > existing_right):
+                    return True
+    return False
+
+
+def register_box(x_left, x_right, line_y, registered_lines, threshold=5):
+    for i, (y, boxes) in enumerate(registered_lines):
+        if abs(y - line_y) <= threshold:
+            boxes.append((x_left, x_right))
+            return
+    registered_lines.append((line_y, [(x_left, x_right)]))
+
+def draw_text_blocks_on_canvas(response, canvas_obj, font_name, img_width, img_height, scale_x, scale_y):
+    registered_lines = []
+    for page in response.full_text_annotation.pages:
+        for block in page.blocks:
+            for paragraph in block.paragraphs:
+                for word in paragraph.words:
+                    text = ''.join([s.text for s in word.symbols])
+                    reshaped_text = arabic_reshaper.reshape(text)
+                    bidi_text = get_display(reshaped_text)
+
+                    bbox = word.bounding_box.vertices
+                    x_left = bbox[0].x * scale_x
+                    x_right = bbox[1].x * scale_x
+                    y_bottom = (img_height - bbox[1].y) * scale_y
+                    box_width = abs(x_right - x_left)
+                    box_height = abs(bbox[0].y - bbox[2].y) * scale_y
+                    font_size = max(6, min(6, box_height))
+                    canvas_obj.setFont(font_name, font_size)
+
+                    # shift = 0
+                    # max_shift = 50
+                    # while shift < max_shift:
+                    #     temp_x_right = x_right - shift
+                    #     temp_x_left = temp_x_right - box_width
+                    #     if not check_horizontal_overlap(temp_x_left, temp_x_right, y_bottom, registered_lines):
+                    #         break
+                    #     shift += 2
+
+                    # final_x_right = x_right - shift
+                    # final_x_left = final_x_right - box_width
+                    register_box(x_left, x_right, y_bottom, registered_lines)
+
+                    canvas_obj.drawRightString(x_right, y_bottom, bidi_text)
+
+def generate_invoice_pdf(image_path):
+    corrected_image_path = correct_image_orientation(image_path)
+    client = initialize_vision_client()
+    img_width, img_height = get_image_size(corrected_image_path)
+    response = detect_text_blocks(corrected_image_path, client)
+
+    # Ensure the invoices folder exists
+    folder_path = os.path.join(settings.MEDIA_ROOT, 'invoices')
+    os.makedirs(folder_path, exist_ok=True)
+
+    # Generate filename if not provided
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    filename = f"invoice_{timestamp}.pdf"
+
+    output_pdf_path = os.path.join(folder_path, filename)
+
+    c, pdf_width, pdf_height, scale_x, scale_y = setup_pdf_canvas(img_width, img_height, output_pdf_path)
+    font_name = register_font()
+
+    draw_text_blocks_on_canvas(response, c, font_name, img_width, img_height, scale_x, scale_y)
+
+    c.save()
+    return output_pdf_path
+
+def process_invoice_digital(pdf_content, image_data):
+    
+    print("LLAMA")
+    """
+    Extract structured invoice data from a digital invoice (text-based PDF content) using Groq API.
+
+    Args:
+        pdf_content (str): Extracted text from the invoice PDF.
+        groq_api_key (str): API key for authentication.
+
+    Returns:
+        dict: Extracted invoice data in a structured JSON format.
+    """
+
+    # Define prompt structure for JSON output
+    messages = [{
+        "role": "system",
+        "content": (
+            "You are an AI specialized in extracting structured data from invoices. "
+            "Ensure the JSON response follows this structure:"
+            "\n```json\n"
+            "{"
+            "\n  \"Invoice Number\": \"<string>\","
+            "\n  \"Invoice Date\": \"<string>\","
+            "\n  \"Supplier Name\": \"<string>\","
+            "\n  \"Supplier VAT\": \"<string>\","
+            "\n  \"Customer Name\": \"<string>\","
+            "\n  \"Customer VAT\": \"<string>\","
+            "\n  \"Amount Before VAT\": <float>,"
+            "\n  \"VAT Amount\": <float>,"
+            "\n  \"Total Amount After VAT\": <float>,"
+            "\n  \"Line Items\": ["
+            "\n    {"
+            "\n      \"Item Name\": \"<string>\","
+            "\n      \"Item Description\": \"<string>\","
+            "\n      \"Quantity\": <int>,"
+            "\n      \"Unit Price\": <float>,"
+            "\n      \"Total Price\": <float>"
+            "\n    }"
+            "\n  ]"
+            "\n}"
+            "\n```"
+        )
+    },
+
+    {
+        "role": "user",
+        "content": (
+            "Extract the following details from this invoice and return them in JSON format:\n"
+            "If any value is missing or cannot be determined, return it as null (None in Python):\n\n"
+            "Match both English and Arabic keywords where available.Invoice contains English and Arabic only.\n\n"
+            "- Invoice Number (رقم الفاتورة / Raqm Al Fatoora)/Receipt Number\n"
+            "- Invoice Date (%d-%m-%Y). Start Date in Food Budget.\n"
+            "- Supplier Name (may appear in English or Arabic at the top of the invoice. If in English return in English else return exact Arabic)\n"
+            "- Supplier VAT Number (الرقم الضريبي / Raqm Al Dhareebi)\n"
+            r"- Customer\Client Name (العميل)\n-"
+            "- Customer VAT Number (الرقم الضريبي للعميل / Raqm Al Dhareebi lil-Ameel)\n"
+            "- Amount Before VAT (مبلغ قبل الضريبة) / Total Amount Before VAT (الإجمالي قبل الضريبة)\n"
+            "- VAT Amount"
+            "- Total Amount After VAT / Total Amount"
+            "Additionally, extract line items listed in the invoice. Each line item should include:\n"
+            "- Item Name\n- Item Description (if available)\n- Quantity\n- Unit Price\n- Total Price\n"
+            f"\n\nInvoice Text:\n{pdf_content}"
+        )
+    }]
+    # response = client.chat.completions.create(
+    #     model="gemma2-9b-it",
+    #     messages=messages,
+    #     temperature=1,
+    #     max_completion_tokens=1024,
+    #     top_p=1,
+    #     stop=None,
+    # )
+    response = client_openai.chat.completions.create(
+        model="gpt-4o",
+        messages=messages,
+        max_tokens=800,
+        temperature=0
+    )
+
+    # Access the response content
+    response_text = response.choices[0].message.content
+
+    # # Prepare API request
+    # data = {
+    #     "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+    #     "messages": [system_message, user_message],
+    #     "max_tokens": 800
+    # }
+
+    # # Send request to Groq API
+    # response = requests.post(url, headers=headers, data=json.dumps(data))
+
+    # # Parse the response
+    # response_text = response.json().get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+
+    # Extract JSON from response
+    match = re.search(r"```json\s*(\{.*?\})\s*```", response_text, re.DOTALL)
+    extracted_json = match.group(1).strip() if match else response_text.strip()
+
+    invoice_data = json.loads(extracted_json)
+    print(invoice_data)
+    invoice_date_str = invoice_data["Invoice Date"]
+    if invoice_date_str:
+        invoice_data["Invoice Date"] = convert_date_format(invoice_date_str)
+    qr_code_string = extract_qr_code(image_data)
+    if qr_code_string:
+        qr_data = decode_tlv_qr(qr_code_string)
+        invoice_data['QR Code Present'] = True
+    else:
+        # qr_presence = is_qr_code_present(image_data)
+        # invoice_data['QR Code Present'] = qr_presence
+        invoice_data['QR Code Present'] = False
+        qr_data = None
+
+    if qr_data:
+        print(qr_data)
+        invoice_data['QR Code Valid'] = True
+        # for key, qr_value in qr_data.items():
+        #     if key in invoice_data and qr_value:
+        #         if key == "Supplier Name":
+        #             continue
+        #         if invoice_data[key] != qr_value:
+        #             # Update other fields normally
+        #             print(f"Updating {key}: {invoice_data[key]} → {qr_value}")
+        #             invoice_data[key] = qr_value
+    else:
+        invoice_data['QR Code Valid'] = False
+    line_items = invoice_data.get("Line Items", [])
+    if isinstance(line_items, str):  # If line items are stored as a string, convert them back
+        try:
+            line_items = json.loads(line_items)
+        except json.JSONDecodeError:
+            line_items = []  # If decoding fails, store an empty list
+    invoice_data['Line Items'] = line_items
+    supplier_str = invoice_data["Supplier Name"]
+    PRESENTATION_FORMS = re.compile(r'[\uFB50-\uFDFF\uFE70-\uFEFF]')
+    if supplier_str:
+        print('supplier str',supplier_str)
+        if PRESENTATION_FORMS.search(supplier_str):
+            supplier_name = arabic_reshaper.reshape(supplier_str)
+            supplier_name = get_display(supplier_name)
+            invoice_data["Supplier Name"] = supplier_name
+        else:
+            supplier_name=supplier_str
+            invoice_data["Supplier Name"] = supplier_name
+    else:
+        invoice_data["Supplier Name"] = None
+    customer_str = invoice_data["Customer Name"]
+    if customer_str:
+        if PRESENTATION_FORMS.search(customer_str):
+            customer_name = arabic_reshaper.reshape(customer_str)
+            customer_name = get_display(customer_name)
+            invoice_data["Customer Name"] = customer_name
+        else:
+            customer_name = customer_str
+            invoice_data["Customer Name"] = customer_name
+    else:
+        invoice_data["Customer Name"] = None
+    # Fix Line Items Item Names
+    line_items = invoice_data["Line Items"]
+    for item in line_items:
+        if item.get("Item Name"):
+            if PRESENTATION_FORMS.search(item["Item Name"]):
+                item["Item Name"] = arabic_reshaper.reshape(item["Item Name"])
+                item["Item Name"] = get_display(item["Item Name"])
+        if item.get("Item Description"):
+            if PRESENTATION_FORMS.search(item["Item Description"]):
+                item["Item Description"] = arabic_reshaper.reshape(item["Item Description"])
+                item["Item Description"] = get_display(item["Item Description"])
+            print('Modified', item["Item Description"])
+    return invoice_data
+
+def upload_to_gcs(bucket_name, source_file_path, credentials_file):
+    """
+    Uploads a file to a specified Google Cloud Storage bucket
+    and returns a signed URL valid for 7 days.
+
+    Args:
+        bucket_name (str): Name of the GCS bucket.
+        source_file_path (str): Full local path to the file.
+        credentials_file (str): Path to the GCP service account JSON file.
+
+    Returns:
+        str: Signed URL to access the uploaded file.
+    """
+
+    # Initialize the GCS client with the credentials file
+    storage_client = storage.Client.from_service_account_json(credentials_file)
+
+    # Get the target bucket
+    bucket = storage_client.bucket(bucket_name)
+
+    # Use the base name of the file as the blob name
+    destination_blob_name = os.path.basename(source_file_path)
+
+    # Create a blob object in the bucket
+    blob = bucket.blob(destination_blob_name)
+    blob.content_disposition = f'attachment; filename="{destination_blob_name}"'
+
+    # Upload the file to GCS
+    blob.upload_from_filename(source_file_path)
+
+    # Generate a signed URL valid for 7 days
+    url = blob.generate_signed_url(expiration=timedelta(days=7))
+
+    # Log upload
+    print(f"File {source_file_path} uploaded to gs://{bucket_name}/{destination_blob_name}")
+    print(f"Download URL: {url}")
+
+    return url
+import os
+import io
+from django.conf import settings
+
+def upload_invoice_for_project(invoice_file,split_invoice=True):
+    """
+    Handles invoice uploads (PDF or image) and saves them as individual or merged invoices.
+
+    Args:
+        invoice_file: InMemoryUploadedFile from request.FILES
+        project_id: ID of the project/company the invoice belongs to
+        split_invoice: If True, split multi-page PDFs into separate invoices
+
+    Returns:
+        dict: {
+            "created": int,
+            "duplicates": int,
+            "pages": int,
+            "details": list[dict]
+        }
+    """
+    file_extension = invoice_file.name.lower().split('.')[-1]
+    original_name_noext = os.path.splitext(invoice_file.name)[0]
+    invoice_bytes = invoice_file.read()
+
+    folder_name = os.path.join(settings.MEDIA_ROOT, 'invoices')
+    os.makedirs(folder_name, exist_ok=True)
+
+    filename = f"invoice_{invoice_file.name}"
+    file_path = os.path.join(folder_name, filename)
+
+    # Save uploaded file
+    with open(file_path, 'wb') as fp:
+        for chunk in invoice_file.chunks():
+            fp.write(chunk)
+
+    # ===========================
+    # 1) Non-PDFs (images)
+    # ===========================
+    if file_extension != "pdf":
+        tmp_image_path = os.path.join(folder_name, f"{original_name_noext}.png")
+        with open(tmp_image_path, "wb") as f:
+            f.write(invoice_bytes)
+
+        page_pdf_path = generate_invoice_pdf(tmp_image_path)
+        pdf_content = extract_text_from_pdf(page_pdf_path)
+        extracted_data = process_invoice_digital(pdf_content, invoice_bytes)
+
+        status = _save_single_invoice_record(
+            
+            local_source_path=file_path,
+            extracted_data=extracted_data,
+            fallback_basename=original_name_noext
+        )
+
+        os.remove(tmp_image_path)
+        delete_file(page_pdf_path)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        return {
+            "created": 1 if status else 0,
+            "duplicates": 1 if not status else 0,
+            "pages": 1,
+            "details": [{"status": status}]
+        }
+
+    # ===========================
+    # 2) PDFs
+    # ===========================
+    # Determine if digital PDF
+    is_digital = False
+    try:
+        full_text = extract_text(file_path)
+        is_digital = bool(full_text.strip())
+        print("Digital Invoice" if is_digital else "Scanned Invoice")
+    except Exception as e:
+        print("PDF parsing failed:", e)
+
+    # For scanned PDFs, convert to images
+    images = []
+    if not is_digital:
+        try:
+            images = pdf_to_images(invoice_bytes)
+        except Exception as e:
+            print("Error converting PDF to images:", e)
+
+    # -----------------------------
+    # 2A) Digital PDF → process directly
+    # -----------------------------
+    if is_digital:
+        pdf_content = extract_text_from_pdf(file_path)
+        extracted_data = process_invoice_digital(pdf_content, invoice_bytes)
+
+        status = _save_single_invoice_record(
+            local_source_path=file_path,
+            extracted_data=extracted_data,
+            fallback_basename=original_name_noext
+        )
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        return {
+            "created": 1 if status else 0,
+            "duplicates": 1 if not status else 0,
+            "pages": 1,
+            "details": [{"status": status}]
+        }
+
+    # -----------------------------
+    # 2B) Scanned PDF → process images
+    # -----------------------------
+    if not images:
+        # PDF has no images/pages
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        return {
+            "created": 0,
+            "duplicates": 0,
+            "pages": 0,
+            "details": [{"status": None, "error": "PDF contains no pages"}]
+        }
+
+    # ---- SPLIT MODE ----
+    if split_invoice:
+        results = []
+        for idx, img in enumerate(images, start=1):
+            page_tag = f"p{idx}"
+            page_png = os.path.join(folder_name, f"invoice_{original_name_noext}_{page_tag}.png")
+            img.save(page_png, format="PNG")
+
+            page_pdf_path = generate_invoice_pdf(page_png)
+            try:
+                pdf_content = extract_text_from_pdf(page_pdf_path)
+                with open(page_png, "rb") as fpng:
+                    page_image_bytes = fpng.read()
+
+                extracted_data = process_invoice_digital(pdf_content, page_image_bytes)
+
+                status = _save_single_invoice_record(
+                
+                    local_source_path=page_png,
+                    extracted_data=extracted_data,
+                    fallback_basename=f"{original_name_noext}_{page_tag}"
+                )
+
+                results.append({"page": idx, "status": status})
+            except Exception as e:
+                print(f"Error processing page {idx}: {e}")
+                results.append({"page": idx, "status": None, "error": str(e)})
+            finally:
+                if os.path.exists(page_png):
+                    os.remove(page_png)
+                if os.path.exists(page_pdf_path):
+                    os.remove(page_pdf_path)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        created = sum(1 for r in results if r["status"] is True)
+        duplicates = sum(1 for r in results if r["status"] is False)
+        return {"created": created, "duplicates": duplicates, "pages": len(results), "details": results}
+
+    # ---- MERGE MODE ----
+    image_list = []
+    for img in images:
+        buf = io.BytesIO()
+        img.save(buf, format='PNG')
+        image_list.append(buf.getvalue())
+    merged_image_bytes = merge_images_vertically(image_list)
+
+    merged_png = os.path.join(folder_name, f"invoice_{original_name_noext}_merged.png")
+    with open(merged_png, "wb") as f:
+        f.write(merged_image_bytes)
+    merged_pdf_path = generate_invoice_pdf(merged_png)
+    pdf_content = extract_text_from_pdf(merged_pdf_path)
+
+    extracted_data = process_invoice_digital(pdf_content, merged_image_bytes)
+
+    status = _save_single_invoice_record(
+        local_source_path=file_path,
+        extracted_data=extracted_data,
+        fallback_basename=original_name_noext
+    )
+
+    # Cleanup
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    if os.path.exists(merged_png):
+        os.remove(merged_png)
+    delete_file(merged_pdf_path)
+
+    return {
+        "created": 1 if status else 0,
+        "duplicates": 1 if not status else 0,
+        "pages": 1,
+        "details": [{"status": status}]
+    }
+
+def delete_file(file_path):
+    """
+    Deletes the image at the given file path.
+    """
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+
+def _save_single_invoice_record(local_source_path, extracted_data, fallback_basename):
+    """
+    Normalizes fields, checks duplicates, uploads to GCS, and saves one Invoice row.
+
+    Returns:
+        True  -> invoice created
+        False -> duplicate (skipped)
+    """
+    # Fallbacks & normalization
+    invoice_number = extracted_data.get("Invoice Number")
+    if not invoice_number:
+        invoice_number = fallback_basename  # ensure uniqueness in split mode
+
+    amount_before_vat = extracted_data.get("Amount Before VAT")
+    total_after_vat = extracted_data.get("Total Amount After VAT")
+    vat_amount = extracted_data.get("VAT Amount")
+    supplier_name = extracted_data.get("Supplier Name")
+    customer_name = extracted_data.get("Customer Name")
+
+    if amount_before_vat is None:
+        amount_before_vat = total_after_vat
+    if vat_amount is None:
+        vat_amount = 0
+    if total_after_vat is None:
+        total_after_vat = 0
+
+    # Guard: amount_before_vat should not exceed (total - vat)
+    try:
+        if amount_before_vat > (total_after_vat - vat_amount):
+            amount_before_vat = total_after_vat - vat_amount
+    except Exception:
+        pass
+
+    amount_before_vat = round(amount_before_vat,2)
+    # Duplicate check
+    if Invoice.objects.filter(invoice_number=invoice_number).exists():
+        print(f"Invoice with number {invoice_number} already exists. Skipping creation.")
+        # Do NOT delete local_source_path here; caller cleans up
+        return False
+
+    # Upload source to GCS (page-PDF in split mode, original upload in merge mode)
+    pdf_url = upload_to_gcs(
+        bucket_name="alrashed-storage",
+        source_file_path=local_source_path,
+        credentials_file=settings.GOOGLE_CLOUD_PATH
+    )
+    supplier, _ = Supplier.objects.get_or_create(name=supplier_name)
+    customer, _ = Customer.objects.get_or_create(name=customer_name)
+    # Create DB record
+    invoice = Invoice(
+        invoice_number=invoice_number,
+        date=extracted_data.get("Invoice Date"),
+        supplier=supplier,
+        supplier_vat=extracted_data.get("Supplier VAT"),
+        customer=customer,
+        customer_vat=extracted_data.get("Customer VAT"),
+        amount_before_vat=amount_before_vat,
+        total_vat=vat_amount,
+        total_amount=total_after_vat,
+        qr_code_present=extracted_data.get("QR Code Present"),
+    )
+    invoice.save()
+    print(f"Invoice with number {invoice_number} created successfully.")
+    return True
+
+def merge_images_vertically(image_list):
+    """Merges multiple invoice images into a single image."""
+    images = [Image.open(io.BytesIO(img)) for img in image_list]
+    max_width = max(img.width for img in images)
+    total_height = sum(img.height for img in images)
+    merged_image = Image.new("RGB", (max_width, total_height), "white")
+
+    y_offset = 0
+    for img in images:
+        img = img.resize((max_width, int(img.height * (max_width / img.width)))) if img.width < max_width else img
+        merged_image.paste(img, (0, y_offset))
+        y_offset += img.height  
+
+    img_byte_array = io.BytesIO()
+    merged_image.save(img_byte_array, format="PNG")
+    return img_byte_array.getvalue()
+
+
 class Login(View):
     def get(self, request):
         # If user is already logged in, redirect to accounts
