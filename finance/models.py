@@ -209,7 +209,14 @@ class Invoice(models.Model):
     supplier_vat = models.CharField(max_length=50, blank=True, verbose_name="Supplier VAT")
     
     # Customer Information
-    customer_name = models.CharField(max_length=200, verbose_name="Customer Name")
+    customer = models.ForeignKey(
+        'Customer',
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name='invoices',
+        verbose_name="Customer",
+    )
     customer_vat = models.CharField(max_length=50, blank=True, verbose_name="Customer VAT")
     
     # Financial Information
@@ -269,6 +276,12 @@ class Invoice(models.Model):
             gst = getattr(self.supplier, 'gstin_uin', None)
             if gst:
                 self.supplier_vat = gst
+
+        # If customer_vat blank and customer has gstin_uin, copy it
+        if self.customer and not self.customer_vat:
+            gst = getattr(self.customer, 'gstin_uin', None)
+            if gst:
+                self.customer_vat = gst
 
         # Auto-calculate total_amount if not provided
         if not self.total_amount:
@@ -399,6 +412,67 @@ class Supplier(models.Model):
     class Meta:
         verbose_name = "Supplier"
         verbose_name_plural = "Suppliers"
+        ordering = ['-created_at']
+        unique_together = [('company', 'name')]
+
+    def __str__(self):
+        return self.name
+    
+
+class Customer(models.Model):
+    CUSTOMER_TYPE_CHOICES = [
+        ('company', 'Company'),
+        ('individual', 'Individual'),
+        ('partnership', 'Partnership'),
+    ]
+
+    GST_CATEGORY_CHOICES = [
+        ('registered', 'Registered Regular'),
+        ('registered_composition', 'Registered Composition'),
+        ('unregistered', 'Unregistered'),
+        ('sez', 'SEZ'),
+        ('overseas', 'Overseas'),
+        ('deemed_export', 'Deemed Export'),
+        ('uin', 'UIN Holders'),
+        ('tax_deductor', 'Tax Deductor'),
+        ('tax_collector', 'Tax Collector'),
+        ('input_service_distributor', 'Input Service Distributor'),
+        
+    ]
+
+    # Basic
+    gstin_uin = models.CharField(max_length=30, blank=True, verbose_name="GSTIN / UIN", help_text="Optional GSTIN for autofill")
+    name = models.CharField(max_length=200, verbose_name="Customer Name")
+    customer_type = models.CharField(max_length=20, choices=CUSTOMER_TYPE_CHOICES, default='company', verbose_name="Customer Type")
+    gst_category = models.CharField(max_length=40, choices=GST_CATEGORY_CHOICES, default='unregistered', verbose_name="GST Category")
+
+    # Primary contact details
+    contact_first_name = models.CharField(max_length=100, blank=True, verbose_name="First Name")
+    contact_last_name = models.CharField(max_length=100, blank=True, verbose_name="Last Name")
+    contact_email = models.EmailField(max_length=254, blank=True, verbose_name="Email ID")
+    contact_mobile = models.CharField(max_length=30, blank=True, verbose_name="Mobile Number")
+
+    # Address
+    preferred_billing = models.BooleanField(default=False, verbose_name="Preferred Billing Address")
+    preferred_shipping = models.BooleanField(default=False, verbose_name="Preferred Shipping Address")
+    postal_code = models.CharField(max_length=20, blank=True, verbose_name="Postal Code")
+    city = models.CharField(max_length=120, blank=True, verbose_name="City/Town")
+    address_line1 = models.CharField(max_length=255, blank=True, verbose_name="Address Line 1")
+    address_line2 = models.CharField(max_length=255, blank=True, verbose_name="Address Line 2")
+    state = models.CharField(max_length=100, blank=True, verbose_name="State/Province")
+    country = models.CharField(max_length=100, blank=True, default='Pakistan', verbose_name="Country")
+
+    # Relationship to Company (optional)
+    company = models.ForeignKey('Company', on_delete=models.SET_NULL, null=True, blank=True, related_name='customers')
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Customer"
+        verbose_name_plural = "Customers"
         ordering = ['-created_at']
         unique_together = [('company', 'name')]
 

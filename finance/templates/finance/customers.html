@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Suppliers - Finance</title>
+    <title>Customers - Finance</title>
     <style>
         /* Re-using the look & feel from your accounts list template */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -70,17 +70,17 @@
 
         <div class="page-header">
             <div class="page-title-section">
-                <h1>Suppliers</h1>
-                <p class="page-subtitle">Manage suppliers and vendor contacts</p>
+                <h1>Customers</h1>
+                <p class="page-subtitle">Manage customers and client contacts</p>
             </div>
             <div class="header-actions">
-                <a href="{% url 'finance-supplier-create' %}" class="btn btn-primary">Add Supplier</a>
+                <a href="{% url 'finance-customer-create' %}" class="btn btn-primary">Add Customer</a>
             </div>
         </div>
 
         <div class="search-section">
-            <form method="get" action="{% url 'finance-suppliers' %}">
-                <input type="text" name="search" class="search-bar" placeholder="Search suppliers by name, GSTIN, email or mobile..." value="{{ search_query }}">
+            <form method="get" action="{% url 'finance-customers' %}">
+                <input type="text" name="search" class="search-bar" placeholder="Search customers by name, GSTIN, email or mobile..." value="{{ search_query }}">
                 <div class="filters">
                     <select name="company" class="filter-select">
                         <option value="">All Companies</option>
@@ -88,15 +88,15 @@
                         <option value="{{ company.id }}" {% if request.GET.company == company.id|stringformat:"s" %}selected{% endif %}>{{ company.name }}</option>
                         {% endfor %}
                     </select>
-                    <select name="supplier_type" class="filter-select">
-                        <option value="">Supplier Type</option>
+                    <select name="customer_type" class="filter-select">
+                        <option value="">Customer Type</option>
                         <option value="company" {% if type_filter == "company" %}selected{% endif %}>Company</option>
                         <option value="individual" {% if type_filter == "individual" %}selected{% endif %}>Individual</option>
                         <option value="partnership" {% if type_filter == "partnership" %}selected{% endif %}>Partnership</option>
                     </select>
                     <button type="submit" class="btn-search">Search</button>
                     {% if search_query %}
-                    <a href="{% url 'finance-suppliers' %}" class="btn">Clear</a>
+                    <a href="{% url 'finance-customers' %}" class="btn">Clear</a>
                     {% endif %}
                 </div>
             </form>
@@ -116,7 +116,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for s in suppliers %}
+                    {% for s in customers %}
                     <tr>
                         <td style="font-weight:700;">{{ s.name }}</td>
                         <td>{{ s.gstin_uin|default:"-" }}</td>
@@ -127,14 +127,14 @@
                             {{ s.contact_email|default:"" }}{% if s.contact_mobile %}<br/>{{ s.contact_mobile }}{% endif %}
                         </td>
                         <td>{{ s.city|default:"-" }}</td>
-                        <td>{{ s.get_supplier_type_display }}</td>
+                        <td>{{ s.get_customer_type_display }}</td>
                         <td class="time-badge">{{ s.created_at|date:"Y-m-d" }}</td>
                         <td>
                             <div class="action-icons">
-                                <a href="{% url 'finance-supplier-edit' s.pk %}" class="icon-btn">✏️ Edit</a>
-                                <form method="post" action="{% url 'finance-supplier-delete' s.pk %}" style="display:inline;">
+                                <a href="{% url 'finance-customer-edit' s.pk %}" class="icon-btn">✏️ Edit</a>
+                                <form method="post" action="{% url 'finance-customer-delete' s.pk %}" style="display:inline;">
                                     {% csrf_token %}
-                                    <button type="submit" class="icon-btn" onclick="return confirm('Delete supplier {{ s.name }}?')">🗑️ Delete</button>
+                                    <button type="submit" class="icon-btn" onclick="return confirm('Delete customer {{ s.name }}?')">🗑️ Delete</button>
                                 </form>
                             </div>
                         </td>
@@ -143,8 +143,8 @@
                     <tr>
                         <td colspan="7">
                             <div class="empty-state">
-                                <h3>No Suppliers</h3>
-                                <p>Get started by adding your first supplier using the "Add Supplier" button.</p>
+                                <h3>No Customers</h3>
+                                <p>Get started by adding your first customer using the "Add Customer" button.</p>
                             </div>
                         </td>
                     </tr>
@@ -154,7 +154,7 @@
         </div>
     </div>
 
-    <a href="{% url 'finance-supplier-create' %}" class="fab" title="Add Supplier">＋</a>
+    <a href="{% url 'finance-customer-create' %}" class="fab" title="Add Customer">＋</a>
 
     <script>
         // Auto-hide messages after 5s

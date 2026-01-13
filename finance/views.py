@@ -4,9 +4,9 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from .forms import LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm
+from .forms import LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm
 from django.db import models
-from .models import Company, Account, Invoice, JournalEntry, Supplier
+from .models import Company, Account, Customer, Invoice, JournalEntry, Supplier
 from django.contrib.messages import get_messages
 from django.db.models import Sum, Q
 from datetime import datetime, timedelta
@@ -706,21 +706,21 @@ class Payables(View):
         from django.db.models import Sum, Count, Avg, Q, F, ExpressionWrapper, fields
         from datetime import datetime, timedelta
         from decimal import Decimal
-        
-        # Get all invoices
-        all_invoices = Invoice.objects.select_related('company').all()
-        
-        # Calculate Total Payables (unpaid invoices:  draft + sent)
+
+        # Eager-load supplier and company to avoid N+1 queries
+        all_invoices = Invoice.objects.select_related('company', 'supplier').all()
+
+        # Calculate Total Payables (unpaid invoices: draft + sent)
         unpaid_invoices = all_invoices.filter(Q(status='draft') | Q(status='sent'))
         total_payables = unpaid_invoices.aggregate(
             total=Sum('total_amount')
         )['total'] or Decimal('0.00')
-        
+
         # Calculate Paid Invoices total
         paid_invoices_total = all_invoices.filter(status='paid').aggregate(
             total=Sum('total_amount')
         )['total'] or Decimal('0.00')
-        
+
         # Calculate Overdue Invoices (assuming 30 days payment term)
         today = datetime.now().date()
         overdue_date = today - timedelta(days=30)
@@ -728,35 +728,33 @@ class Payables(View):
         overdue_total = overdue_invoices.aggregate(
             total=Sum('total_amount')
         )['total'] or Decimal('0.00')
-        
-        # Calculate Average Payment Period
-        # For paid invoices, calculate days between invoice date and when it was marked paid
-        # This is a simplified calculation - you might want to add a payment_date field
-        avg_payment_period = 45  # Default value, you can calculate this if you add payment_date field
-        
+
+        # Calculate Average Payment Period (placeholder)
+        avg_payment_period = 45  # Default value; calculate if you add payment_date
+
         # Count invoices by status
         paid_count = all_invoices.filter(status='paid').count()
         pending_count = all_invoices.filter(Q(status='draft') | Q(status='sent')).count()
         overdue_count = overdue_invoices.count()
-        
+
         # Filter by status from dropdown
         status_filter = request.GET.get('status', 'All Invoices')
-        
+
         if status_filter == 'Paid':
             filtered_invoices = all_invoices.filter(status='paid')
         elif status_filter == 'Pending':
             filtered_invoices = unpaid_invoices.filter(date__gte=overdue_date)
         elif status_filter == 'Overdue':
             filtered_invoices = overdue_invoices
-        else: 
+        else:
             filtered_invoices = all_invoices
-        
+
         # Prepare invoice list with due dates
         invoice_list = []
         for invoice in filtered_invoices.order_by('-date'):
             # Calculate due date (30 days from invoice date)
             due_date = invoice.date + timedelta(days=30)
-            
+
             # Determine status for display
             if invoice.status == 'paid':
                 display_status = 'Paid'
@@ -764,26 +762,29 @@ class Payables(View):
                 display_status = 'Overdue'
             else:
                 display_status = 'Pending'
-            
+
+            # Use supplier FK (guard for None)
+            vendor_name = invoice.supplier.name if invoice.supplier else 'Unknown Supplier'
+
             invoice_list.append({
                 'invoice_number': invoice.invoice_number,
-                'vendor': invoice.supplier_name,
-                'date':  invoice.date,
+                'vendor': vendor_name,
+                'date': invoice.date,
                 'due_date': due_date,
-                'amount':  invoice.total_amount,
+                'amount': invoice.total_amount,
                 'status': display_status,
-                'payment_method': 'Bank Transfer',  # You can add this field to your model
+                'payment_method': 'Bank Transfer',  # Optional field
             })
-        
+
         # Get vendor breakdown for chart (top 6 vendors by payables)
-        vendor_breakdown = unpaid_invoices.values('supplier_name').annotate(
+        vendor_breakdown = unpaid_invoices.values('supplier__name').annotate(
             total=Sum('total_amount'),
             count=Count('id')
         ).order_by('-total')[:6]
-        
+
         # Calculate max value for chart scaling
         max_vendor_amount = vendor_breakdown[0]['total'] if vendor_breakdown else 0
-        
+
         # Prepare vendor chart data with percentages
         vendor_chart_data = []
         for vendor in vendor_breakdown:
@@ -791,13 +792,13 @@ class Payables(View):
                 percentage = (float(vendor['total']) / float(max_vendor_amount)) * 100
             else:
                 percentage = 0
-            
+
             vendor_chart_data.append({
-                'name': vendor['supplier_name'],
+                'name': vendor.get('supplier__name') or 'Unknown Supplier',
                 'total': vendor['total'],
                 'percentage': percentage,
             })
-        
+
         # Pad with empty vendors if less than 6
         while len(vendor_chart_data) < 6:
             vendor_chart_data.append({
@@ -805,7 +806,7 @@ class Payables(View):
                 'total': 0,
                 'percentage': 0,
             })
-        
+
         context = {
             'total_payables': total_payables,
             'paid_invoices_total': paid_invoices_total,
@@ -818,21 +819,21 @@ class Payables(View):
             'vendor_chart_data': vendor_chart_data,
             'status_filter': status_filter,
         }
-        
+
         return render(request, 'finance/payables.html', context)
 class Invoices(View):
     """List all invoices"""
     @method_decorator(login_required)
     def get(self, request):
         # Eager-load supplier and company to avoid N+1 queries
-        invoices = Invoice.objects.select_related('company', 'supplier').all()
+        invoices = Invoice.objects.select_related('company', 'supplier', 'customer').all()
 
         # Search functionality
         search_query = request.GET.get('search', '')
         if search_query:
             invoices = invoices.filter(
                 models.Q(invoice_number__icontains=search_query) |
-                models.Q(customer_name__icontains=search_query) |
+                models.Q(customer__name__icontains=search_query) |
                 models.Q(supplier__name__icontains=search_query)  # search supplier name via FK
             )
 
@@ -919,23 +920,46 @@ class Suppliers(View):
     """List all suppliers"""
     @method_decorator(login_required)
     def get(self, request):
+        from django.db.models import Q
+        from django.db.models import Count
+        from decimal import Decimal
+
+        # Base queryset (eager-load to avoid N+1)
         suppliers = Supplier.objects.select_related('company', 'created_by').all().order_by('-created_at')
 
-        search_query = request.GET.get('search', '')
+        # Search functionality (include gstin)
+        search_query = request.GET.get('search', '').strip()
         if search_query:
             suppliers = suppliers.filter(
-                models.Q(name__icontains=search_query) |
-                models.Q(contact_email__icontains=search_query) |
-                models.Q(contact_mobile__icontains=search_query)
+                Q(name__icontains=search_query) |
+                Q(gstin_uin__icontains=search_query) |
+                Q(contact_email__icontains=search_query) |
+                Q(contact_mobile__icontains=search_query)
             )
+
+        # Company filter (expects company id)
+        company_filter = request.GET.get('company', '').strip()
+        if company_filter:
+            # filter by company_id (works with string id from GET)
+            suppliers = suppliers.filter(company_id=company_filter)
+
+        # Supplier type filter — support both `supplier_type` and legacy `type` from the template
+        type_filter = request.GET.get('supplier_type') or request.GET.get('type', '')
+        if type_filter:
+            suppliers = suppliers.filter(supplier_type=type_filter)
+
+        # Pass companies for the dropdown
+        companies = Company.objects.all()
 
         context = {
             'suppliers': suppliers,
             'search_query': search_query,
             'total_count': Supplier.objects.count(),
+            'companies': companies,
+            'company_filter': company_filter,
+            'type_filter': type_filter,
         }
         return render(request, 'finance/suppliers.html', context)
-
 
 class SupplierCreate(View):
     """Create new supplier"""
@@ -1006,6 +1030,122 @@ class SupplierDelete(View):
         messages.success(request, f'Supplier "{name}" deleted successfully!')
         return redirect('finance-suppliers')
 
+
+class Customers(View):
+    """List all customers"""
+    @method_decorator(login_required)
+    def get(self, request):
+        from django.db.models import Q
+        from django.db.models import Count
+        from decimal import Decimal
+
+        # Base queryset (eager-load to avoid N+1)
+        customers = Customer.objects.select_related('company', 'created_by').all().order_by('-created_at')
+
+        # Search functionality (include gstin)
+        search_query = request.GET.get('search', '').strip()
+        if search_query:
+            customers = customers.filter(
+                Q(name__icontains=search_query) |
+                Q(gstin_uin__icontains=search_query) |
+                Q(contact_email__icontains=search_query) |
+                Q(contact_mobile__icontains=search_query)
+            )
+
+        # Company filter (expects company id)
+        company_filter = request.GET.get('company', '').strip()
+        if company_filter:
+            # filter by company_id (works with string id from GET)
+            customers = customers.filter(company_id=company_filter)
+
+        # Customer type filter — support both `customer_type` and legacy `type` from the template
+        type_filter = request.GET.get('customer_type') or request.GET.get('type', '')
+        if type_filter:
+            customers = customers.filter(customer_type=type_filter)
+
+        # Pass companies for the dropdown
+        companies = Company.objects.all()
+
+        context = {
+            'customers': customers,
+            'search_query': search_query,
+            'total_count': Customer.objects.count(),
+            'companies': companies,
+            'company_filter': company_filter,
+            'type_filter': type_filter,
+        }
+        return render(request, 'finance/customers.html', context)
+
+class CustomerCreate(View):
+    """Create new customer"""
+    @method_decorator(login_required)
+    def get(self, request):
+        form = CustomerForm()
+        return render(request, 'finance/customer_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_modal': True,  # template can render as modal if desired
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = CustomerForm(request.POST)
+        if form.is_valid():
+            customer = form.save(commit=False)
+            customer.created_by = request.user
+            customer.save()
+            messages.success(request, f'Customer "{customer.name}" created successfully!')
+            return redirect('finance-customers')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/customer_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_modal': True,
+        })
+
+
+class CustomerEdit(View):
+    """Edit customer"""
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        customer = get_object_or_404(Customer, pk=pk)
+        form = CustomerForm(instance=customer)
+        return render(request, 'finance/customer_form.html', {
+            'form': form,
+            'customer': customer,
+            'action': 'Edit',
+            'is_modal': False,
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        customer = get_object_or_404(Customer, pk=pk)
+        form = CustomerForm(request.POST, instance=customer)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Customer "{customer.name}" updated successfully!')
+            return redirect('finance-customers')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/customer_form.html', {
+            'form': form,
+            'customer': customer,
+            'action': 'Edit',
+            'is_modal': False,
+        })
+
+
+class CustomerDelete(View):
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        customer = get_object_or_404(Customer, pk=pk)
+        name = customer.name
+        customer.delete()
+        messages.success(request, f'Customer "{name}" deleted successfully!')
+        return redirect('finance-customers')
+    
+
 class Receivables(View):
     @method_decorator(login_required)
     def get(self, request):
@@ -1014,9 +1154,7 @@ class Receivables(View):
         from decimal import Decimal
         
         # Get all customer invoices (receivables are invoices FROM customers)
-        all_invoices = Invoice.objects.select_related('company').filter(
-            customer_name__isnull=False
-        ).exclude(customer_name='')
+        all_invoices = Invoice.objects.select_related('company','customer')
         
         # If you don't have a field to distinguish, just use all invoices
         # all_invoices = Invoice.objects. select_related('company').all()
@@ -1074,9 +1212,10 @@ class Receivables(View):
             else:
                 display_status = 'Pending'
             
+            customer_name = invoice.customer.name if invoice.customer else 'Unknown Customer'
             invoice_list.append({
                 'invoice_number': invoice.invoice_number,
-                'vendor':  invoice.customer_name or 'N/A',  # Customer name for receivables
+                'customer':  customer_name,
                 'date': invoice.date,
                 'due_date': due_date,
                 'amount': invoice.total_amount,

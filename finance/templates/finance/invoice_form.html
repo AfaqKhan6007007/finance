@@ -344,14 +344,19 @@
                             {% endif %}
                         </div>
                         
-                        <!-- Customer Name -->
+                        <!-- Customer -->
                         <div class="form-group">
-                            <label for="id_customer_name" class="form-label required">Customer Name</label>
-                            <input type="text" name="customer_name" id="id_customer_name" class="form-control" 
-                                   placeholder="Enter customer name"
-                                   value="{{ form.customer_name.value|default:'' }}" required>
-                            {% if form.customer_name.errors %}
-                                <div class="error-message">{{ form.customer_name.errors.0 }}</div>
+                            <label for="id_customer" class="form-label required">Customer</label>
+                            <select id="id_customer" name="customer" class="form-control" required>
+                                <option value="">-- select customer --</option>
+                                {% for c in form.fields.customer.queryset %}
+                                    <option value="{{ c.pk }}" {% if form.customer.value == c.pk|stringformat:"s" %}selected{% endif %}>
+                                        {{ c.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.customer.errors %}
+                                <div class="error-message">{{ form.customer.errors.0 }}</div>
                             {% endif %}
                         </div>
                         

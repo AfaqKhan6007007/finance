@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
-from .models import Company, Account, Invoice, JournalEntry, Supplier
+from .models import Company, Account, Customer, Invoice, JournalEntry, Supplier
 from django.core.exceptions import ValidationError
 
 class SignupForm(UserCreationForm):
@@ -120,7 +120,7 @@ class InvoiceForm(forms.ModelForm):
         model = Invoice
         fields = [
             'invoice_id', 'invoice_number', 'date', 'supplier', 'supplier_vat',
-            'customer_name', 'customer_vat', 'amount_before_vat', 'total_vat',
+            'customer', 'customer_vat', 'amount_before_vat', 'total_vat',
             'total_amount', 'qr_code_present', 'company', 'status'
         ]
 
@@ -132,11 +132,17 @@ class InvoiceForm(forms.ModelForm):
         self.fields['supplier'].widget.attrs.update({'class': 'form-control'})
         self.fields['supplier'].required = True
 
+        # Customer: choose from existing customers
+        self.fields['customer'].queryset = Customer.objects.all().order_by('name')
+        self.fields['customer'].widget.attrs.update({'class': 'form-control'})
+        self.fields['customer'].required = True
+
         # Widgets and placeholders
         self.fields['invoice_id'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Enter invoice ID'})
         self.fields['invoice_number'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Enter invoice number'})
         self.fields['date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['supplier_vat'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Supplier VAT (autofilled)'})
+        self.fields['customer_vat'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Customer VAT (autofilled)'})
         self.fields['amount_before_vat'].widget.attrs.update({'class': 'form-control', 'placeholder': '0.00', 'step': '0.01'})
         self.fields['total_vat'].widget.attrs.update({'class': 'form-control', 'placeholder': '0.00', 'step': '0.01'})
         self.fields['total_amount'].widget.attrs.update({'class': 'form-control', 'placeholder': '0.00', 'readonly': 'readonly'})
@@ -255,6 +261,73 @@ class SupplierForm(forms.ModelForm):
             errors['name'] = ValidationError('Supplier name is required.')
         if not supplier_type:
             errors['supplier_type'] = ValidationError('Supplier type is required.')
+        if not gst_category:
+            errors['gst_category'] = ValidationError('GST category is required.')
+
+        if errors:
+            raise ValidationError(errors)
+
+        return cleaned
+    
+class CustomerForm(forms.ModelForm):
+    class Meta:
+        model = Customer
+        fields = [
+            'gstin_uin', 'name', 'customer_type', 'gst_category',
+            'contact_first_name', 'contact_last_name', 'contact_email', 'contact_mobile',
+            'preferred_billing', 'preferred_shipping',
+            'postal_code', 'city', 'address_line1', 'address_line2', 'state', 'country',
+            'company',
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # enforce required fields server-side
+        self.fields['name'].required = True
+        self.fields['customer_type'].required = True
+        self.fields['gst_category'].required = True
+
+        # keep other fields optional
+        self.fields['gstin_uin'].required = False
+        self.fields['contact_first_name'].required = False
+        self.fields['contact_last_name'].required = False
+        self.fields['contact_email'].required = False
+        self.fields['contact_mobile'].required = False
+        self.fields['company'].required = False
+
+        # widgets / placeholders
+        self.fields['gstin_uin'].widget = forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter GSTIN / UIN for autofill'})
+        self.fields['name'].widget = forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Customer name', 'required': 'required', 'aria-required': 'true'})
+        self.fields['contact_first_name'].widget = forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'})
+        self.fields['contact_last_name'].widget = forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'})
+        self.fields['contact_email'].widget = forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email ID'})
+        self.fields['contact_mobile'].widget = forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Mobile Number'})
+        self.fields['postal_code'].widget = forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Postal Code'})
+        self.fields['address_line1'].widget = forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Address Line 1'})
+        self.fields['address_line2'].widget = forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Address Line 2'})
+        self.fields['city'].widget = forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'City/Town'})
+        self.fields['state'].widget = forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'State/Province'})
+        self.fields['country'].widget = forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Country'})
+
+        # add required attrs for selects too
+        self.fields['customer_type'].widget = forms.Select(attrs={'class': 'form-control', 'required': 'required', 'aria-required': 'true'})
+        self.fields['gst_category'].widget = forms.Select(attrs={'class': 'form-control', 'required': 'required', 'aria-required': 'true'})
+        self.fields['company'].widget = forms.Select(attrs={'class': 'form-control'})
+
+    def clean(self):
+        cleaned = super().clean()
+
+        # server-side enforcement (extra safety)
+        name = cleaned.get('name')
+        customer_type = cleaned.get('customer_type')
+        gst_category = cleaned.get('gst_category')
+
+        errors = {}
+        if not name:
+            errors['name'] = ValidationError('Customer name is required.')
+        if not customer_type:
+            errors['customer_type'] = ValidationError('Customer type is required.')
         if not gst_category:
             errors['gst_category'] = ValidationError('GST category is required.')
 

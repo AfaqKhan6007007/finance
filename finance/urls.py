@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import Login, Signup, Logout, Dashboard, Journal, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete
+from .views import CustomerCreate, CustomerDelete, CustomerEdit, Customers, Login, Signup, Logout, Dashboard, Journal, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete
 
 urlpatterns = [
      # ============ Authentication ============
@@ -21,6 +21,13 @@ urlpatterns = [
     path('suppliers/<int:pk>/delete/', SupplierDelete.as_view(), name='finance-supplier-delete'),
      
      
+    # ============ Customer Management ============
+    path('customers/', Customers.as_view(), name='finance-customers'),
+    path('customers/new/', CustomerCreate.as_view(), name='finance-customer-create'),
+    path('customers/<int:pk>/edit/', CustomerEdit.as_view(), name='finance-customer-edit'),
+    path('customers/<int:pk>/delete/', CustomerDelete.as_view(), name='finance-customer-delete'),
+     
+
      # ============ Journal Entry Management ============
     path('journal/', Journal.as_view(), name='finance-journal'),
     path('journal/add/', JournalCreate.as_view(), name='finance-journal-create'),

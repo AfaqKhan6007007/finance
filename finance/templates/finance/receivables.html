@@ -611,7 +611,7 @@
                         {% for inv in invoice_list %}
                             <tr>
                                 <td style="font-weight: bold;">{{ inv.invoice_number }}</td>
-                                <td>{{ inv.vendor }}</td>
+                                <td>{{ inv.customer }}</td>
                                 <td>{{ inv.date|date:"Y-m-d" }}</td>
                                 <td>{{ inv.due_date|date:"Y-m-d" }}</td>
                                 <td>${{ inv.amount|floatformat:0 }}</td>

@@ -419,7 +419,13 @@
                             -
                         {% endif %}
                         </td>
-                        <td class="customer-name">{{ invoice.customer_name }}</td>
+                            <td class="customer-name">
+                            {% if invoice.customer %}
+                                {{ invoice.customer.name }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
                         <td>SAR {{ invoice.amount_before_vat|floatformat:2 }}</td>
                         <td>SAR {{ invoice.total_vat|floatformat:2 }}</td>
                         <td>SAR {{ invoice.total_amount|floatformat:2 }}</td>
