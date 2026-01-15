@@ -183,6 +183,60 @@ class Account(models.Model):
             return f"{self.account_number} - {self.name}"
         return self.name
     
+class CostCenter(models.Model):
+    name = models.CharField(
+        max_length=150,
+        verbose_name="Cost Center Name"
+    )
+
+    cost_center_number = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name="Cost Center Number",
+        help_text="Will be used as prefix in Cost Center name"
+    )
+
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="cost_centers",
+        verbose_name="Company"
+    )
+
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="children",
+        verbose_name="Parent Cost Center"
+    )
+
+    is_group = models.BooleanField(
+        default=False,
+        verbose_name="Is Group",
+        help_text="Entries can only be made against non-group cost centers"
+    )
+
+    is_disabled = models.BooleanField(
+        default=False,
+        verbose_name="Disabled"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        unique_together = ("company", "name")
+
+    def __str__(self):
+        if self.cost_center_number:
+            return f"{self.cost_center_number} - {self.name}"
+        return self.name
+
+
 class Budget(models.Model):
     # Basic Information
     series = models.CharField(max_length=200, verbose_name="Budget Series")
@@ -197,7 +251,11 @@ class Budget(models.Model):
         verbose_name="Company"
     )
     distribution = models.CharField(max_length=200,choices=[('monthly', 'Monthly'), ('quarterly', 'Quarterly'), ('half-yearly', 'Half-Yearly'), ('yearly', 'Yearly')], verbose_name="Distribution")
-    cost_center = models.CharField(max_length=200, verbose_name="Cost Center")
+    cost_center = models.ForeignKey(
+        CostCenter,
+        on_delete=models.PROTECT,
+        limit_choices_to={"is_group": False, "is_disabled": False}
+    )
     account = models.ForeignKey(
         Account,
         on_delete=models.CASCADE,
@@ -514,3 +572,4 @@ class Customer(models.Model):
 
     def __str__(self):
         return self.name
+    

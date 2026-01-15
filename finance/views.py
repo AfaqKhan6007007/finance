@@ -10,7 +10,7 @@ from django.utils.decorators import method_decorator
 from django.contrib import messages
 from .forms import BudgetForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm
 from django.db import models
-from .models import Budget, Company, Account, Customer, Invoice, JournalEntry, Supplier
+from .models import Budget, Company, Account, CostCenter, Customer, Invoice, JournalEntry, Supplier
 from django.contrib.messages import get_messages
 from django.db.models import Sum, Q
 from datetime import datetime, timedelta
@@ -174,7 +174,8 @@ class Budgets(View):
     def get(self, request):
         budgets = Budget.objects.select_related(
             'company',
-            'account'
+            'account',
+            'cost_center'
         ).all()
 
         # Search by series
@@ -186,6 +187,11 @@ class Budgets(View):
         id_filter = request.GET.get('id', '')
         if id_filter:
             budgets = budgets.filter(id=id_filter)
+
+        # Filter by Cost Center
+        cost_center_filter = request.GET.get('cost_center', '')
+        if cost_center_filter:
+            budgets = budgets.filter(cost_center_id=cost_center_filter)
 
         # Filter by Company
         company_filter = request.GET.get('company', '')
@@ -218,6 +224,8 @@ class Budgets(View):
             'total_count': Budget.objects.count(),
             'companies': Company.objects.all(),
             'accounts': Account.objects.all(),
+            'cost_centers': CostCenter.objects.filter(is_group=False, is_disabled=False),
+            'cost_center_filter': cost_center_filter,
         }
 
         return render(request, 'finance/budgets.html', context)

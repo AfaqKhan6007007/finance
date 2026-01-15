@@ -342,11 +342,21 @@
                     </select>
                 </div>
 
-                <!-- Cost Center -->
                 <div class="form-group">
                     <label class="required">Cost Center</label>
-                    <input type="text" name="cost_center" class="form-control"
-                           value="{{ form.cost_center.value|default:'' }}" required>
+                    <select name="cost_center" class="form-control" required>
+                        <option value="">Select Cost Center</option>
+                        {% for cc in form.fields.cost_center.queryset %}
+                        <option value="{{ cc.pk }}"
+                            {% if form.cost_center.value == cc.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ cc }}
+                        </option>
+                        {% endfor %}
+                    </select>
+
+                    {% if form.cost_center.errors %}
+                        <div class="error-message">{{ form.cost_center.errors.0 }}</div>
+                    {% endif %}
                 </div>
 
                 <!-- Budget Amount -->
