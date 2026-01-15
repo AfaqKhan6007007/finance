@@ -8,9 +8,9 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from .forms import LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm
+from .forms import BudgetForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm
 from django.db import models
-from .models import Company, Account, Customer, Invoice, JournalEntry, Supplier
+from .models import Budget, Company, Account, Customer, Invoice, JournalEntry, Supplier
 from django.contrib.messages import get_messages
 from django.db.models import Sum, Q
 from datetime import datetime, timedelta
@@ -167,6 +167,151 @@ class AccountDelete(View):
         messages.success(request, f'Account "{account_name}" deleted successfully!')
         return redirect('finance-accounts')
 
+class Budgets(View):
+    """List all budgets"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        budgets = Budget.objects.select_related(
+            'company',
+            'account'
+        ).all()
+
+        # Search by series
+        search_query = request.GET.get('search', '')
+        if search_query:
+            budgets = budgets.filter(series__icontains=search_query)
+
+        # Filter by ID
+        id_filter = request.GET.get('id', '')
+        if id_filter:
+            budgets = budgets.filter(id=id_filter)
+
+        # Filter by Company
+        company_filter = request.GET.get('company', '')
+        if company_filter:
+            budgets = budgets.filter(company_id=company_filter)
+
+        # Filter by Account
+        account_filter = request.GET.get('account', '')
+        if account_filter:
+            budgets = budgets.filter(account_id=account_filter)
+
+        # Filter by Budget Against
+        budget_against_filter = request.GET.get('budget_against', '')
+        if budget_against_filter:
+            budgets = budgets.filter(budget_against=budget_against_filter)
+
+        # Filter by Distribution
+        distribution_filter = request.GET.get('distribution', '')
+        if distribution_filter:
+            budgets = budgets.filter(distribution=distribution_filter)
+
+        context = {
+            'budgets': budgets,
+            'search_query': search_query,
+            'id_filter': id_filter,
+            'company_filter': company_filter,
+            'account_filter': account_filter,
+            'budget_against_filter': budget_against_filter,
+            'distribution_filter': distribution_filter,
+            'total_count': Budget.objects.count(),
+            'companies': Company.objects.all(),
+            'accounts': Account.objects.all(),
+        }
+
+        return render(request, 'finance/budgets.html', context)
+    
+class BudgetCreate(View):
+    """Create new budget"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        form = BudgetForm()
+        return render(request, 'finance/budget_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = BudgetForm(request.POST)
+
+        # Debug
+        print("POST data:", request.POST)
+
+        if form.is_valid():
+            budget = form.save()
+            messages.success(
+                request,
+                f'Budget "{budget.series}" created successfully!'
+            )
+            return redirect('finance-budgets')
+        else:
+            print("Form errors:", form.errors)
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/budget_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+    
+class BudgetEdit(View):
+    """Edit existing budget"""
+
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        budget = get_object_or_404(Budget, pk=pk)
+        form = BudgetForm(instance=budget)
+        return render(request, 'finance/budget_form.html', {
+            'form': form,
+            'budget': budget,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        budget = get_object_or_404(Budget, pk=pk)
+        form = BudgetForm(request.POST, instance=budget)
+
+        # Debug
+        print("POST data:", request.POST)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                f'Budget "{budget.series}" updated successfully!'
+            )
+            return redirect('finance-budgets')
+        else:
+            print("Form errors:", form.errors)
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/budget_form.html', {
+            'form': form,
+            'budget': budget,
+            'action': 'Edit',
+            'is_edit': True
+        })
+    
+class BudgetDelete(View):
+    """Delete budget"""
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        budget = get_object_or_404(Budget, pk=pk)
+        series = budget.series
+        budget.delete()
+        messages.success(
+            request,
+            f'Budget "{series}" deleted successfully!'
+        )
+        return redirect('finance-budgets')
+    
 class Dashboard(View):
     @method_decorator(login_required)
     def get(self, request):

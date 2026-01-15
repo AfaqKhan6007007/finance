@@ -183,6 +183,42 @@ class Account(models.Model):
             return f"{self.account_number} - {self.name}"
         return self.name
     
+class Budget(models.Model):
+    # Basic Information
+    series = models.CharField(max_length=200, verbose_name="Budget Series")
+    budget_against = models.CharField(max_length=200,choices=[('cost_center', 'Cost Center'), ('project', 'Project')], verbose_name="Budget Against")
+    fiscal_year_from = models.CharField(max_length=20, choices=[('2025-2026', '2025-2026')], verbose_name="Fiscal Year From")
+    fiscal_year_to = models.CharField(max_length=20, choices=[('2025-2026', '2025-2026')], verbose_name="Fiscal Year To")
+    # Company Relationship
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='budgets',
+        verbose_name="Company"
+    )
+    distribution = models.CharField(max_length=200,choices=[('monthly', 'Monthly'), ('quarterly', 'Quarterly'), ('half-yearly', 'Half-Yearly'), ('yearly', 'Yearly')], verbose_name="Distribution")
+    cost_center = models.CharField(max_length=200, verbose_name="Cost Center")
+    account = models.ForeignKey(
+        Account,
+        on_delete=models.CASCADE,
+        related_name='budgets',
+        verbose_name="Account"
+    )
+    # Amount
+    budget_amount = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        verbose_name="Total Budget Amount"
+    )
+    
+    class Meta:
+        verbose_name_plural = "Budgets"
+        ordering = ['-fiscal_year_from', 'series']
+    
+    def __str__(self):
+        return f"{self.series} ({self.fiscal_year_from} - {self.fiscal_year_to})"
+    
+
 class Invoice(models.Model):
     STATUS_CHOICES = [
         ('draft', 'Draft'),

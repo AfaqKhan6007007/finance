@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CustomerCreate, CustomerDelete, CustomerEdit, Customers, Login, Signup, Logout, Dashboard, Journal, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
+from .views import Budgets,BudgetCreate,BudgetEdit, BudgetDelete, CustomerCreate, CustomerDelete, CustomerEdit, Customers, Login, Signup, Logout, Dashboard, Journal, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
 
 urlpatterns = [
      # ============ Authentication ============
@@ -57,4 +57,9 @@ urlpatterns = [
     # ============ Accounting Modules ============
     path('payables/', Payables.as_view(), name='finance-payables'),
     path('receivables/', Receivables.as_view(), name='finance-receivables'),
+
+    path('budgets/', Budgets.as_view(), name='finance-budgets'),
+    path('budgets/new/', BudgetCreate.as_view(), name='finance-budget-create'),
+    path('budgets/<int:pk>/edit/', BudgetEdit.as_view(), name='finance-budget-edit'),
+    path('budgets/<int:pk>/delete/', BudgetDelete.as_view(), name='finance-budget-delete'),
 ]

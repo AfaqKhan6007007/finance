@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
-from .models import Company, Account, Customer, Invoice, JournalEntry, Supplier
+from .models import Company, Account, Customer, Invoice, JournalEntry, Supplier, Budget
 from django.core.exceptions import ValidationError
 
 class SignupForm(UserCreationForm):
@@ -335,3 +335,64 @@ class CustomerForm(forms.ModelForm):
             raise ValidationError(errors)
 
         return cleaned
+    
+class BudgetForm(forms.ModelForm):
+    class Meta:
+        model = Budget
+        fields = [
+            'series',
+            'budget_against',
+            'fiscal_year_from',
+            'fiscal_year_to',
+            'company',
+            'distribution',
+            'cost_center',
+            'account',
+            'budget_amount',
+        ]
+
+        widgets = {
+            'series': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter Budget Series'
+            }),
+            'budget_against': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'fiscal_year_from': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'fiscal_year_to': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'company': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'distribution': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'cost_center': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter Cost Center'
+            }),
+            'account': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'budget_amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter Total Budget Amount',
+                'step': '0.01'
+            }),
+        }
+
+        labels = {
+            'series': 'Budget Series',
+            'budget_against': 'Budget Against',
+            'fiscal_year_from': 'Fiscal Year From',
+            'fiscal_year_to': 'Fiscal Year To',
+            'company': 'Company',
+            'distribution': 'Distribution',
+            'cost_center': 'Cost Center',
+            'account': 'Account',
+            'budget_amount': 'Total Budget Amount',
+        }
