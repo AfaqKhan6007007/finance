@@ -573,3 +573,38 @@ class Customer(models.Model):
     def __str__(self):
         return self.name
     
+class AccountingDimension(models.Model):
+    name = models.CharField(max_length=150, verbose_name="Dimension Name")
+    
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ["name"]
+    
+    def __str__(self):
+        return self.name
+    
+class CostCenterAllocation(models.Model):
+    cost_center = models.ForeignKey(
+        CostCenter,
+        on_delete=models.CASCADE,
+        related_name="allocations",
+        verbose_name="Cost Center"
+    )
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="cost_center_allocations",
+        verbose_name="Company"
+    )
+
+    valid_from = models.DateField(verbose_name="Valid From")
+    
+    class Meta:
+        ordering = ["cost_center"]
+        unique_together = ("cost_center", "company")
+
+    def __str__(self):
+        return f"{self.cost_center.name} - {self.company.name} ({self.valid_from})"

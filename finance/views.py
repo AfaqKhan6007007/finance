@@ -8,9 +8,9 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from .forms import BudgetForm, CostCenterForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm
+from .forms import AccountingDimensionForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm
 from django.db import models
-from .models import Budget, Company, Account, CostCenter, Customer, Invoice, JournalEntry, Supplier
+from .models import AccountingDimension, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, Invoice, JournalEntry, Supplier
 from django.contrib.messages import get_messages
 from django.db.models import Sum, Q
 from datetime import datetime, timedelta
@@ -445,6 +445,225 @@ class CostCenterDelete(View):
         )
         return redirect('finance-cost-centers')
     
+
+class AccountingDimensions(View):
+    """List all Accounting Dimensions"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        accounting_dimensions = AccountingDimension.objects.all()
+
+        # Search by series
+        search_query = request.GET.get('search', '')
+        if search_query:
+            accounting_dimensions = accounting_dimensions.filter(name__icontains=search_query)
+
+        context = {
+            'accounting_dimensions': accounting_dimensions,
+            'search_query': search_query,
+            'total_count': AccountingDimension.objects.count(),
+        }
+
+        return render(request, 'finance/accountingdimensions.html', context)
+
+class AccountingDimensionCreate(View):
+    """Create new accounting dimension"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        form = AccountingDimensionForm()
+        return render(request, 'finance/accounting_dimensions_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = AccountingDimensionForm(request.POST)
+        # Debug
+        print("POST data:", request.POST)
+
+        if form.is_valid():
+            accounting_dimension = form.save()
+            messages.success(
+                request,
+                f'Accounting Dimension "{accounting_dimension.name}" created successfully!'
+            )
+            return redirect('finance-accounting-dimensions')
+        else:
+            print("Form errors:", form.errors)
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/accounting_dimensions_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+class AccountingDimensionEdit(View):
+    """Edit existing accounting dimension"""
+
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        accounting_dimension = get_object_or_404(AccountingDimension, pk=pk)
+        form = AccountingDimensionForm(instance=accounting_dimension)
+        return render(request, 'finance/accounting_dimensions_form.html', {
+            'form': form,
+            'accounting_dimension': accounting_dimension,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        accounting_dimension = get_object_or_404(AccountingDimension, pk=pk)
+        form = AccountingDimensionForm(request.POST, instance=accounting_dimension)
+
+        # Debug
+        print("POST data:", request.POST)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                f'Accounting Dimension "{accounting_dimension.name}" updated successfully!'
+            )
+            return redirect('finance-accounting-dimensions')
+        else:
+            print("Form errors:", form.errors)
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/accounting_dimensions_form.html', {
+            'form': form,
+            'accounting_dimension': accounting_dimension,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+class AccountingDimensionDelete(View):
+    """Delete accounting dimension"""
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        accounting_dimension = get_object_or_404(AccountingDimension, pk=pk)
+        name = accounting_dimension.name
+        accounting_dimension.delete()
+        messages.success(
+            request,
+            f'Accounting Dimension "{name}" deleted successfully!'
+        )
+        return redirect('finance-accounting-dimensions')
+
+
+class CostCenterAllocations(View):
+    """List all Cost Center Allocations"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        cost_center_allocations = CostCenterAllocation.objects.all()
+
+        # Search by series
+        search_query = request.GET.get('search', '')
+        if search_query:
+            cost_center_allocations = cost_center_allocations.filter(cost_center__name__icontains=search_query)
+        context = {
+            'cost_center_allocations': cost_center_allocations,
+            'search_query': search_query,
+            'total_count': CostCenterAllocation.objects.count(),
+        }
+
+        return render(request, 'finance/costcenterallocations.html', context)
+
+class CostCenterAllocationsCreate(View):
+    """Create new cost center allocation"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        form = CostCenterAllocationsForm()
+        return render(request, 'finance/cost_center_allocations_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = CostCenterAllocationsForm(request.POST)
+        # Debug
+        print("POST data:", request.POST)
+
+        if form.is_valid():
+            cost_center_allocation = form.save()
+            messages.success(
+                request,
+                f'Cost Center Allocation "{cost_center_allocation.cost_center}" created successfully!'
+            )
+            return redirect('finance-cost-center-allocations')
+        else:
+            print("Form errors:", form.errors)
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/cost_center_allocations_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+class CostCenterAllocationsEdit(View):
+    """Edit existing cost center allocation"""
+
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        cost_center_allocation = get_object_or_404(CostCenterAllocation, pk=pk)
+        form = CostCenterAllocationsForm(instance=cost_center_allocation)
+        return render(request, 'finance/cost_center_allocations_form.html', {
+            'form': form,
+            'cost_center_allocation': cost_center_allocation,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        cost_center_allocation = get_object_or_404(CostCenterAllocation, pk=pk)
+        form = CostCenterAllocationsForm(request.POST, instance=cost_center_allocation)
+
+        # Debug
+        print("POST data:", request.POST)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                f'Cost Center Allocation "{cost_center_allocation.name}" updated successfully!'
+            )
+            return redirect('finance-cost-center-allocations')
+        else:
+            print("Form errors:", form.errors)
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/cost_center_allocations_form.html', {
+            'form': form,
+            'cost_center_allocation': cost_center_allocation,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+class CostCenterAllocationsDelete(View):
+    """Delete cost center allocation"""
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        cost_center_allocation = get_object_or_404(CostCenterAllocation, pk=pk)
+    
+        cost_center_allocation.delete()
+        messages.success(
+            request,
+            f'Cost Center Allocation "{cost_center_allocation.cost_center}" deleted successfully!'
+        )
+        return redirect('finance-cost-center-allocations')
+
 
 class Dashboard(View):
     @method_decorator(login_required)

@@ -1,7 +1,7 @@
 from django.urls import path
 
 from finance.models import CostCenter
-from .views import Budgets,BudgetCreate,BudgetEdit, BudgetDelete,CostCenterDelete, CostCenterCreate, CostCenterEdit, CostCenters, CustomerCreate, CustomerDelete, CustomerEdit, Customers, Login, Signup, Logout, Dashboard, Journal, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
+from .views import AccountingDimensionCreate, AccountingDimensionDelete, AccountingDimensionEdit, AccountingDimensions, Budgets,BudgetCreate,BudgetEdit, BudgetDelete, CostCenterAllocations, CostCenterAllocationsCreate, CostCenterAllocationsDelete, CostCenterAllocationsEdit,CostCenterDelete, CostCenterCreate, CostCenterEdit, CostCenters, CustomerCreate, CustomerDelete, CustomerEdit, Customers, Login, Signup, Logout, Dashboard, Journal, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
 
 urlpatterns = [
      # ============ Authentication ============
@@ -69,4 +69,14 @@ urlpatterns = [
     path('cost-center/new/', CostCenterCreate.as_view(), name='finance-cost-center-create'),
     path('cost-center/<int:pk>/edit/', CostCenterEdit.as_view(), name='finance-cost-center-edit'),
     path('cost-center/<int:pk>/delete/', CostCenterDelete.as_view(), name='finance-cost-center-delete'),
+
+    path('accounting-dimensions/', AccountingDimensions.as_view(), name='finance-accounting-dimensions'),
+    path('accounting-dimensions/new/', AccountingDimensionCreate.as_view(), name='finance-accounting-dimension-create'),
+    path('accounting-dimensions/<int:pk>/edit/', AccountingDimensionEdit.as_view(), name='finance-accounting-dimension-edit'),
+    path('accounting-dimensions/<int:pk>/delete/', AccountingDimensionDelete.as_view(), name='finance-accounting-dimension-delete'),
+
+    path('cost-center-allocations/', CostCenterAllocations.as_view(), name='finance-cost-center-allocations'),
+    path('cost-center-allocations/new/', CostCenterAllocationsCreate.as_view(), name='finance-cost-center-allocation-create'),
+    path('cost-center-allocations/<int:pk>/edit/', CostCenterAllocationsEdit.as_view(), name='finance-cost-center-allocation-edit'),
+    path('cost-center-allocations/<int:pk>/delete/', CostCenterAllocationsDelete.as_view(), name='finance-cost-center-allocation-delete'),
 ]

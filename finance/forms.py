@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
-from .models import Company, Account, CostCenter, Customer, Invoice, JournalEntry, Supplier, Budget
+
+from .models import AccountingDimension, Company, Account, CostCenter, CostCenterAllocation, Customer, Invoice, JournalEntry, Supplier, Budget
 from django.core.exceptions import ValidationError
 
 class SignupForm(UserCreationForm):
@@ -439,4 +440,52 @@ class CostCenterForm(forms.ModelForm):
             'parent': 'Parent Cost Center',
             'is_group': 'Is Group',
             'is_disabled': 'Is Disabled',
+        }
+
+class AccountingDimensionForm(forms.ModelForm):
+    class Meta:
+        model = AccountingDimension
+        fields = [
+            'name',
+
+        ]
+
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter Accounting Dimension Name'
+            }),
+        }
+
+        labels = {
+            'name': 'Accounting Dimension Name',
+        }
+
+class CostCenterAllocationsForm(forms.ModelForm):
+    class Meta:
+        model = CostCenterAllocation
+        fields = [
+            'cost_center',
+            'company',
+            'valid_from',
+
+        ]
+
+        widgets = {
+            'cost_center': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'company': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'valid_from': forms.DateInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter Cost Center Allocation Name'
+            }),
+        }
+
+        labels = {
+            'cost_center': 'Cost Center',
+            'company': 'Company',
+            'valid_from': 'Valid From',
         }
