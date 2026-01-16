@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 
-from .models import AccountingDimension, Company, Account, CostCenter, CostCenterAllocation, Customer, Invoice, JournalEntry, Supplier, Budget
+from .models import AccountingDimension, Company, Account, CostCenter, CostCenterAllocation, Customer, Invoice, JournalEntry, Supplier, Budget, TaxItemTemplate
 from django.core.exceptions import ValidationError
 
 class SignupForm(UserCreationForm):
@@ -488,4 +488,44 @@ class CostCenterAllocationsForm(forms.ModelForm):
             'cost_center': 'Cost Center',
             'company': 'Company',
             'valid_from': 'Valid From',
+        }
+
+class TaxItemTemplatesForm(forms.ModelForm):
+    class Meta:
+        model = TaxItemTemplate
+        fields = [
+            'title',
+            'company',
+            'gst_rate',
+            'gst_treatment',
+            'disabled',
+        ]
+
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter Tax Item Template Title'
+            }),
+            'company': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'gst_rate': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter Tax Rate (%)',
+                'step': '0.01'
+            }),
+            'gst_treatment': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'disabled': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+
+        labels = {
+            'title': 'Tax Item Template Title',
+            'company': 'Company',
+            'gst_rate': 'GST Rate (%)',
+            'gst_treatment': 'GST Treatment',
+            'disabled': 'Disabled',
         }

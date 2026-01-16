@@ -1,7 +1,6 @@
 from django.urls import path
 
-from finance.models import CostCenter
-from .views import AccountingDimensionCreate, AccountingDimensionDelete, AccountingDimensionEdit, AccountingDimensions, Budgets,BudgetCreate,BudgetEdit, BudgetDelete, CostCenterAllocations, CostCenterAllocationsCreate, CostCenterAllocationsDelete, CostCenterAllocationsEdit,CostCenterDelete, CostCenterCreate, CostCenterEdit, CostCenters, CustomerCreate, CustomerDelete, CustomerEdit, Customers, Login, Signup, Logout, Dashboard, Journal, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
+from .views import AccountingDimensionCreate, AccountingDimensionDelete, AccountingDimensionEdit, AccountingDimensions, Budgets,BudgetCreate,BudgetEdit, BudgetDelete, CostCenterAllocations, CostCenterAllocationsCreate, CostCenterAllocationsDelete, CostCenterAllocationsEdit,CostCenterDelete, CostCenterCreate, CostCenterEdit, CostCenters, CustomerCreate, CustomerDelete, CustomerEdit, Customers, Login, Signup, Logout, Dashboard, Journal, TaxItemTemplates, TaxItemTemplatesCreate, TaxItemTemplatesEdit, TaxItemTemplatesDelete, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
 
 urlpatterns = [
      # ============ Authentication ============
@@ -79,4 +78,10 @@ urlpatterns = [
     path('cost-center-allocations/new/', CostCenterAllocationsCreate.as_view(), name='finance-cost-center-allocation-create'),
     path('cost-center-allocations/<int:pk>/edit/', CostCenterAllocationsEdit.as_view(), name='finance-cost-center-allocation-edit'),
     path('cost-center-allocations/<int:pk>/delete/', CostCenterAllocationsDelete.as_view(), name='finance-cost-center-allocation-delete'),
+
+
+    path('tax-item-templates/', TaxItemTemplates.as_view(), name='finance-tax-item-templates'),
+    path('tax-item-templates/new/', TaxItemTemplatesCreate.as_view(), name='finance-tax-item-template-create'),
+    path('tax-item-templates/<int:pk>/edit/', TaxItemTemplatesEdit.as_view(), name='finance-tax-item-template-edit'),
+    path('tax-item-templates/<int:pk>/delete/', TaxItemTemplatesDelete.as_view(), name='finance-tax-item-template-delete'),
 ]

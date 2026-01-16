@@ -8,9 +8,9 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from .forms import AccountingDimensionForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm
+from .forms import AccountingDimensionForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm, TaxItemTemplatesForm
 from django.db import models
-from .models import AccountingDimension, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, Invoice, JournalEntry, Supplier
+from .models import AccountingDimension, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, Invoice, JournalEntry, Supplier, TaxItemTemplate
 from django.contrib.messages import get_messages
 from django.db.models import Sum, Q
 from datetime import datetime, timedelta
@@ -663,6 +663,124 @@ class CostCenterAllocationsDelete(View):
             f'Cost Center Allocation "{cost_center_allocation.cost_center}" deleted successfully!'
         )
         return redirect('finance-cost-center-allocations')
+
+class TaxItemTemplates(View):
+    """List all Tax Item Templates"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        tax_item_templates = TaxItemTemplate.objects.select_related(
+            'company',
+        ).all()
+
+        # Search by series
+        search_query = request.GET.get('search', '')
+        if search_query:
+            tax_item_templates = tax_item_templates.filter(title__icontains=search_query)
+
+        # Filter by Company
+        company_filter = request.GET.get('company', '')
+        if company_filter:
+            tax_item_templates = tax_item_templates.filter(company_id=company_filter)
+
+        context = {
+            'tax_item_templates': tax_item_templates,
+            'company_filter': company_filter,
+            'search_query': search_query,
+            'total_count': TaxItemTemplate.objects.count(),
+        }
+
+        return render(request, 'finance/tax_item_templates.html', context)
+
+class TaxItemTemplatesCreate(View):
+    """Create new tax item template"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        form = TaxItemTemplatesForm()
+        return render(request, 'finance/tax_item_templates_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = TaxItemTemplatesForm(request.POST)
+        # Debug
+        print("POST data:", request.POST)
+
+        if form.is_valid():
+            tax_item_template = form.save()
+            messages.success(
+                request,
+                f'Tax Item Template "{tax_item_template.title}" created successfully!'
+            )
+            return redirect('finance-tax-item-templates')
+        else:
+            print("Form errors:", form.errors)
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/tax_item_templates_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+class TaxItemTemplatesEdit(View):
+    """Edit existing tax item template"""
+
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        tax_item_template = get_object_or_404(TaxItemTemplate, pk=pk)
+        form = TaxItemTemplatesForm(instance=tax_item_template)
+        return render(request, 'finance/tax_item_templates_form.html', {
+            'form': form,
+            'tax_item_template': tax_item_template,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        tax_item_template = get_object_or_404(TaxItemTemplate, pk=pk)
+        form = TaxItemTemplatesForm(request.POST, instance=tax_item_template)
+
+        # Debug
+        print("POST data:", request.POST)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                f'Tax Item Template "{tax_item_template.title}" updated successfully!'
+            )
+            return redirect('finance-tax-item-templates')
+        else:
+            print("Form errors:", form.errors)
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/tax_item_templates_form.html', {
+            'form': form,
+            'tax_item_template': tax_item_template,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+class TaxItemTemplatesDelete(View):
+    """Delete tax item template"""
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        tax_item_template = get_object_or_404(TaxItemTemplate, pk=pk)
+
+        tax_item_template.delete()
+        messages.success(
+            request,
+            f'Tax Item Template "{tax_item_template.title}" deleted successfully!'
+        )
+        return redirect('finance-tax-item-templates')
+
 
 
 class Dashboard(View):

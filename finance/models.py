@@ -608,3 +608,29 @@ class CostCenterAllocation(models.Model):
 
     def __str__(self):
         return f"{self.cost_center.name} - {self.company.name} ({self.valid_from})"
+    
+class TaxItemTemplate(models.Model):
+    title = models.CharField(max_length=150, verbose_name="Tax Item Template Title")
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="tax_item_templates",
+        verbose_name="Company"
+    )
+    gst_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        verbose_name="GST Rate (%)"
+    )
+    gst_treatment = models.CharField(
+        max_length=100,
+        verbose_name="GST Treatment"
+    )
+
+    disabled = models.BooleanField(default=False, verbose_name="Disabled")
+    
+    class Meta:
+        ordering = ["title"]
+    
+    def __str__(self):
+        return f"{self.title} ({self.gst_rate}%)"
