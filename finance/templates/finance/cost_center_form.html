@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% if is_edit %}Edit{% else %}New{% endif %} Cost Center</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding:  0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f9fafb;
+            color: #333;
+        }
+
+        body.sidebar-collapsed .sidebar {
+            transform: translateX(-100%);
+        }
+
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px;
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s ease, width 0.3s ease;
+        }
+
+        body.sidebar-collapsed .header {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        body.sidebar-collapsed .main-content {
+            margin-left: 0;
+        }
+        
+        /* Breadcrumb */
+        .breadcrumb {
+            padding: 16px 40px;
+            
+            
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .breadcrumb a {
+            color: #666;
+            text-decoration: none;
+        }
+        
+        .breadcrumb a:hover {
+            color: #00b894;
+        }
+        
+        .breadcrumb-separator {
+            margin: 0 8px;
+            color: #999;
+        }
+        
+        /* Header */
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            
+            
+        }
+        
+        .form-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .menu-icon {
+            font-size: 24px;
+            color: #00b894;
+            cursor: pointer;
+        }
+        
+        .form-title h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #00b894;
+        }
+        
+        .btn-save {
+            padding: 10px 32px;
+            background-color:  #00b894;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-save:hover {
+            background-color: #00a281;
+        }
+        
+        /* Form Container */
+        .form-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 40px;
+        }
+        
+        .form-card {
+            background:  white;
+            border-radius:  8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px 32px;
+        }
+        
+        /* Form Fields */
+        .form-group {
+            margin-bottom:  0;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight:  600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .form-label.required::after {
+            content: " *";
+            color: #dc2626;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+            background-color: white;
+            transition: border-color 0.2s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #00b894;
+            box-shadow: 0 0 0 3px rgba(0, 184, 148, 0.1);
+        }
+        
+        .form-control::placeholder {
+            color: #9ca3af;
+        }
+        
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 40px;
+        }
+        
+        .form-help {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 6px;
+            font-style: italic;
+        }
+        
+        /* Checkbox */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        
+        .checkbox-input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #00b894;
+        }
+        
+        .checkbox-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+        }
+        
+        /* Messages */
+        .messages {
+            margin-bottom: 24px;
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius:  6px;
+            margin-bottom:  12px;
+            font-size: 14px;
+        }
+        
+        .alert-success {
+            background-color:  #d1fae5;
+            color:  #059669;
+            border-left: 4px solid #059669;
+        }
+        
+        .alert-error {
+            background-color: #fee2e2;
+            color:  #dc2626;
+            border-left: 4px solid #dc2626;
+        }
+        
+        .error-message {
+            color: #dc2626;
+            font-size: 12px;
+            margin-top:  4px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+            
+            .form-card {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+{% include "finance/header.html" %}
+{% include "finance/sidenav_budget.html" %}
+
+<div class="main-content">
+
+    <h2 style="margin-bottom: 24px;">
+        {% if is_edit %}Edit{% else %}New{% endif %} Cost Center 
+    </h2>
+
+    <div class="form-card">
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-grid">
+
+                <!-- Name -->
+                <div class="form-group">
+                    <label class="required">Name</label>
+                    <input type="text" name="name" class="form-control"
+                           value="{{ form.name.value }}" required>
+                    {% if form.name.errors %}
+                        <div class="error-message">{{ form.name.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                
+
+                <div class="form-group">
+                    <label class="required">Cost Center Number</label>
+                    <input type="text"
+                        name="cost_center_number"
+                        class="form-control"
+                        value="{{ form.cost_center_number.value|default:'' }}">
+                    {% if form.cost_center_number.errors %}
+                        <div class="error-message">{{ form.cost_center_number.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+
+                <!-- Company -->
+                <div class="form-group">
+                    <label class="required">Company</label>
+                    <select name="company" class="form-control" required>
+                        {% for company in form.fields.company.queryset %}
+                        <option value="{{ company.pk }}"
+                            {% if form.company.value == company.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ company.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Parent Cost Center -->
+                <div class="form-group">
+                    <label>Parent Cost Center</label>
+                    <select name="parent" class="form-control">
+                        {% for parent in form.fields.parent.queryset %}
+                        <option value="{{ parent.pk }}"
+                            {% if form.parent.value == parent.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ parent.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+    <label class="checkbox-label">
+        <input type="checkbox"
+               name="is_group"
+               class="checkbox-input"
+               {% if form.is_group.value %}checked{% endif %}>
+        Is Group
+    </label>
+</div>
+
+<div class="form-group">
+    <label class="checkbox-label">
+        <input type="checkbox"
+               name="is_disabled"
+               class="checkbox-input"
+               {% if form.is_disabled.value %}checked{% endif %}>
+        Is Disabled
+    </label>
+</div>
+            </div>
+
+            <button type="submit" class="btn-save">Save</button>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

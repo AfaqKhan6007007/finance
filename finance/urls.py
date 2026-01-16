@@ -1,5 +1,7 @@
 from django.urls import path
-from .views import Budgets,BudgetCreate,BudgetEdit, BudgetDelete, CustomerCreate, CustomerDelete, CustomerEdit, Customers, Login, Signup, Logout, Dashboard, Journal, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
+
+from finance.models import CostCenter
+from .views import Budgets,BudgetCreate,BudgetEdit, BudgetDelete,CostCenterDelete, CostCenterCreate, CostCenterEdit, CostCenters, CustomerCreate, CustomerDelete, CustomerEdit, Customers, Login, Signup, Logout, Dashboard, Journal, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
 
 urlpatterns = [
      # ============ Authentication ============
@@ -62,4 +64,9 @@ urlpatterns = [
     path('budgets/new/', BudgetCreate.as_view(), name='finance-budget-create'),
     path('budgets/<int:pk>/edit/', BudgetEdit.as_view(), name='finance-budget-edit'),
     path('budgets/<int:pk>/delete/', BudgetDelete.as_view(), name='finance-budget-delete'),
+
+    path('cost-center/', CostCenters.as_view(), name='finance-cost-centers'),
+    path('cost-center/new/', CostCenterCreate.as_view(), name='finance-cost-center-create'),
+    path('cost-center/<int:pk>/edit/', CostCenterEdit.as_view(), name='finance-cost-center-edit'),
+    path('cost-center/<int:pk>/delete/', CostCenterDelete.as_view(), name='finance-cost-center-delete'),
 ]

@@ -8,7 +8,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from .forms import BudgetForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm
+from .forms import BudgetForm, CostCenterForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm
 from django.db import models
 from .models import Budget, Company, Account, CostCenter, Customer, Invoice, JournalEntry, Supplier
 from django.contrib.messages import get_messages
@@ -320,6 +320,132 @@ class BudgetDelete(View):
         )
         return redirect('finance-budgets')
     
+class CostCenters(View):
+    """List all Cost Centers"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        cost_centers = CostCenter.objects.select_related(
+            'company',
+            'parent',
+        ).order_by('-created_at')
+
+        # Search by series
+        search_query = request.GET.get('search', '')
+        if search_query:
+            cost_centers = cost_centers.filter(name__icontains=search_query)
+
+        # Filter by Company
+        company_filter = request.GET.get('company', '')
+        if company_filter:
+            cost_centers = cost_centers.filter(company_id=company_filter)
+
+        # Filter by Parent
+        parent_filter = request.GET.get('parent', '')
+        if parent_filter:
+            cost_centers = cost_centers.filter(parent_id=parent_filter)
+        context = {
+            'cost_centers': cost_centers,
+            'search_query': search_query,
+            'company_filter': company_filter,
+            'parent_filter': parent_filter,
+            'companies': Company.objects.all(),
+            'parents': CostCenter.objects.all(),
+            'total_count': CostCenter.objects.count(),
+        }
+
+        return render(request, 'finance/cost_centers.html', context)
+
+class CostCenterCreate(View):
+    """Create new cost center"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        form = CostCenterForm()
+        return render(request, 'finance/cost_center_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = CostCenterForm(request.POST)
+        # Debug
+        print("POST data:", request.POST)
+
+        if form.is_valid():
+            cost_center = form.save()
+            messages.success(
+                request,
+                f'Cost Center "{cost_center.name}" created successfully!'
+            )
+            return redirect('finance-cost-centers')
+        else:
+            print("Form errors:", form.errors)
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/cost_center_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+    
+class CostCenterEdit(View):
+    """Edit existing cost center"""
+
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        cost_center = get_object_or_404(CostCenter, pk=pk)
+        form = CostCenterForm(instance=cost_center)
+        return render(request, 'finance/cost_center_form.html', {
+            'form': form,
+            'cost_center': cost_center,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        cost_center = get_object_or_404(CostCenter, pk=pk)
+        form = CostCenterForm(request.POST, instance=cost_center)
+
+        # Debug
+        print("POST data:", request.POST)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                f'Cost Center "{cost_center.name}" updated successfully!'
+            )
+            return redirect('finance-cost-centers')
+        else:
+            print("Form errors:", form.errors)
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/cost_center_form.html', {
+            'form': form,
+            'cost_center': cost_center,
+            'action': 'Edit',
+            'is_edit': True
+        })
+    
+class CostCenterDelete(View):
+    """Delete cost center"""
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        cost_center = get_object_or_404(CostCenter, pk=pk)
+        name = cost_center.name
+        cost_center.delete()
+        messages.success(
+            request,
+            f'Cost Center "{name}" deleted successfully!'
+        )
+        return redirect('finance-cost-centers')
+    
+
 class Dashboard(View):
     @method_decorator(login_required)
     def get(self, request):

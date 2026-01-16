@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
-from .models import Company, Account, Customer, Invoice, JournalEntry, Supplier, Budget
+from .models import Company, Account, CostCenter, Customer, Invoice, JournalEntry, Supplier, Budget
 from django.core.exceptions import ValidationError
 
 class SignupForm(UserCreationForm):
@@ -395,4 +395,48 @@ class BudgetForm(forms.ModelForm):
             'cost_center': 'Cost Center',
             'account': 'Account',
             'budget_amount': 'Total Budget Amount',
+        }
+
+class CostCenterForm(forms.ModelForm):
+    class Meta:
+        model = CostCenter
+        fields = [
+            'name',
+            'cost_center_number',
+            'company',
+            'parent',
+            'is_group',
+            'is_disabled',
+        ]
+
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter Cost Center Name'
+            }),
+            'cost_center_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter Cost Center Number'
+            }),
+            'company': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'parent': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'is_group': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'is_disabled': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+
+        labels = {
+            'name': 'Cost Center Name',
+            'cost_center_number': 'Cost Center Number',
+            'company': 'Company',
+            'parent': 'Parent Cost Center',
+            'is_group': 'Is Group',
+            'is_disabled': 'Is Disabled',
         }
