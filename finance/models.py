@@ -624,7 +624,13 @@ class TaxItemTemplate(models.Model):
     )
     gst_treatment = models.CharField(
         max_length=100,
-        verbose_name="GST Treatment"
+        verbose_name="GST Treatment",
+        choices=[
+            ('taxable', 'Taxable'),
+            ('nil_rated', 'Nil-Rated'),
+            ('exempted', 'Exempted'),
+            ('non_gst', 'Non-GST'),
+        ]
     )
 
     disabled = models.BooleanField(default=False, verbose_name="Disabled")

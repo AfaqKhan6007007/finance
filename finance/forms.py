@@ -504,7 +504,7 @@ class TaxItemTemplatesForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Enter Tax Item Template Title'
+                'placeholder': 'Enter Title'
             }),
             'company': forms.Select(attrs={
                 'class': 'form-control'
