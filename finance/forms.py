@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 
-from .models import AccountingDimension, Company, Account, CostCenter, CostCenterAllocation, Customer, Invoice, JournalEntry, Supplier, Budget, TaxItemTemplate
+from .models import AccountingDimension, Company, Account, CostCenter, CostCenterAllocation, Customer, Invoice, JournalEntry, Supplier, Budget, TaxCategory, TaxItemTemplate
 from django.core.exceptions import ValidationError
 
 class SignupForm(UserCreationForm):
@@ -529,3 +529,73 @@ class TaxItemTemplatesForm(forms.ModelForm):
             'gst_treatment': 'GST Treatment',
             'disabled': 'Disabled',
         }
+
+class TaxCategoryForm(forms.ModelForm):
+    class Meta:
+        model = TaxCategory
+        fields = [
+            'title',
+        ]
+
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter Tax Category Title'
+            }),
+        }
+
+        labels = {
+            'title': 'Tax Category Title',
+        }
+
+from django import forms
+from .models import TaxRule
+
+
+class TaxRuleForm(forms.ModelForm):
+    class Meta:
+        model = TaxRule
+        fields = "__all__"
+
+        widgets = {
+            "tax_type": forms.Select(attrs={"class": "form-control"}),
+            "sales_tax_template": forms.Select(attrs={"class": "form-control"}),
+            "shopping_cart_use": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+
+            "customer": forms.Select(attrs={"class": "form-control"}),
+            "customer_group": forms.TextInput(attrs={"class": "form-control"}),
+            "item": forms.TextInput(attrs={"class": "form-control"}),
+            "item_group": forms.TextInput(attrs={"class": "form-control"}),
+
+            "billing_city": forms.TextInput(attrs={"class": "form-control"}),
+            "shipping_city": forms.TextInput(attrs={"class": "form-control"}),
+            "billing_county": forms.TextInput(attrs={"class": "form-control"}),
+            "shipping_county": forms.TextInput(attrs={"class": "form-control"}),
+
+            "billing_state": forms.TextInput(attrs={"class": "form-control"}),
+            "shipping_state": forms.TextInput(attrs={"class": "form-control"}),
+            "billing_zipcode": forms.TextInput(attrs={"class": "form-control"}),
+            "shipping_zipcode": forms.TextInput(attrs={"class": "form-control"}),
+
+            "billing_country": forms.TextInput(attrs={"class": "form-control"}),
+            "shipping_country": forms.TextInput(attrs={"class": "form-control"}),
+
+            "tax_category": forms.Select(attrs={"class": "form-control"}),
+            "from_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "to_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "priority": forms.NumberInput(attrs={"class": "form-control"}),
+
+            "company": forms.Select(attrs={"class": "form-control"}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        from_date = cleaned_data.get("from_date")
+        to_date = cleaned_data.get("to_date")
+
+        if from_date and to_date and from_date > to_date:
+            raise forms.ValidationError(
+                "From Date cannot be later than To Date."
+            )
+
+        return cleaned_data

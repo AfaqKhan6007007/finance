@@ -640,3 +640,60 @@ class TaxItemTemplate(models.Model):
     
     def __str__(self):
         return f"{self.title} ({self.gst_rate}%)"
+    
+class TaxCategory(models.Model):
+    title = models.CharField(max_length=150, verbose_name="Tax Category Title",null=True, blank=True)
+    
+    class Meta:
+        ordering = ["title"]
+
+    def __str__(self):
+        return self.title
+    
+class TaxRule(models.Model):
+    tax_type = models.CharField(max_length=100, verbose_name="Tax Type", choices=[
+        ('sales', 'Sales'),
+        ('purchase', 'Purchase'),
+    ])
+    sales_tax_template = models.ForeignKey(
+        TaxItemTemplate,
+        on_delete=models.CASCADE,
+        related_name="sales_tax_rules",
+        verbose_name="Sales Tax Template"
+    )
+    shopping_cart_use = models.BooleanField(default=False, verbose_name="Shopping Cart Use")
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.CASCADE,
+        related_name="tax_rules",
+        verbose_name="Customer"
+    )
+    customer_group = models.CharField(max_length=100, verbose_name="Customer Group", blank=True)
+    item = models.CharField(max_length=200, verbose_name="Item", blank=True)
+    item_group = models.CharField(max_length=100, verbose_name="Item Group", blank=True)
+    billing_city = models.CharField(max_length=100, verbose_name="Billing City", blank=True)
+    shipping_city = models.CharField(max_length=100, verbose_name="Shipping City", blank=True)
+    billing_county = models.CharField(max_length=100, verbose_name="Billing County", blank=True)
+    shipping_county = models.CharField(max_length=100, verbose_name="Shipping County", blank=True)
+    billing_state = models.CharField(max_length=100, verbose_name="Billing State", blank=True)
+    shipping_state = models.CharField(max_length=100, verbose_name="Shipping State", blank=True)
+    billing_zipcode = models.CharField(max_length=20, verbose_name="Billing Zipcode", blank=True)
+    shipping_zipcode = models.CharField(max_length=20, verbose_name="Shipping Zipcode", blank=True)
+    billing_country = models.CharField(max_length=100, verbose_name="Billing Country", blank=True)
+    shipping_country = models.CharField(max_length=100, verbose_name="Shipping Country", blank=True)
+    tax_category = models.ForeignKey(
+        TaxCategory,
+        on_delete=models.CASCADE,
+        related_name="tax_rules",
+        verbose_name="Tax Category"
+    )
+    from_date = models.DateField(verbose_name="From Date")
+    to_date = models.DateField(verbose_name="To Date")
+    priority = models.IntegerField(default=0, verbose_name="Priority")
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="tax_rules",
+        verbose_name="Company"
+    )
+

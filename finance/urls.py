@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import AccountingDimensionCreate, AccountingDimensionDelete, AccountingDimensionEdit, AccountingDimensions, Budgets,BudgetCreate,BudgetEdit, BudgetDelete, CostCenterAllocations, CostCenterAllocationsCreate, CostCenterAllocationsDelete, CostCenterAllocationsEdit,CostCenterDelete, CostCenterCreate, CostCenterEdit, CostCenters, CustomerCreate, CustomerDelete, CustomerEdit, Customers, Login, Signup, Logout, Dashboard, Journal, TaxItemTemplates, TaxItemTemplatesCreate, TaxItemTemplatesEdit, TaxItemTemplatesDelete, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
+from .views import AccountingDimensionCreate, AccountingDimensionDelete, AccountingDimensionEdit, AccountingDimensions, Budgets,BudgetCreate,BudgetEdit, BudgetDelete, CostCenterAllocations, CostCenterAllocationsCreate, CostCenterAllocationsDelete, CostCenterAllocationsEdit,CostCenterDelete, CostCenterCreate, CostCenterEdit, CostCenters, CustomerCreate, CustomerDelete, CustomerEdit, Customers, Login, Signup, Logout, Dashboard, Journal, TaxCategories, TaxCategoryCreate, TaxCategoryDelete, TaxCategoryEdit, TaxItemTemplates, TaxItemTemplatesCreate, TaxItemTemplatesEdit, TaxItemTemplatesDelete, TaxRuleView, TaxRulesCreate, TaxRulesDelete, TaxRulesEdit, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
 
 urlpatterns = [
      # ============ Authentication ============
@@ -84,4 +84,14 @@ urlpatterns = [
     path('tax-item-templates/new/', TaxItemTemplatesCreate.as_view(), name='finance-tax-item-template-create'),
     path('tax-item-templates/<int:pk>/edit/', TaxItemTemplatesEdit.as_view(), name='finance-tax-item-template-edit'),
     path('tax-item-templates/<int:pk>/delete/', TaxItemTemplatesDelete.as_view(), name='finance-tax-item-template-delete'),
+
+    path('tax-category/', TaxCategories.as_view(), name='finance-tax-categories'),
+    path('tax-category/new/', TaxCategoryCreate.as_view(), name='finance-tax-category-create'),
+    path('tax-category/<int:pk>/edit/', TaxCategoryEdit.as_view(), name='finance-tax-category-edit'),
+    path('tax-category/<int:pk>/delete/', TaxCategoryDelete.as_view(), name='finance-tax-category-delete'),
+
+    path('tax-rules/', TaxRuleView.as_view(), name='finance-tax-rules'),
+    path('tax-rules/new/', TaxRulesCreate.as_view(), name='finance-tax-rule-create'),
+    path('tax-rules/<int:pk>/edit/', TaxRulesEdit.as_view(), name='finance-tax-rule-edit'),
+    path('tax-rules/<int:pk>/delete/', TaxRulesDelete.as_view(), name='finance-tax-rule-delete'),
 ]

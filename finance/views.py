@@ -8,9 +8,9 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from .forms import AccountingDimensionForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm, TaxItemTemplatesForm
+from .forms import AccountingDimensionForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm, TaxCategoryForm, TaxItemTemplatesForm, TaxRuleForm
 from django.db import models
-from .models import AccountingDimension, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, Invoice, JournalEntry, Supplier, TaxItemTemplate
+from .models import AccountingDimension, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, Invoice, JournalEntry, Supplier, TaxCategory, TaxItemTemplate, TaxRule
 from django.contrib.messages import get_messages
 from django.db.models import Sum, Q
 from datetime import datetime, timedelta
@@ -556,6 +556,118 @@ class AccountingDimensionDelete(View):
         return redirect('finance-accounting-dimensions')
 
 
+class TaxCategories(View):
+    """List all Tax Categories"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        tax_categories = TaxCategory.objects.all()
+
+        # Search by series
+        search_query = request.GET.get('search', '')
+        if search_query:
+            tax_categories = tax_categories.filter(title__icontains=search_query)
+
+        context = {
+            'tax_categories': tax_categories,
+            'search_query': search_query,
+            'total_count': TaxCategory.objects.count(),
+        }
+
+        return render(request, 'finance/taxcategories.html', context)
+
+class TaxCategoryCreate(View):
+    """Create new tax category"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        form = TaxCategoryForm()
+        return render(request, 'finance/taxcategories_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = TaxCategoryForm(request.POST)
+        # Debug
+        print("POST data:", request.POST)
+
+        if form.is_valid():
+            tax_category = form.save()
+            messages.success(
+                request,
+                f'Tax Category "{tax_category.title}" created successfully!'
+            )
+            return redirect('finance-tax-categories')
+        else:
+            print("Form errors:", form.errors)
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/taxcategories_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+class TaxCategoryEdit(View):
+    """Edit existing tax category"""
+
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        tax_category = get_object_or_404(TaxCategory, pk=pk)
+        form = TaxCategoryForm(instance=tax_category)
+        return render(request, 'finance/taxcategories_form.html', {
+            'form': form,
+            'tax_category': tax_category,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        tax_category = get_object_or_404(TaxCategory, pk=pk)
+        form = TaxCategoryForm(request.POST, instance=tax_category)
+
+        # Debug
+        print("POST data:", request.POST)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                f'Tax Category "{tax_category.title}" updated successfully!'
+            )
+            return redirect('finance-tax-categories')
+        else:
+            print("Form errors:", form.errors)
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/taxcategories_form.html', {
+            'form': form,
+            'tax_category': tax_category,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+class TaxCategoryDelete(View):
+    """Delete tax category"""
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        tax_category = get_object_or_404(TaxCategory, pk=pk)
+        title = tax_category.title
+        tax_category.delete()
+        messages.success(
+            request,
+            f'Tax Category "{title}" deleted successfully!'
+        )
+        return redirect('finance-tax-categories')
+
+
+
+
 class CostCenterAllocations(View):
     """List all Cost Center Allocations"""
 
@@ -781,6 +893,122 @@ class TaxItemTemplatesDelete(View):
         )
         return redirect('finance-tax-item-templates')
 
+
+
+class TaxRuleView(View):
+    """List all Tax Rules"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        tax_rules= TaxRule.objects.all()
+
+        # Search by series
+        search_query = request.GET.get('search', '')
+        if search_query:
+            tax_rules = tax_rules.filter(tax_type__icontains=search_query)
+
+        # Filter by Company
+        type_filter = request.GET.get('tax_type', '')
+        if type_filter:
+            tax_rules = tax_rules.filter(tax_type=type_filter)
+
+        context = {
+            'tax_rules': tax_rules,
+            'type_filter': type_filter,
+            'search_query': search_query,
+            'total_count': TaxRule.objects.count(),
+        }
+
+        return render(request, 'finance/tax_rules.html', context)
+
+class TaxRulesCreate(View):
+    """Create new tax rule"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        form = TaxRuleForm()
+        return render(request, 'finance/tax_rules_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = TaxRuleForm(request.POST)
+        # Debug
+        print("POST data:", request.POST)
+
+        if form.is_valid():
+            tax_rule = form.save()
+            messages.success(
+                request,
+                f'Tax Rule "{tax_rule.id}" created successfully!'
+            )
+            return redirect('finance-tax-rules')
+        else:
+            print("Form errors:", form.errors)
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/tax_rules_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+class TaxRulesEdit(View):
+    """Edit existing tax rule"""
+
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        tax_rule = get_object_or_404(TaxRule, pk=pk)
+        form = TaxRuleForm(instance=tax_rule)
+        return render(request, 'finance/tax_rules_form.html', {
+            'form': form,
+            'tax_rule': tax_rule,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        tax_rule = get_object_or_404(TaxRule, pk=pk)
+        form = TaxRuleForm(request.POST, instance=tax_rule)
+
+        # Debug
+        print("POST data:", request.POST)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                f'Tax Rule "{tax_rule.id}" updated successfully!'
+            )
+            return redirect('finance-tax-rules')
+        else:
+            print("Form errors:", form.errors)
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/tax_rules_form.html', {
+            'form': form,
+            'tax_rule': tax_rule,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+class TaxRulesDelete(View):
+    """Delete tax rule"""
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        tax_rule = get_object_or_404(TaxRule, pk=pk)
+
+        tax_rule.delete()
+        messages.success(
+            request,
+            f'Tax Rule "{tax_rule.id}" deleted successfully!'
+        )
+        return redirect('finance-tax-rules')
 
 
 class Dashboard(View):

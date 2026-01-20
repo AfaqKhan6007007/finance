@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cost Center Allocations - Finance</title>
+    <title>Accounting Dimensions - Finance</title>
     <style>
         * {
             margin: 0;
@@ -379,7 +379,7 @@
 </head>
 <body>
     {% include "finance/header.html" %}
-    {% include "finance/sidenav_budget.html" %}
+    {% include "finance/sidenav_tax.html" %}
     
     <!-- Main Content -->
     <div class="main-content">
@@ -398,8 +398,8 @@
         <!-- Page Header -->
         <div class="page-header">
             <div class="page-title-section">
-                <h1>Cost Center Allocations</h1>
-                <p class="page-subtitle">Complete list of all cost center allocations in system</p>
+                <h1>Tax Categories</h1>
+                <p class="page-subtitle">Complete list of all tax categories in system</p>
             </div>
             
             <div class="header-actions">
@@ -409,8 +409,8 @@
                 <button class="btn">
                     ⬇ Export
                 </button>
-                <a href="{% url 'finance-cost-center-allocation-create' %}" class="btn btn-primary">
-                    ➕ Add Cost Center Allocation
+                <a href="{% url 'finance-tax-category-create' %}" class="btn btn-primary">
+                    ➕ Add Tax Category
                 </a>
             </div>
         </div>
@@ -422,33 +422,27 @@
                 <thead>
                     <tr>
                         <th><input type="checkbox" class="checkbox" id="select-all"></th>
-                        <th>ID</th>
-                        <th>Cost center</th>
-                        <th>Company</th>
-                        <th>Valid From</th>
+                        <th>Title</th>
                         <th style="text-align:left;">
-                            {{ cost_center_allocations|length }} of {{ total_count }}
+                            {{ tax_categories|length }} of {{ total_count }}
                         </th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for cost_center_allocation in cost_center_allocations %}
+                    {% for tax_category in tax_categories %}
                     <tr>
                         <td><input type="checkbox" class="checkbox row-checkbox"></td>
-                        <td>{{ cost_center_allocation.id }}</td>
-                        <td style="font-weight:600;">{{ cost_center_allocation.cost_center.name }}</td>
-                        <td>{{ cost_center_allocation.company.name }}</td>
-                        <td>{{ cost_center_allocation.valid_from }}</td>
+                        <td style="font-weight:600;">{{ tax_category.title }}</td>
                         <td>
                             <div class="action-icons">
                                
-                                <a href="{% url 'finance-cost-center-allocation-edit' cost_center_allocation.pk %}" class="icon-btn">
+                                <a href="{% url 'finance-tax-category-edit' tax_category.pk %}" class="icon-btn">
                                     ✏️ Edit
                                 </a>
                                 <form method="post"
-                                      action="{% url 'finance-cost-center-allocation-delete' cost_center_allocation.pk %}"
+                                      action="{% url 'finance-tax-category-delete' tax_category.pk %}"
                                       style="display:inline;"
-                                      onsubmit="return confirm('Delete budget {{ cost_center_allocation.name }}?');">
+                                      onsubmit="return confirm('Delete tax category {{ tax_category.title }}?');">
                                     {% csrf_token %}
                                     <button type="submit" class="icon-btn icon-btn-delete">
                                         🗑️ Delete
@@ -461,12 +455,12 @@
                     <tr>
                         <td colspan="7">
                             <div class="empty-state">
-                                <h3>No Cost Center Allocations Found</h3>
+                                <h3>No Tax Categories Found</h3>
                                 <p>
                                     {% if search_query %}
-                                        No cost center allocations match your search criteria.
+                                        No tax categories match your search criteria.
                                     {% else %}
-                                        Get started by creating your first cost center allocation.
+                                        Get started by creating your first tax category.
                                     {% endif %}
                                 </p>
                             </div>
@@ -479,7 +473,7 @@
     </div>
 
     <!-- Floating Action Button -->
-    <a href="{% url 'finance-cost-center-allocation-create' %}" class="fab">
+    <a href="{% url 'finance-tax-category-create' %}" class="fab">
         <svg viewBox="0 0 24 24">
             <path d="M12 5v14M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round"/>
         </svg>
