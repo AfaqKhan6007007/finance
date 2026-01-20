@@ -1,6 +1,8 @@
 from django.urls import path
 
-from .views import AccountingDimensionCreate, AccountingDimensionDelete, AccountingDimensionEdit, AccountingDimensions, Budgets,BudgetCreate,BudgetEdit, BudgetDelete, CostCenterAllocations, CostCenterAllocationsCreate, CostCenterAllocationsDelete, CostCenterAllocationsEdit,CostCenterDelete, CostCenterCreate, CostCenterEdit, CostCenters, CustomerCreate, CustomerDelete, CustomerEdit, Customers, Login, Signup, Logout, Dashboard, Journal, TaxCategories, TaxCategoryCreate, TaxCategoryDelete, TaxCategoryEdit, TaxItemTemplates, TaxItemTemplatesCreate, TaxItemTemplatesEdit, TaxItemTemplatesDelete, TaxRuleView, TaxRulesCreate, TaxRulesDelete, TaxRulesEdit, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
+from finance.models import TaxWithholdingCategory
+
+from .views import AccountingDimensionCreate, AccountingDimensionDelete, AccountingDimensionEdit, AccountingDimensions, Budgets,BudgetCreate,BudgetEdit, BudgetDelete, CostCenterAllocations, CostCenterAllocationsCreate, CostCenterAllocationsDelete, CostCenterAllocationsEdit,CostCenterDelete, CostCenterCreate, CostCenterEdit, CostCenters, CustomerCreate, CustomerDelete, CustomerEdit, Customers, DeductionCertificateCreate, DeductionCertificateDelete, DeductionCertificateEdit, DeductionCertificateView, Login, Signup, Logout, Dashboard, Journal, TaxCategories, TaxCategoryCreate, TaxCategoryDelete, TaxCategoryEdit, TaxItemTemplates, TaxItemTemplatesCreate, TaxItemTemplatesEdit, TaxItemTemplatesDelete, TaxRuleView, TaxRulesCreate, TaxRulesDelete, TaxRulesEdit, TaxWithholdingCategoryCreate, TaxWithholdingCategoryDelete, TaxWithholdingCategoryEdit, TaxWithholdingCategoryList, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
 
 urlpatterns = [
      # ============ Authentication ============
@@ -94,4 +96,30 @@ urlpatterns = [
     path('tax-rules/new/', TaxRulesCreate.as_view(), name='finance-tax-rule-create'),
     path('tax-rules/<int:pk>/edit/', TaxRulesEdit.as_view(), name='finance-tax-rule-edit'),
     path('tax-rules/<int:pk>/delete/', TaxRulesDelete.as_view(), name='finance-tax-rule-delete'),
+
+    path('tax-withholding-categories/', TaxWithholdingCategoryList.as_view(), name='finance-tax-withholding-categories'),
+    path('tax-withholding-categories/new/', TaxWithholdingCategoryCreate.as_view(), name='finance-tax-withholding-category-create'),
+    path('tax-withholding-categories/<int:pk>/edit/', TaxWithholdingCategoryEdit.as_view(), name='finance-tax-withholding-category-edit'),
+    path('tax-withholding-categories/<int:pk>/delete/', TaxWithholdingCategoryDelete.as_view(), name='finance-tax-withholding-category-delete'),
+
+    path(
+        'deduction-certificates/',
+        DeductionCertificateView.as_view(),
+        name='finance-deduction-certificates'
+    ),
+    path(
+        'deduction-certificates/new/',
+        DeductionCertificateCreate.as_view(),
+        name='finance-deduction-certificate-create'
+    ),
+    path(
+        'deduction-certificates/<int:pk>/edit/',
+        DeductionCertificateEdit.as_view(),
+        name='finance-deduction-certificate-edit'
+    ),
+    path(
+        'deduction-certificates/<int:pk>/delete/',
+        DeductionCertificateDelete.as_view(),
+        name='finance-deduction-certificate-delete'
+    ),
 ]

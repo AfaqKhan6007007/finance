@@ -1,8 +1,8 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
-
-from .models import AccountingDimension, Company, Account, CostCenter, CostCenterAllocation, Customer, Invoice, JournalEntry, Supplier, Budget, TaxCategory, TaxItemTemplate
+from django.forms import inlineformset_factory
+from .models import AccountingDimension, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, Supplier, Budget, TaxCategory, TaxCategoryAccount, TaxItemTemplate, TaxWithholdingCategory, TaxWithholdingRate
 from django.core.exceptions import ValidationError
 
 class SignupForm(UserCreationForm):
@@ -599,3 +599,138 @@ class TaxRuleForm(forms.ModelForm):
             )
 
         return cleaned_data
+
+
+class TaxWithholdingCategoryForm(forms.ModelForm):
+    class Meta:
+        model = TaxWithholdingCategory
+        fields = '__all__'
+        widgets = {
+            # --- Text Inputs ---
+            'name': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Enter Name'
+            }),
+            'category_name': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Enter Category Name'
+            }),
+            'section': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'e.g. 194C'
+            }),
+
+            # --- Select Dropdowns ---
+            'deduct_tax_on_basis': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'entity': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+
+            # --- Checkboxes ---
+            'round_off_tax_amount': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'only_deduct_on_excess': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'disable_cumulative_threshold': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'disable_transaction_threshold': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+
+# --- Rate Form (For the Inline Table) ---
+class TaxWithholdingRateForm(forms.ModelForm):
+    class Meta:
+        model = TaxWithholdingRate
+        fields = '__all__'
+        widgets = {
+            # --- Date Pickers (Critical for the table) ---
+            'from_date': forms.DateInput(attrs={
+                'class': 'form-control', 
+                'type': 'date'  # This triggers the HTML5 date picker
+            }),
+            'to_date': forms.DateInput(attrs={
+                'class': 'form-control', 
+                'type': 'date'
+            }),
+            
+            # --- Text/Number Inputs ---
+            'tax_withholding_group': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Code'
+            }),
+            'tax_withholding_rate': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'step': '0.001', # Allows 3 decimal places
+                'placeholder': '0.000'
+            }),
+            'cumulative_threshold': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'step': '0.01',
+                'placeholder': '0.00'
+            }),
+            'transaction_threshold': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'step': '0.01',
+                'placeholder': '0.00'
+            }),
+        }
+
+# --- Account Form (For the Inline Table) ---
+class TaxCategoryAccountForm(forms.ModelForm):
+    class Meta:
+        model = TaxCategoryAccount
+        fields = '__all__'
+        widgets = {
+            'company': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'account': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+        }
+
+# --- Formset Definitions ---
+
+# 1. Rates Table Formset
+TaxRateFormSet = inlineformset_factory(
+    parent_model=TaxWithholdingCategory,
+    model=TaxWithholdingRate,
+    form=TaxWithholdingRateForm, # We pass the custom form here to apply widgets
+    extra=1,          # Show 1 empty row by default
+    can_delete=True   # Allow deleting rows
+)
+
+# 2. Accounts Table Formset
+TaxAccountFormSet = inlineformset_factory(
+    parent_model=TaxWithholdingCategory,
+    model=TaxCategoryAccount,
+    form=TaxCategoryAccountForm, # We pass the custom form here to apply widgets
+    extra=1,
+    can_delete=True
+)
+
+class DeductionCertificateForm(forms.ModelForm):
+    class Meta:
+        model = DeductionCertificate
+        fields = [
+            'tax_withholding_category',
+            'company',
+            'fiscal_year',
+            'certificate_number',
+            'supplier',
+            'pan_number',
+            'valid_from',
+            'valid_to',
+            'rate_of_tdas',
+            'certificate_limit',
+        ]
+        widgets = {
+            'valid_from': forms.DateInput(attrs={'type': 'date'}),
+            'valid_to': forms.DateInput(attrs={'type': 'date'}),
+        }

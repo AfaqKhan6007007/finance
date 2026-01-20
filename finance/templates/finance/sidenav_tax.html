@@ -140,11 +140,11 @@
       <div class="submenu">
         <a href="{% url 'finance-tax-categories' %}">Tax Category</a>
         <a href="{% url 'finance-tax-rules' %}">Tax Rule</a>
-        <a href="#">Tax Withholding Category</a>
+        <a href="{% url 'finance-tax-withholding-categories' %}">Tax Withholding Category</a>
       </div>
     </div>
 
-    <a class="nav-item" href="#">Deduction Certificate</a>
+    <a class="nav-item" href="{% url 'finance-deduction-certificates' %}">Deduction Certificate</a>
 
     <!-- REPORTS -->
     <div class="nav-item has-submenu">

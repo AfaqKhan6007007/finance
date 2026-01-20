@@ -8,9 +8,9 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from .forms import AccountingDimensionForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm, TaxCategoryForm, TaxItemTemplatesForm, TaxRuleForm
-from django.db import models
-from .models import AccountingDimension, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, Invoice, JournalEntry, Supplier, TaxCategory, TaxItemTemplate, TaxRule
+from .forms import AccountingDimensionForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, DeductionCertificateForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm, TaxAccountFormSet, TaxCategoryForm, TaxItemTemplatesForm, TaxRateFormSet, TaxRuleForm, TaxWithholdingCategoryForm
+from django.db import models, transaction
+from .models import AccountingDimension, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, Supplier, TaxCategory, TaxItemTemplate, TaxRule, TaxWithholdingCategory
 from django.contrib.messages import get_messages
 from django.db.models import Sum, Q
 from datetime import datetime, timedelta
@@ -1010,6 +1010,266 @@ class TaxRulesDelete(View):
         )
         return redirect('finance-tax-rules')
 
+class DeductionCertificateView(View):
+    """List all Deduction Certificates"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        certificates = DeductionCertificate.objects.select_related(
+            'company', 'supplier', 'tax_withholding_category'
+        ).all()
+
+        # Search by certificate number
+        search_query = request.GET.get('search', '')
+        if search_query:
+            certificates = certificates.filter(
+                certificate_number__icontains=search_query
+            )
+
+        # Filter by Company
+        company_filter = request.GET.get('company', '')
+        if company_filter:
+            certificates = certificates.filter(company_id=company_filter)
+
+        context = {
+            'certificates': certificates,
+            'search_query': search_query,
+            'company_filter': company_filter,
+            'total_count': DeductionCertificate.objects.count(),
+        }
+
+        return render(
+            request,
+            'finance/deduction_certificates.html',
+            context
+        )
+
+class DeductionCertificateCreate(View):
+    """Create new Deduction Certificate"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        form = DeductionCertificateForm()
+        return render(request, 'finance/deduction_certificate_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = DeductionCertificateForm(request.POST)
+
+        # Debug
+        print("POST data:", request.POST)
+
+        if form.is_valid():
+            certificate = form.save()
+            messages.success(
+                request,
+                f'Deduction Certificate "{certificate.certificate_number}" created successfully!'
+            )
+            return redirect('finance-deduction-certificates')
+        else:
+            print("Form errors:", form.errors)
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/deduction_certificate_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+    
+class DeductionCertificateEdit(View):
+    """Edit existing Deduction Certificate"""
+
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        certificate = get_object_or_404(DeductionCertificate, pk=pk)
+        form = DeductionCertificateForm(instance=certificate)
+
+        return render(request, 'finance/deduction_certificate_form.html', {
+            'form': form,
+            'certificate': certificate,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        certificate = get_object_or_404(DeductionCertificate, pk=pk)
+        form = DeductionCertificateForm(
+            request.POST,
+            instance=certificate
+        )
+
+        # Debug
+        print("POST data:", request.POST)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                f'Deduction Certificate "{certificate.certificate_number}" updated successfully!'
+            )
+            return redirect('finance-deduction-certificates')
+        else:
+            print("Form errors:", form.errors)
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/deduction_certificate_form.html', {
+            'form': form,
+            'certificate': certificate,
+            'action': 'Edit',
+            'is_edit': True
+        })
+    
+class DeductionCertificateDelete(View):
+    """Delete Deduction Certificate"""
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        certificate = get_object_or_404(DeductionCertificate, pk=pk)
+
+        certificate.delete()
+        messages.success(
+            request,
+            f'Deduction Certificate "{certificate.certificate_number}" deleted successfully!'
+        )
+        return redirect('finance-deduction-certificates')
+
+class TaxWithholdingCategoryList(View):
+    """List all Tax Withholding Categories"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        categories = TaxWithholdingCategory.objects.all()
+
+        # Search and Filter logic
+        search_query = request.GET.get('search', '')
+        if search_query:
+            categories = categories.filter(name__icontains=search_query)
+
+        basis_filter = request.GET.get('basis', '')
+        if basis_filter:
+            categories = categories.filter(deduct_tax_on_basis=basis_filter)
+
+        context = {
+            'categories': categories,
+            'basis_filter': basis_filter,
+            'search_query': search_query,
+            'total_count': TaxWithholdingCategory.objects.count(),
+        }
+
+        # Make sure this template filename matches what is on your disk
+        return render(request, 'finance/tax_category_list.html', context)
+
+
+class TaxWithholdingCategoryCreate(View):
+    """Create new Tax Withholding Category"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        return render(request, 'finance/tax_category_form.html', {
+            'form': TaxWithholdingCategoryForm(),
+            'rates_formset': TaxRateFormSet(),
+            'accounts_formset': TaxAccountFormSet(),
+            'action': 'New',
+            'is_edit': False
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = TaxWithholdingCategoryForm(request.POST)
+        rates_formset = TaxRateFormSet(request.POST)
+        accounts_formset = TaxAccountFormSet(request.POST)
+
+        if form.is_valid() and rates_formset.is_valid() and accounts_formset.is_valid():
+            try:
+                with transaction.atomic():
+                    category = form.save()
+                    
+                    rates_formset.instance = category
+                    rates_formset.save()
+                    
+                    accounts_formset.instance = category
+                    accounts_formset.save()
+                    
+                    messages.success(request, f'Tax Category "{category.name}" created successfully!')
+                    # ✅ FIXED: Matches your urls.py name
+                    return redirect('finance-tax-withholding-categories') 
+            except Exception as e:
+                messages.error(request, f'Error saving data: {str(e)}')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/tax_category_form.html', {
+            'form': form,
+            'rates_formset': rates_formset,
+            'accounts_formset': accounts_formset,
+            'action': 'New',
+            'is_edit': False
+        })
+
+
+class TaxWithholdingCategoryEdit(View):
+    """Edit existing Tax Withholding Category"""
+
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        category = get_object_or_404(TaxWithholdingCategory, pk=pk)
+        return render(request, 'finance/tax_category_form.html', {
+            'form': TaxWithholdingCategoryForm(instance=category),
+            'rates_formset': TaxRateFormSet(instance=category),
+            'accounts_formset': TaxAccountFormSet(instance=category),
+            'category': category,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        category = get_object_or_404(TaxWithholdingCategory, pk=pk)
+        
+        form = TaxWithholdingCategoryForm(request.POST, instance=category)
+        rates_formset = TaxRateFormSet(request.POST, instance=category)
+        accounts_formset = TaxAccountFormSet(request.POST, instance=category)
+
+        if form.is_valid() and rates_formset.is_valid() and accounts_formset.is_valid():
+            try:
+                with transaction.atomic():
+                    form.save()
+                    rates_formset.save()
+                    accounts_formset.save()
+                    
+                    messages.success(request, f'Tax Category "{category.name}" updated successfully!')
+                    # ✅ FIXED: Matches your urls.py name
+                    return redirect('finance-tax-withholding-categories')
+            except Exception as e:
+                messages.error(request, f'Error saving data: {str(e)}')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+
+        return render(request, 'finance/tax_category_form.html', {
+            'form': form,
+            'rates_formset': rates_formset,
+            'accounts_formset': accounts_formset,
+            'category': category,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+
+class TaxWithholdingCategoryDelete(View):
+    """Delete Tax Withholding Category"""
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        category = get_object_or_404(TaxWithholdingCategory, pk=pk)
+        category.delete()
+        messages.success(request, f'Tax Category "{category.name}" deleted successfully!')
+        # ✅ FIXED: Matches your urls.py name
+        return redirect('finance-tax-withholding-categories')
 
 class Dashboard(View):
     @method_decorator(login_required)

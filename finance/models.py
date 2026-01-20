@@ -697,3 +697,158 @@ class TaxRule(models.Model):
         verbose_name="Company"
     )
 
+from django.db import models
+
+class TaxWithholdingCategory(models.Model):
+    name = models.CharField(max_length=255, verbose_name="Name")
+
+    category_name = models.CharField(max_length=255, blank=True, null=True, verbose_name="Category Name")
+    
+    BASIS_CHOICES = [
+        ('Net Total', 'Net Total'),
+        ('Gross Total', 'Gross Total'),
+    ]
+    deduct_tax_on_basis = models.CharField(
+        max_length=50, 
+        choices=BASIS_CHOICES, 
+        default='Net Total',
+        verbose_name="Deduct Tax On Basis"
+    )
+    
+    round_off_tax_amount = models.BooleanField(
+        default=False, 
+        verbose_name="Round Off Tax Amount",
+        help_text="Checking this will round off the tax amount to the nearest integer"
+    )
+    
+    section = models.CharField(max_length=100, blank=True, null=True, verbose_name="Section")
+    
+    only_deduct_on_excess = models.BooleanField(
+        default=False, 
+        verbose_name="Only Deduct Tax On Excess Amount",
+        help_text="Tax withheld only for amount exceeding cumulative threshold"
+    )
+    
+    ENTITY_CHOICES = [
+        ('Company', 'Company'),
+        ('Company Assessee', 'Company Assessee'),
+        ('Individual', 'Individual'),
+        ('No PAN / Invalid PAN', 'No PAN / Invalid PAN'),
+    ]
+    entity = models.CharField(
+        max_length=50, 
+        choices=ENTITY_CHOICES, 
+        default='Company',
+        verbose_name="Entity"
+    )
+    
+    disable_cumulative_threshold = models.BooleanField(
+        default=False, 
+        verbose_name="Disable Cumulative Threshold",
+        help_text="When checked, only transaction threshold will be applied for transaction individually"
+    )
+    
+    disable_transaction_threshold = models.BooleanField(
+        default=False, 
+        verbose_name="Disable Transaction Threshold",
+        help_text="When checked, only cumulative threshold will be applied"
+    )
+
+    def __str__(self):
+        return self.name
+
+
+class TaxWithholdingRate(models.Model):
+    category = models.ForeignKey(
+        TaxWithholdingCategory, 
+        related_name='rates', 
+        on_delete=models.CASCADE
+    )
+    
+    from_date = models.DateField(verbose_name="From Date")
+    to_date = models.DateField(verbose_name="To Date")
+    
+    tax_withholding_group = models.CharField(max_length=100, verbose_name="Tax Withholding Group", blank=True)
+    
+    tax_withholding_rate = models.DecimalField(
+        max_digits=6, 
+        decimal_places=3, 
+        verbose_name="Tax Withholding Rate", 
+        default=0.000
+    )
+    
+    cumulative_threshold = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        default=0.00, 
+        verbose_name="Cumulative Threshold"
+    )
+    
+    transaction_threshold = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        default=0.00, 
+        verbose_name="Transaction Threshold"
+    )
+
+    class Meta:
+        verbose_name = "Tax Withholding Rate"
+
+
+class TaxCategoryAccount(models.Model):
+    category = models.ForeignKey(
+        TaxWithholdingCategory, 
+        related_name='accounts', 
+        on_delete=models.CASCADE
+    )
+    
+    company = models.ForeignKey(
+        'Company', 
+        on_delete=models.CASCADE, 
+        verbose_name="Company"
+    )
+    
+    account = models.ForeignKey(
+        'Account', 
+        on_delete=models.CASCADE, 
+        verbose_name="Account"
+    )
+
+    class Meta:
+        verbose_name = "Category Account Mapping"
+
+class DeductionCertificate(models.Model):
+    tax_withholding_category = models.ForeignKey(
+        TaxWithholdingCategory,
+        on_delete=models.CASCADE,
+        related_name='deduction_certificates',
+        verbose_name="Tax Withholding Category"
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        verbose_name="Company"
+    )
+    fiscal_year = models.CharField(max_length=20,  choices=[('2025-2026', '2025-2026')],verbose_name="Fiscal Year")
+    certificate_number = models.CharField(max_length=100, verbose_name="Certificate Number")
+    supplier = models.ForeignKey(
+        'Supplier',
+        on_delete=models.CASCADE,
+        related_name='deduction_certificates',
+        verbose_name="Supplier"
+    )
+    pan_number = models.CharField(max_length=20, blank=True, verbose_name="PAN Number")
+    valid_from = models.DateField(verbose_name="Valid From")
+    valid_to = models.DateField(verbose_name="Valid To")
+    rate_of_tdas = models.DecimalField(
+        max_digits=6,
+        decimal_places=3,
+        verbose_name="Rate of TDS",
+        default=0.000
+    )
+    certificate_limit = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Certificate Limit",
+        default=0.00
+    )
