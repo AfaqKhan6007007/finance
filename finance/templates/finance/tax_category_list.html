@@ -454,10 +454,10 @@
                         <td>{{ category.entity|default:"-" }}</td>
                         <td>
                             <div class="action-icons">
-                                <a href="{% url 'finance-tax-category-edit' category.pk %}" class="icon-btn">
+                                <a href="{% url 'finance-tax-withholding-category-edit' category.pk %}" class="icon-btn">
                                     ✏️ Edit
                                 </a>
-                                <form method="post" action="{% url 'finance-tax-category-delete' category.pk %}" 
+                                <form method="post" action="{% url 'finance-tax-withholding-category-delete' category.pk %}" 
                                       style="display:inline;" onsubmit="return confirm('Delete category {{ category.name }}?');">
                                     {% csrf_token %}
                                     <button type="submit" class="icon-btn icon-btn-delete">
