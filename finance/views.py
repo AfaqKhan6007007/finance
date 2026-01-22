@@ -8,9 +8,9 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from .forms import AccountingDimensionForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, DeductionCertificateForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm, TaxAccountFormSet, TaxCategoryForm, TaxItemTemplatesForm, TaxRateFormSet, TaxRuleForm, TaxWithholdingCategoryForm
+from .forms import AccountingDimensionForm, BankAccountForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, DeductionCertificateForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm, TaxAccountFormSet, TaxCategoryForm, TaxItemTemplatesForm, TaxRateFormSet, TaxRuleForm, TaxWithholdingCategoryForm
 from django.db import models, transaction
-from .models import AccountingDimension, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, Supplier, TaxCategory, TaxItemTemplate, TaxRule, TaxWithholdingCategory
+from .models import AccountingDimension, BankAccount, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, Supplier, TaxCategory, TaxItemTemplate, TaxRule, TaxWithholdingCategory
 from django.contrib.messages import get_messages
 from django.db.models import Sum, Q
 from datetime import datetime, timedelta
@@ -3422,6 +3422,108 @@ def merge_images_vertically(image_list):
     merged_image.save(img_byte_array, format="PNG")
     return img_byte_array.getvalue()
 
+class BankAccounts(View):
+    """List all Bank Accounts"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        bank_accounts = BankAccount.objects.select_related(
+            'account_type', 'account_subtype'
+        )
+
+        search_query = request.GET.get('search', '')
+        if search_query:
+            bank_accounts = bank_accounts.filter(
+                name__icontains=search_query
+            )
+
+        context = {
+            'bank_accounts': bank_accounts,
+            'search_query': search_query,
+            'total_count': BankAccount.objects.count(),
+        }
+        return render(request, 'finance/bank_accounts.html', context)
+    
+class BankAccountCreate(View):
+    """Create new bank account"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        form = BankAccountForm()
+        return render(request, 'finance/bank_account_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = BankAccountForm(request.POST)
+
+        if form.is_valid():
+            bank_account = form.save()
+            messages.success(
+                request,
+                f'Bank Account "{bank_account.name}" created successfully!'
+            )
+            return redirect('finance-bank-accounts')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/bank_account_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+    
+class BankAccountEdit(View):
+    """Edit existing bank account"""
+
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        bank_account = get_object_or_404(BankAccount, pk=pk)
+        form = BankAccountForm(instance=bank_account)
+
+        return render(request, 'finance/bank_account_form.html', {
+            'form': form,
+            'bank_account': bank_account,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        bank_account = get_object_or_404(BankAccount, pk=pk)
+        form = BankAccountForm(request.POST, instance=bank_account)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                f'Bank Account "{bank_account.name}" updated successfully!'
+            )
+            return redirect('finance-bank-accounts')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/bank_account_form.html', {
+            'form': form,
+            'bank_account': bank_account,
+            'action': 'Edit',
+            'is_edit': True
+        })
+    
+class BankAccountDelete(View):
+    """Delete bank account"""
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        bank_account = get_object_or_404(BankAccount, pk=pk)
+        bank_account.delete()
+
+        messages.success(
+            request,
+            f'Bank Account "{bank_account.name}" deleted successfully!'
+        )
+        return redirect('finance-bank-accounts')
 
 class Login(View):
     def get(self, request):
