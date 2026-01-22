@@ -852,3 +852,52 @@ class DeductionCertificate(models.Model):
         verbose_name="Certificate Limit",
         default=0.00
     )
+
+class BankAccountType(models.Model):
+    account_type = models.CharField(max_length=200, verbose_name="Bank Account Type Name")
+    class Meta:
+        verbose_name_plural = "Bank Account Types"
+        ordering = ['account_type']
+    def __str__(self):
+        return self.account_type
+
+class BankAccountSubtype(models.Model):
+    account_subtype = models.CharField(max_length=200, verbose_name="Bank Account Subtype Name")
+    class Meta:
+        verbose_name_plural = "Bank Account Subtypes"
+        ordering = ['account_subtype']
+    def __str__(self):
+        return self.account_subtype
+
+class BankAccount(models.Model):
+    name = models.CharField(max_length=200, verbose_name="Bank Account Name")
+    bank = models.CharField(max_length=200, verbose_name="Bank Name")
+    account_type = models.ForeignKey(BankAccountType, on_delete=models.CASCADE, related_name='bank_accounts', verbose_name="Bank Account Type", blank=True,null=True)
+    account_subtype = models.ForeignKey(BankAccountSubtype, on_delete=models.CASCADE, related_name='bank_accounts', verbose_name="Bank Account Subtype", blank=True,null=True)
+    party_type = models.CharField(max_length=100, verbose_name="Party Type", choices=[('customer', 'Customer'), ('supplier', 'Supplier'),('employee','Employee'),('shareholder','Shareholder')], blank=True)
+    party = models.CharField(max_length=200, verbose_name="Party", blank=True)
+
+    iban = models.CharField(max_length=34, verbose_name="IBAN", blank=True)
+    branch_code = models.CharField(max_length=20, verbose_name="Branch Code", blank=True)
+    bank_account_number = models.CharField(max_length=50, verbose_name="Bank Account Number", blank=True)
+
+    last_integration_date = models.DateField(null=True, blank=True, verbose_name="Last Integration Date")
+
+    class Meta:
+        verbose_name_plural = "Bank Accounts"
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} - {self.bank}"
+    
+class BankGuarantee(models.Model):
+    type = models.CharField(max_length=100, verbose_name="Bank Guarantee Type", choices=[('receiving', 'Receiving'), ('providing', 'Providing')])
+    amount = models.DecimalField(max_digits=15, decimal_places=2, verbose_name="Amount")
+    start_date = models.DateField(verbose_name="Start Date")
+
+    class Meta:
+        verbose_name_plural = "Bank Guarantees"
+        ordering = ['start_date']
+
+    def __str__(self):
+        return f"{self.type} - {self.amount} starting {self.start_date}"

@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.forms import inlineformset_factory
-from .models import AccountingDimension, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, Supplier, Budget, TaxCategory, TaxCategoryAccount, TaxItemTemplate, TaxWithholdingCategory, TaxWithholdingRate
+from .models import AccountingDimension, BankAccount, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, Supplier, Budget, TaxCategory, TaxCategoryAccount, TaxItemTemplate, TaxWithholdingCategory, TaxWithholdingRate
 from django.core.exceptions import ValidationError
 
 class SignupForm(UserCreationForm):
@@ -734,3 +734,39 @@ class DeductionCertificateForm(forms.ModelForm):
             'valid_from': forms.DateInput(attrs={'type': 'date'}),
             'valid_to': forms.DateInput(attrs={'type': 'date'}),
         }
+
+class BankAccountForm(forms.ModelForm):
+    class Meta:
+        model = BankAccount
+        fields = [
+            'name',
+            'bank',
+            'account_type',
+            'account_subtype',
+            'party_type',
+            'party',
+            'iban',
+            'branch_code',
+            'bank_account_number',
+            'last_integration_date',
+        ]
+
+        widgets = {
+            'last_integration_date': forms.DateInput(
+                attrs={'type': 'date'}
+            ),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        party_type = cleaned_data.get('party_type')
+        party = cleaned_data.get('party')
+
+        # If party_type is selected, party should be provided
+        if party_type and not party:
+            self.add_error(
+                'party',
+                'Party is required when Party Type is selected.'
+            )
+
+        return cleaned_data
