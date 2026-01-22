@@ -1,0 +1,78 @@
+<!-- Chatbot Widget -->
+<div id="chatbot-widget">
+    <!-- Floating Button (always visible) -->
+    <button id="chatbot-toggle-btn" class="chatbot-toggle-btn" aria-label="Open Chatbot">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span class="chatbot-notification-badge" id="chatbot-notification" style="display: none;">1</span>
+    </button>
+
+    <!-- Chat Window (hidden by default) -->
+    <div id="chatbot-window" class="chatbot-window" style="display: none;">
+        <!-- Header -->
+        <div class="chatbot-header">
+            <div class="chatbot-header-content">
+                <div class="chatbot-avatar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </div>
+                <div class="chatbot-header-info">
+                    <h3 class="chatbot-title">Finance Assistant</h3>
+                    <span class="chatbot-status">Online</span>
+                </div>
+            </div>
+            <div class="chatbot-header-actions">
+                <button id="chatbot-clear-btn" class="chatbot-action-btn" title="Clear conversation" aria-label="Clear conversation">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+                <button id="chatbot-close-btn" class="chatbot-action-btn" aria-label="Close chatbot">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Messages Container -->
+        <div id="chatbot-messages" class="chatbot-messages">
+            <div class="chatbot-welcome-message">
+                <p>👋 Hello! I'm your Finance Assistant. How can I help you today?</p>
+                <p class="chatbot-welcome-hint">Ask me about invoices, accounts, suppliers, budgets, or any financial questions!</p>
+            </div>
+        </div>
+
+        <!-- Typing Indicator (hidden by default) -->
+        <div id="chatbot-typing" class="chatbot-typing-indicator" style="display: none;">
+            <div class="chatbot-typing-dot"></div>
+            <div class="chatbot-typing-dot"></div>
+            <div class="chatbot-typing-dot"></div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="chatbot-input-area">
+            <form id="chatbot-form">
+                <input 
+                    type="text" 
+                    id="chatbot-input" 
+                    class="chatbot-input" 
+                    placeholder="Type your message..." 
+                    autocomplete="off"
+                    maxlength="500"
+                />
+                <button type="submit" id="chatbot-send-btn" class="chatbot-send-btn" aria-label="Send message">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

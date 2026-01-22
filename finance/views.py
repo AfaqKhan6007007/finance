@@ -3520,3 +3520,94 @@ class Logout(View):
         # Add message after logout (this should work with FallbackStorage)
         messages.success(request, f'Goodbye {user_name}! You have been logged out successfully.')
         return redirect('finance-login')
+
+
+# ============================================
+# CHATBOT VIEWS
+# ============================================
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+from .services.chatbot_service import ChatbotService
+import json
+
+@login_required
+@require_http_methods(["POST"])
+def chatbot_send_message(request):
+    """
+    Handle chatbot message sending.
+    Receives user message, processes with OpenAI, returns response.
+    """
+    try:
+        data = json.loads(request.body)
+        user_message = data.get('message', '').strip()
+        
+        if not user_message:
+            return JsonResponse({
+                'success': False,
+                'error': 'Message cannot be empty'
+            }, status=400)
+        
+        # Initialize chatbot service
+        chatbot = ChatbotService()
+        
+        # Send message and get response
+        result = chatbot.send_message(user_message, request.session)
+        
+        return JsonResponse(result)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON format'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
+@require_http_methods(["GET"])
+def chatbot_get_history(request):
+    """
+    Retrieve conversation history from session.
+    """
+    try:
+        chatbot = ChatbotService()
+        conversation = chatbot.get_conversation_history(request.session)
+        
+        return JsonResponse({
+            'success': True,
+            'conversation': conversation
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def chatbot_clear_conversation(request):
+    """
+    Clear conversation history from session.
+    """
+    try:
+        chatbot = ChatbotService()
+        chatbot.clear_conversation(request.session)
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Conversation cleared successfully'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

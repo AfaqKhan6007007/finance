@@ -1,0 +1,2 @@
+fastmcp
+Django>=6.0

@@ -2,7 +2,7 @@ from django.urls import path
 
 from finance.models import TaxWithholdingCategory
 
-from .views import AccountingDimensionCreate, AccountingDimensionDelete, AccountingDimensionEdit, AccountingDimensions, Budgets,BudgetCreate,BudgetEdit, BudgetDelete, CostCenterAllocations, CostCenterAllocationsCreate, CostCenterAllocationsDelete, CostCenterAllocationsEdit,CostCenterDelete, CostCenterCreate, CostCenterEdit, CostCenters, CustomerCreate, CustomerDelete, CustomerEdit, Customers, DeductionCertificateCreate, DeductionCertificateDelete, DeductionCertificateEdit, DeductionCertificateView, Login, Signup, Logout, Dashboard, Journal, TaxCategories, TaxCategoryCreate, TaxCategoryDelete, TaxCategoryEdit, TaxItemTemplates, TaxItemTemplatesCreate, TaxItemTemplatesEdit, TaxItemTemplatesDelete, TaxRuleView, TaxRulesCreate, TaxRulesDelete, TaxRulesEdit, TaxWithholdingCategoryCreate, TaxWithholdingCategoryDelete, TaxWithholdingCategoryEdit, TaxWithholdingCategoryList, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
+from .views import AccountingDimensionCreate, AccountingDimensionDelete, AccountingDimensionEdit, AccountingDimensions, Budgets,BudgetCreate,BudgetEdit, BudgetDelete, CostCenterAllocations, CostCenterAllocationsCreate, CostCenterAllocationsDelete, CostCenterAllocationsEdit,CostCenterDelete, CostCenterCreate, CostCenterEdit, CostCenters, CustomerCreate, CustomerDelete, CustomerEdit, Customers, DeductionCertificateCreate, DeductionCertificateDelete, DeductionCertificateEdit, DeductionCertificateView, Login, Signup, Logout, Dashboard, Journal, TaxCategories, TaxCategoryCreate, TaxCategoryDelete, TaxCategoryEdit, TaxItemTemplates, TaxItemTemplatesCreate, TaxItemTemplatesEdit, TaxItemTemplatesDelete, TaxRuleView, TaxRulesCreate, TaxRulesDelete, TaxRulesEdit, TaxWithholdingCategoryCreate, TaxWithholdingCategoryDelete, TaxWithholdingCategoryEdit, TaxWithholdingCategoryList, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice, chatbot_send_message, chatbot_get_history, chatbot_clear_conversation
 
 urlpatterns = [
      # ============ Authentication ============
@@ -122,4 +122,9 @@ urlpatterns = [
         DeductionCertificateDelete.as_view(),
         name='finance-deduction-certificate-delete'
     ),
+    
+    # ============ Chatbot API ============
+    path('chatbot/send/', chatbot_send_message, name='finance-chatbot-send'),
+    path('chatbot/history/', chatbot_get_history, name='finance-chatbot-history'),
+    path('chatbot/clear/', chatbot_clear_conversation, name='finance-chatbot-clear'),
 ]
