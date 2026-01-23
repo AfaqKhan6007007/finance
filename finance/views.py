@@ -8,9 +8,9 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from .forms import AccountingDimensionForm, BankAccountForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, DeductionCertificateForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm, TaxAccountFormSet, TaxCategoryForm, TaxItemTemplatesForm, TaxRateFormSet, TaxRuleForm, TaxWithholdingCategoryForm
+from .forms import AccountingDimensionForm, BankAccountForm, BankAccountTypeForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, DeductionCertificateForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm, TaxAccountFormSet, TaxCategoryForm, TaxItemTemplatesForm, TaxRateFormSet, TaxRuleForm, TaxWithholdingCategoryForm
 from django.db import models, transaction
-from .models import AccountingDimension, BankAccount, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, Supplier, TaxCategory, TaxItemTemplate, TaxRule, TaxWithholdingCategory
+from .models import AccountingDimension, BankAccount, BankAccountType, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, Supplier, TaxCategory, TaxItemTemplate, TaxRule, TaxWithholdingCategory
 from django.contrib.messages import get_messages
 from django.db.models import Sum, Q
 from datetime import datetime, timedelta
@@ -3524,6 +3524,110 @@ class BankAccountDelete(View):
             f'Bank Account "{bank_account.name}" deleted successfully!'
         )
         return redirect('finance-bank-accounts')
+
+
+class BankAccountTypes(View):
+    """List all Bank Account Types"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        bank_account_types = BankAccountType.objects.all()
+
+        search_query = request.GET.get('search', '')
+        if search_query:
+            bank_account_types = bank_account_types.filter(
+                account_type__icontains=search_query
+            )
+
+        context = {
+            'bank_account_types': bank_account_types,
+            'search_query': search_query,
+            'total_count': BankAccountType.objects.count(),
+        }
+        return render(request, 'finance/bank_account_types.html', context)
+    
+class BankAccountTypeCreate(View):
+    """Create new bank account type"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        form = BankAccountTypeForm()
+        return render(request, 'finance/bank_account_type_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = BankAccountTypeForm(request.POST)
+
+        if form.is_valid():
+            bank_account_type = form.save()
+            messages.success(
+                request,
+                f'Bank Account Type "{bank_account_type.account_type}" created successfully!'
+            )
+            return redirect('finance-bank-account-types')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/bank_account_type_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+class BankAccountTypeEdit(View):
+    """Edit existing bank account type"""
+
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        bank_account_type = get_object_or_404(BankAccountType, pk=pk)
+        form = BankAccountTypeForm(instance=bank_account_type)
+
+        return render(request, 'finance/bank_account_type_form.html', {
+            'form': form,
+            'bank_account_type': bank_account_type,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        bank_account_type = get_object_or_404(BankAccountType, pk=pk)
+        form = BankAccountTypeForm(request.POST, instance=bank_account_type)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                f'Bank Account Type "{bank_account_type.account_type}" updated successfully!'
+            )
+            return redirect('finance-bank-account-types')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/bank_account_type_form.html', {
+            'form': form,
+            'bank_account_type': bank_account_type,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+class BankAccountTypeDelete(View):
+    """Delete bank account type"""
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        bank_account_type = get_object_or_404(BankAccountType, pk=pk)
+        bank_account_type.delete()
+
+        messages.success(
+            request,
+            f'Bank Account Type "{bank_account_type.account_type}" deleted successfully!'
+        )
+        return redirect('finance-bank-account-types')
+
+
 
 class Login(View):
     def get(self, request):

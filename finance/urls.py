@@ -2,7 +2,7 @@ from django.urls import path
 
 from finance.models import TaxWithholdingCategory
 
-from .views import AccountingDimensionCreate, AccountingDimensionDelete, AccountingDimensionEdit, AccountingDimensions, BankAccountCreate, BankAccountDelete, BankAccountEdit, BankAccounts, Budgets,BudgetCreate,BudgetEdit, BudgetDelete, CostCenterAllocations, CostCenterAllocationsCreate, CostCenterAllocationsDelete, CostCenterAllocationsEdit,CostCenterDelete, CostCenterCreate, CostCenterEdit, CostCenters, CustomerCreate, CustomerDelete, CustomerEdit, Customers, DeductionCertificateCreate, DeductionCertificateDelete, DeductionCertificateEdit, DeductionCertificateView, Login, Signup, Logout, Dashboard, Journal, TaxCategories, TaxCategoryCreate, TaxCategoryDelete, TaxCategoryEdit, TaxItemTemplates, TaxItemTemplatesCreate, TaxItemTemplatesEdit, TaxItemTemplatesDelete, TaxRuleView, TaxRulesCreate, TaxRulesDelete, TaxRulesEdit, TaxWithholdingCategoryCreate, TaxWithholdingCategoryDelete, TaxWithholdingCategoryEdit, TaxWithholdingCategoryList, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
+from .views import AccountingDimensionCreate, AccountingDimensionDelete, AccountingDimensionEdit, AccountingDimensions, BankAccountCreate, BankAccountDelete, BankAccountEdit, BankAccountTypeCreate, BankAccountTypeDelete, BankAccountTypeEdit, BankAccountTypes, BankAccounts, Budgets,BudgetCreate,BudgetEdit, BudgetDelete, CostCenterAllocations, CostCenterAllocationsCreate, CostCenterAllocationsDelete, CostCenterAllocationsEdit,CostCenterDelete, CostCenterCreate, CostCenterEdit, CostCenters, CustomerCreate, CustomerDelete, CustomerEdit, Customers, DeductionCertificateCreate, DeductionCertificateDelete, DeductionCertificateEdit, DeductionCertificateView, Login, Signup, Logout, Dashboard, Journal, TaxCategories, TaxCategoryCreate, TaxCategoryDelete, TaxCategoryEdit, TaxItemTemplates, TaxItemTemplatesCreate, TaxItemTemplatesEdit, TaxItemTemplatesDelete, TaxRuleView, TaxRulesCreate, TaxRulesDelete, TaxRulesEdit, TaxWithholdingCategoryCreate, TaxWithholdingCategoryDelete, TaxWithholdingCategoryEdit, TaxWithholdingCategoryList, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
 
 urlpatterns = [
      # ============ Authentication ============
@@ -127,4 +127,9 @@ urlpatterns = [
     path('bank-accounts/new/', BankAccountCreate.as_view(), name='finance-bank-account-create'),
     path('bank-accounts/<int:pk>/edit/', BankAccountEdit.as_view(), name='finance-bank-account-edit'),
     path('bank-accounts/<int:pk>/delete/', BankAccountDelete.as_view(), name='finance-bank-account-delete'),
+
+    path('bank-account-types/', BankAccountTypes.as_view(), name='finance-bank-account-types'),
+    path('bank-account-types/new/', BankAccountTypeCreate.as_view(), name='finance-bank-account-type-create'),
+    path('bank-account-types/<int:pk>/edit/', BankAccountTypeEdit.as_view(), name='finance-bank-account-type-edit'),
+    path('bank-account-types/<int:pk>/delete/', BankAccountTypeDelete.as_view(), name='finance-bank-account-type-delete'),
 ]

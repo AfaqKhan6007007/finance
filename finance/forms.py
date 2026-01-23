@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.forms import inlineformset_factory
-from .models import AccountingDimension, BankAccount, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, Supplier, Budget, TaxCategory, TaxCategoryAccount, TaxItemTemplate, TaxWithholdingCategory, TaxWithholdingRate
+from .models import AccountingDimension, BankAccount, BankAccountType, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, Supplier, Budget, TaxCategory, TaxCategoryAccount, TaxItemTemplate, TaxWithholdingCategory, TaxWithholdingRate
 from django.core.exceptions import ValidationError
 
 class SignupForm(UserCreationForm):
@@ -770,3 +770,8 @@ class BankAccountForm(forms.ModelForm):
             )
 
         return cleaned_data
+    
+class BankAccountTypeForm(forms.ModelForm):
+    class Meta:
+        model = BankAccountType
+        fields = ['account_type']

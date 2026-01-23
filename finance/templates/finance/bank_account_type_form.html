@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{% if is_edit %}Edit{% else %}New{% endif %} Budget</title>
-
+    <title>{% if is_edit %}Edit{% else %}New{% endif %} Bank Account Type</title>
     <style>
         * {
             margin: 0;
@@ -258,7 +257,7 @@
 <div class="main-content">
 
     <h2 style="margin-bottom: 24px;">
-        {% if is_edit %}Edit{% else %}New{% endif %} Bank Account
+        {% if is_edit %}Edit{% else %}New{% endif %} Bank Account Type
     </h2>
 
     <div class="form-card">
@@ -267,126 +266,20 @@
 
             <div class="form-grid">
 
-                <!-- Name -->
-                <div class="form-group">
-                    <label class="form-label required">Account Name</label>
-                    <input type="text" name="name" id="id_name" 
-                            class="form-control" value="{{ form.name.value|default:'' }}">
-                    {% if form.name.errors %}
-                        <div class="error-message">{{ form.name.errors.0 }}</div>
-                    {% endif %}
-                </div>
-
-
-                <!-- Bank -->
-                <div class="form-group">
-                    <label class="form-label required">Bank</label>
-                    <input type="text" name="bank" id="id_bank" 
-                            class="form-control" value="{{ form.bank.value|default:'' }}">
-                    {% if form.bank.errors %}
-                        <div class="error-message">{{ form.bank.errors.0 }}</div>
-                    {% endif %}
-                </div>
-
-                <div class="form-group">
-                    <label class="required">Account Type</label>
-                    <select name="account_type" class="form-control" required>
-                        <option value="">Select Account Type</option>
-                        {% for account_type in form.fields.account_type.queryset %}
-                        <option value="{{ account_type.pk }}"
-                            {% if form.account_type.value == account_type.pk|stringformat:"s" %}selected{% endif %}>
-                            {{ account_type }}
-                        </option>
-                        {% endfor %}
-                    </select>
+                <!-- Account Type -->
+                <div class="form-group full-width">
+                    <label class="form-label required">Account Type Name</label>
+                    <input type="text"
+                           name="account_type"
+                           id="id_account_type"
+                           class="form-control"
+                           value="{{ form.account_type.value|default:'' }}"
+                           placeholder="e.g. Current, Savings, Payroll">
 
                     {% if form.account_type.errors %}
-                        <div class="error-message">{{ form.account_type.errors.0 }}</div>
-                    {% endif %}
-                </div>
-
-                 <!-- Account Subtype -->
-                <div class="form-group">
-                    <label class="required">Account Sub Type</label>
-                    <select name="account_subtype" class="form-control" required>
-                        <option value="">Select Account Sub Type</option>
-                        {% for account_subtype in form.fields.account_subtype.queryset %}
-                        <option value="{{ account_subtype.pk }}"
-                            {% if form.account_subtype.value == account_subtype.pk|stringformat:"s" %}selected{% endif %}>
-                            {{ account_subtype }}
-                        </option>
-                        {% endfor %}
-                    </select>
-
-                    {% if form.account_subtype.errors %}
-                        <div class="error-message">{{ form.account_subtype.errors.0 }}</div>
-                    {% endif %}
-                </div>
-
-
-
-                <!-- Party Type -->
-                <div class="form-group">
-                    <label for="id_party_type" class="form-label required">Party Type</label>
-                    <select name="party_type" id="id_party_type" class="form-control" required>
-                        <option value="customer" {% if form.party_type.value == "customer" %}selected{% endif %}>Customer</option>
-                        <option value="supplier" {% if form.party_type.value == "supplier" %}selected{% endif %}>Supplier</option>
-                        <option value="employee" {% if form.party_type.value == "employee" %}selected{% endif %}>Employee</option>
-                        <option value="shareholder" {% if form.party_type.value == "shareholder" %}selected{% endif %}>Shareholder</option>
-                    </select>
-                    {% if form.party_type.errors %}
-                        <div class="error-message">{{ form.party_type.errors.0 }}</div>
-                    {% endif %}
-                </div>
-
-                <!-- Party -->
-                <div class="form-group">
-                    <label for="id_party" class="form-label">Party</label>
-                    <input type="text" name="party" id="id_party" 
-                            class="form-control" value="{{ form.party.value|default:'' }}">
-                    {% if form.party.errors %}
-                        <div class="error-message">{{ form.party.errors.0 }}</div>
-                    {% endif %}
-                </div>
-
-
-                <!-- IBAN -->
-                <div class="form-group">
-                    <label for="id_iban" class="form-label">IBAN</label>
-                    <input type="text" name="iban" id="id_iban" 
-                            class="form-control" value="{{ form.iban.value|default:'' }}">
-                    {% if form.iban.errors %}
-                        <div class="error-message">{{ form.iban.errors.0 }}</div>
-                    {% endif %}
-                </div>
-
-                <!-- Branch Code -->
-                <div class="form-group">
-                    <label for="id_branch_code" class="form-label">Branch Code</label>
-                    <input type="text" name="branch_code" id="id_branch_code" 
-                            class="form-control" value="{{ form.branch_code.value|default:'' }}">
-                    {% if form.branch_code.errors %}
-                        <div class="error-message">{{ form.branch_code.errors.0 }}</div>
-                    {% endif %}
-                </div>
-
-                <!-- Bank Account Number -->
-                <div class="form-group">
-                    <label for="id_bank_account_number" class="form-label">Bank Account Number</label>
-                    <input type="text" name="bank_account_number" id="id_bank_account_number" 
-                            class="form-control" value="{{ form.bank_account_number.value|default:'' }}">
-                    {% if form.bank_account_number.errors %}
-                        <div class="error-message">{{ form.bank_account_number.errors.0 }}</div>
-                    {% endif %}
-                </div>
-
-                <!-- Last Integration Date -->
-                <div class="form-group">
-                    <label for="id_last_integration_date" class="form-label">Last Integration Date</label>
-                    <input type="date" name="last_integration_date" id="id_last_integration_date" 
-                            class="form-control" value="{{ form.last_integration_date.value|default:'' }}">
-                    {% if form.last_integration_date.errors %}
-                        <div class="error-message">{{ form.last_integration_date.errors.0 }}</div>
+                        <div class="error-message">
+                            {{ form.account_type.errors.0 }}
+                        </div>
                     {% endif %}
                 </div>
 
@@ -395,7 +288,7 @@
             <button type="submit" class="btn-save">Save</button>
         </form>
     </div>
-</div>
 
+</div>
 </body>
 </html>
