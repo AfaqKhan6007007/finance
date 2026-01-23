@@ -2,7 +2,7 @@ from django.urls import path
 
 from finance.models import TaxWithholdingCategory
 
-from .views import AccountingDimensionCreate, AccountingDimensionDelete, AccountingDimensionEdit, AccountingDimensions, BankAccountCreate, BankAccountDelete, BankAccountEdit, BankAccountTypeCreate, BankAccountTypeDelete, BankAccountTypeEdit, BankAccountTypes, BankAccounts, Budgets,BudgetCreate,BudgetEdit, BudgetDelete, CostCenterAllocations, CostCenterAllocationsCreate, CostCenterAllocationsDelete, CostCenterAllocationsEdit,CostCenterDelete, CostCenterCreate, CostCenterEdit, CostCenters, CustomerCreate, CustomerDelete, CustomerEdit, Customers, DeductionCertificateCreate, DeductionCertificateDelete, DeductionCertificateEdit, DeductionCertificateView, Login, Signup, Logout, Dashboard, Journal, TaxCategories, TaxCategoryCreate, TaxCategoryDelete, TaxCategoryEdit, TaxItemTemplates, TaxItemTemplatesCreate, TaxItemTemplatesEdit, TaxItemTemplatesDelete, TaxRuleView, TaxRulesCreate, TaxRulesDelete, TaxRulesEdit, TaxWithholdingCategoryCreate, TaxWithholdingCategoryDelete, TaxWithholdingCategoryEdit, TaxWithholdingCategoryList, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
+from .views import AccountingDimensionCreate, AccountingDimensionDelete, AccountingDimensionEdit, AccountingDimensions, BankAccountCreate, BankAccountDelete, BankAccountEdit, BankAccountSubTypeCreate, BankAccountSubTypeDelete, BankAccountSubTypeEdit, BankAccountSubTypes, BankAccountTypeCreate, BankAccountTypeDelete, BankAccountTypeEdit, BankAccountTypes, BankAccounts, BankGuaranteeCreate, BankGuaranteeCreate, BankGuaranteeDelete, BankGuaranteeEdit, BankGuarantees, Budgets,BudgetCreate,BudgetEdit, BudgetDelete, CostCenterAllocations, CostCenterAllocationsCreate, CostCenterAllocationsDelete, CostCenterAllocationsEdit,CostCenterDelete, CostCenterCreate, CostCenterEdit, CostCenters, CustomerCreate, CustomerDelete, CustomerEdit, Customers, DeductionCertificateCreate, DeductionCertificateDelete, DeductionCertificateEdit, DeductionCertificateView, Login, Signup, Logout, Dashboard, Journal, TaxCategories, TaxCategoryCreate, TaxCategoryDelete, TaxCategoryEdit, TaxItemTemplates, TaxItemTemplatesCreate, TaxItemTemplatesEdit, TaxItemTemplatesDelete, TaxRuleView, TaxRulesCreate, TaxRulesDelete, TaxRulesEdit, TaxWithholdingCategoryCreate, TaxWithholdingCategoryDelete, TaxWithholdingCategoryEdit, TaxWithholdingCategoryList, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
 
 urlpatterns = [
      # ============ Authentication ============
@@ -132,4 +132,15 @@ urlpatterns = [
     path('bank-account-types/new/', BankAccountTypeCreate.as_view(), name='finance-bank-account-type-create'),
     path('bank-account-types/<int:pk>/edit/', BankAccountTypeEdit.as_view(), name='finance-bank-account-type-edit'),
     path('bank-account-types/<int:pk>/delete/', BankAccountTypeDelete.as_view(), name='finance-bank-account-type-delete'),
+
+    path('bank-account-subtypes/', BankAccountSubTypes.as_view(), name='finance-bank-account-subtypes'),
+    path('bank-account-subtypes/new/', BankAccountSubTypeCreate.as_view(), name='finance-bank-account-subtype-create'),
+    path('bank-account-subtypes/<int:pk>/edit/', BankAccountSubTypeEdit.as_view(), name='finance-bank-account-subtype-edit'),
+    path('bank-account-subtypes/<int:pk>/delete/', BankAccountSubTypeDelete.as_view(), name='finance-bank-account-subtype-delete'),
+
+    path('bank-guarantees/', BankGuarantees.as_view(), name='finance-bank-guarantees'),
+    path('bank-guarantees/new/', BankGuaranteeCreate.as_view(), name='finance-bank-guarantee-create'),
+    path('bank-guarantees/<int:pk>/edit/', BankGuaranteeEdit.as_view(), name='finance-bank-guarantee-edit'),
+    path('bank-guarantees/<int:pk>/delete/', BankGuaranteeDelete.as_view(), name='finance-bank-guarantee-delete'),
+
 ]

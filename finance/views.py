@@ -8,9 +8,9 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from .forms import AccountingDimensionForm, BankAccountForm, BankAccountTypeForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, DeductionCertificateForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm, TaxAccountFormSet, TaxCategoryForm, TaxItemTemplatesForm, TaxRateFormSet, TaxRuleForm, TaxWithholdingCategoryForm
+from .forms import AccountingDimensionForm, BankAccountForm, BankAccountSubTypeForm, BankAccountTypeForm, BankGuaranteeForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, DeductionCertificateForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm, TaxAccountFormSet, TaxCategoryForm, TaxItemTemplatesForm, TaxRateFormSet, TaxRuleForm, TaxWithholdingCategoryForm
 from django.db import models, transaction
-from .models import AccountingDimension, BankAccount, BankAccountType, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, Supplier, TaxCategory, TaxItemTemplate, TaxRule, TaxWithholdingCategory
+from .models import AccountingDimension, BankAccount, BankAccountSubtype, BankAccountType, BankGuarantee, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, Supplier, TaxCategory, TaxItemTemplate, TaxRule, TaxWithholdingCategory
 from django.contrib.messages import get_messages
 from django.db.models import Sum, Q
 from datetime import datetime, timedelta
@@ -3627,6 +3627,210 @@ class BankAccountTypeDelete(View):
         )
         return redirect('finance-bank-account-types')
 
+
+
+class BankAccountSubTypes(View):
+    """List all Bank Account Sub Types"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        bank_account_subtypes = BankAccountSubtype.objects.all()
+
+        search_query = request.GET.get('search', '')
+        if search_query:
+            bank_account_subtypes = bank_account_subtypes.filter(
+                account_type__icontains=search_query
+            )
+
+        context = {
+            'bank_account_subtypes': bank_account_subtypes,
+            'search_query': search_query,
+            'total_count': BankAccountSubtype.objects.count(),
+        }
+        return render(request, 'finance/bank_account_subtypes.html', context)
+
+class BankAccountSubTypeCreate(View):
+    """Create new bank account subtype"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        form = BankAccountSubTypeForm()
+        return render(request, 'finance/bank_account_subtype_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = BankAccountSubTypeForm(request.POST)
+
+        if form.is_valid():
+            bank_account_subtype = form.save()
+            messages.success(
+                request,
+                f'Bank Account Subtype "{bank_account_subtype.account_subtype}" created successfully!'
+            )
+            return redirect('finance-bank-account-subtypes')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/bank_account_subtype_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+class BankAccountSubTypeEdit(View):
+    """Edit existing bank account subtype"""
+
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        bank_account_subtype = get_object_or_404(BankAccountSubtype, pk=pk)
+        form = BankAccountSubTypeForm(instance=bank_account_subtype)
+
+        return render(request, 'finance/bank_account_subtype_form.html', {
+            'form': form,
+            'bank_account_subtype': bank_account_subtype,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        bank_account_subtype = get_object_or_404(BankAccountSubtype, pk=pk)
+        form = BankAccountSubTypeForm(request.POST, instance=bank_account_subtype)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                f'Bank Account Subtype "{bank_account_subtype.account_subtype}" updated successfully!'
+            )
+            return redirect('finance-bank-account-subtypes')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/bank_account_subtype_form.html', {
+            'form': form,
+            'bank_account_subtype': bank_account_subtype,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+class BankAccountSubTypeDelete(View):
+    """Delete bank account subtype"""
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        bank_account_subtype = get_object_or_404(BankAccountSubtype, pk=pk)
+        bank_account_subtype.delete()
+
+        messages.success(
+            request,
+            f'Bank Account Subtype "{bank_account_subtype.account_subtype}" deleted successfully!'
+        )
+        return redirect('finance-bank-account-subtypes')
+
+
+class BankGuarantees(View):
+    """List all Bank Guarantees"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        bank_guarantees = BankGuarantee.objects.all()
+
+        search_query = request.GET.get('search', '')
+        if search_query:
+            bank_guarantees = bank_guarantees.filter(
+                type__icontains=search_query
+            )
+
+        context = {
+            'bank_guarantees': bank_guarantees,
+            'search_query': search_query,
+            'total_count': BankGuarantee.objects.count(),
+        }
+        return render(request, 'finance/bank_guarantees.html', context)
+    
+class BankGuaranteeCreate(View):
+    """Create new Bank Guarantee"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        form = BankGuaranteeForm()
+        return render(request, 'finance/bank_guarantee_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = BankGuaranteeForm(request.POST)
+
+        if form.is_valid():
+            bank_guarantee = form.save()
+            messages.success(
+                request,
+                'Bank Guarantee created successfully!'
+            )
+            return redirect('finance-bank-guarantees')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/bank_guarantee_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+    
+class BankGuaranteeEdit(View):
+    """Edit existing Bank Guarantee"""
+
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        bank_guarantee = get_object_or_404(BankGuarantee, pk=pk)
+        form = BankGuaranteeForm(instance=bank_guarantee)
+
+        return render(request, 'finance/bank_guarantee_form.html', {
+            'form': form,
+            'bank_guarantee': bank_guarantee,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        bank_guarantee = get_object_or_404(BankGuarantee, pk=pk)
+        form = BankGuaranteeForm(request.POST, instance=bank_guarantee)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                'Bank Guarantee updated successfully!'
+            )
+            return redirect('finance-bank-guarantees')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/bank_guarantee_form.html', {
+            'form': form,
+            'bank_guarantee': bank_guarantee,
+            'action': 'Edit',
+            'is_edit': True
+        })
+    
+class BankGuaranteeDelete(View):
+    """Delete Bank Guarantee"""
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        bank_guarantee = get_object_or_404(BankGuarantee, pk=pk)
+        bank_guarantee.delete()
+
+        messages.success(
+            request,
+            'Bank Guarantee deleted successfully!'
+        )
+        return redirect('finance-bank-guarantees')
 
 
 class Login(View):

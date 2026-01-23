@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.forms import inlineformset_factory
-from .models import AccountingDimension, BankAccount, BankAccountType, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, Supplier, Budget, TaxCategory, TaxCategoryAccount, TaxItemTemplate, TaxWithholdingCategory, TaxWithholdingRate
+from .models import AccountingDimension, BankAccount, BankAccountSubtype, BankAccountType, BankGuarantee, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, Supplier, Budget, TaxCategory, TaxCategoryAccount, TaxItemTemplate, TaxWithholdingCategory, TaxWithholdingRate
 from django.core.exceptions import ValidationError
 
 class SignupForm(UserCreationForm):
@@ -775,3 +775,21 @@ class BankAccountTypeForm(forms.ModelForm):
     class Meta:
         model = BankAccountType
         fields = ['account_type']
+
+class BankAccountSubTypeForm(forms.ModelForm):
+    class Meta:
+        model = BankAccountSubtype
+        fields = ['account_subtype']
+
+class BankGuaranteeForm(forms.ModelForm):
+    class Meta:
+        model = BankGuarantee
+        fields = ['type', 'amount', 'start_date']
+        widgets = {
+            'start_date': forms.DateInput(attrs={'type': 'date'}),
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': '0.00',
+            }),
+        }
