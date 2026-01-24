@@ -17,6 +17,8 @@
 8. [Accounting Dimensions](#8-accounting-dimensions)
 9. [Relationships Summary](#9-relationships-summary)
 10. [Key Constraints & Rules](#10-key-constraints--rules)
+11. [Banking Models](#11-banking-models)
+12. [Complete Table List](#complete-table-list-26-models)
 
 ---
 
@@ -776,9 +778,134 @@ When expense recorded:
 | CostCenter | Expense categorization | Departmental analysis |
 | TaxItemTemplate | Tax rate definition | GST/VAT rates |
 | TaxWithholding* | TDS/WHT processing | Tax compliance |
+| BankAccount | Bank account tracking | Payment processing |
+| BankGuarantee | Guarantee tracking | Security/Performance bonds |
+
+---
+
+## Complete Table List (26 Models)
+
+### Core Financial Models (9)
+1. **UserProfile** - User profile extensions
+2. **Company** - Multi-company master data
+3. **Account** - Chart of accounts (GL)
+4. **CostCenter** - Departmental tracking
+5. **Budget** - Budget planning & monitoring
+6. **JournalEntry** - Transaction recording
+7. **Invoice** - Purchasing & sales invoicing
+8. **Supplier** - Vendor master data
+9. **Customer** - Customer master data
+
+### Tax Management Models (7)
+10. **TaxItemTemplate** - Tax rate definitions
+11. **TaxCategory** - Tax grouping
+12. **TaxRule** - Conditional tax application
+13. **TaxWithholdingCategory** - TDS/WHT categories
+14. **TaxWithholdingRate** - TDS/WHT rate config
+15. **TaxCategoryAccount** - Tax GL mapping
+16. **DeductionCertificate** - TDS certificates
+
+### Dimensional Analysis Models (2)
+17. **AccountingDimension** - Custom dimensions
+18. **CostCenterAllocation** - Cost center assignments
+
+### Banking Models (4)
+19. **BankAccountType** - Bank account types
+20. **BankAccountSubtype** - Bank account subtypes
+21. **BankAccount** - Bank account details
+22. **BankGuarantee** - Guarantee tracking
+
+### Django Built-in (1)
+23. **User** (auth_user) - Authentication
 
 ---
 
 **Last Updated:** January 22, 2026
 **Database:** SQLite (db.sqlite3)
 **Django ORM:** Models defined in finance/models.py
+
+---
+
+## 11. BANKING MODELS
+
+### BankAccountType Table
+**Purpose:** Categorize types of bank accounts
+
+| Field | Type | Constraints | Notes |
+|-------|------|-----------|-------|
+| id | INTEGER | PRIMARY KEY | Auto-generated |
+| account_type | VARCHAR(200) | NOT NULL | Bank account type name (e.g., "Savings", "Current", "Credit Card") |
+
+---
+
+### BankAccountSubtype Table
+**Purpose:** Further classification of bank accounts
+
+| Field | Type | Constraints | Notes |
+|-------|------|-----------|-------|
+| id | INTEGER | PRIMARY KEY | Auto-generated |
+| account_subtype | VARCHAR(200) | NOT NULL | Bank account subtype name (e.g., "Business Savings", "Salary Account") |
+
+---
+
+### BankAccount Table
+**Purpose:** Manage company bank account details and party-linked accounts
+
+| Field | Type | Constraints | Notes |
+|-------|------|-----------|-------|
+| id | INTEGER | PRIMARY KEY | Auto-generated |
+| name | VARCHAR(200) | NOT NULL | Bank account name/label |
+| bank | VARCHAR(200) | NOT NULL | Bank name (e.g., "HDFC Bank", "Chase Bank") |
+| account_type_id | INTEGER | FK → BankAccountType (NULL) | Optional classification |
+| account_subtype_id | INTEGER | FK → BankAccountSubtype (NULL) | Optional sub-classification |
+| party_type | VARCHAR(100) | CHOICES, BLANK OK | [customer, supplier, employee, shareholder] - linked party type |
+| party | VARCHAR(200) | BLANK OK | Party name/identifier |
+| iban | VARCHAR(34) | BLANK OK | International Bank Account Number |
+| branch_code | VARCHAR(20) | BLANK OK | Bank branch identifier |
+| bank_account_number | VARCHAR(50) | BLANK OK | Account number |
+| last_integration_date | DATE | NULL | Last sync/reconciliation date |
+
+**Example:**
+```
+BankAccount 1:
+├── Name: "Main Operating Account"
+├── Bank: "HDFC Bank"
+├── Account Type: "Current Account"
+├── Account Number: "12345678901"
+├── IBAN: "IN12HDFC0001234567890"
+└── Party Type: (none - company account)
+
+BankAccount 2:
+├── Name: "Supplier - XYZ Ltd Payment Account"
+├── Bank: "State Bank"
+├── Party Type: "supplier"
+├── Party: "XYZ Supplies Ltd"
+└── Used for: Direct payment processing
+```
+
+---
+
+### BankGuarantee Table
+**Purpose:** Track bank guarantees issued or received
+
+| Field | Type | Constraints | Notes |
+|-------|------|-----------|-------|
+| id | INTEGER | PRIMARY KEY | Auto-generated |
+| type | VARCHAR(100) | CHOICES | [receiving, providing] - direction of guarantee |
+| amount | DECIMAL(15,2) | NOT NULL | Guarantee amount |
+| start_date | DATE | NOT NULL | Effective start date |
+
+**Types:**
+- **Receiving:** Bank guarantee received from customer/vendor (security deposit)
+- **Providing:** Bank guarantee given to customer/vendor (performance guarantee)
+
+**Example:**
+```
+Guarantee 1:
+├── Type: "Providing"
+├── Amount: 500,000
+├── Start Date: 2025-01-01
+└── Purpose: Performance guarantee to client for project delivery
+```
+
+---

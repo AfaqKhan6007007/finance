@@ -3632,7 +3632,12 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from .services.chatbot_service import ChatbotService
+from .services.chatbot_service_enhanced import EnhancedChatbotService
 import json
+import os
+
+# Use enhanced chatbot if MCP is enabled, otherwise fall back to basic
+USE_ENHANCED_CHATBOT = os.getenv('USE_MCP_CHATBOT', 'true').lower() == 'true'
 
 @login_required
 @require_http_methods(["POST"])
@@ -3651,13 +3656,23 @@ def chatbot_send_message(request):
                 'error': 'Message cannot be empty'
             }, status=400)
         
-        # Initialize chatbot service
-        chatbot = ChatbotService()
+        # Use enhanced chatbot service with MCP integration
+        if USE_ENHANCED_CHATBOT:
+            chatbot = EnhancedChatbotService()
+        else:
+            chatbot = ChatbotService()
         
         # Send message and get response
         result = chatbot.send_message(user_message, request.session)
         
-        return JsonResponse(result)
+        # Ensure result is a dict for JsonResponse
+        if isinstance(result, str):
+            return JsonResponse({
+                'success': True,
+                'response': result
+            })
+        else:
+            return JsonResponse(result)
         
     except json.JSONDecodeError:
         return JsonResponse({
@@ -3678,7 +3693,10 @@ def chatbot_get_history(request):
     Retrieve conversation history from session.
     """
     try:
-        chatbot = ChatbotService()
+        if USE_ENHANCED_CHATBOT:
+            chatbot = EnhancedChatbotService()
+        else:
+            chatbot = ChatbotService()
         conversation = chatbot.get_conversation_history(request.session)
         
         return JsonResponse({
@@ -3700,7 +3718,10 @@ def chatbot_clear_conversation(request):
     Clear conversation history from session.
     """
     try:
-        chatbot = ChatbotService()
+        if USE_ENHANCED_CHATBOT:
+            chatbot = EnhancedChatbotService()
+        else:
+            chatbot = ChatbotService()
         chatbot.clear_conversation(request.session)
         
         return JsonResponse({

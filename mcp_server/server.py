@@ -1,73 +1,51 @@
 """
 Finance Management System MCP Server
-Main server file - registers all tools and resources
+New Architecture: 5 Generic Data Tools + Schema Guides + CRUD Prompt Templates
+
+Tool Count Reduction:
+- OLD: 35+ table-specific tools
+- NEW: 5 generic data tools + 24 schema/helper tools = 29 total
+
+This architecture:
+1. Uses 5 core generic tools for ALL tables
+2. Schema guides provide table-specific context
+3. CRUD prompt templates provide few-shot examples
+4. Easy to add new tables without new tools
 """
 from fastmcp import FastMCP
 from pathlib import Path
+import sys
+import os
+from typing import Optional, Dict, Any
+from asgiref.sync import sync_to_async
+
+# Add parent directory to Python path for Django imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import config first to initialize Django
-from mcp_server import config
+import config
 
-# Import all tools
-from mcp_server.tools.company_tools import (
-    list_companies,
-    get_company,
-    search_companies,
-    get_company_accounts,
-    get_company_stats
+# Import generic data tools (5 core tools)
+from tools.generic_data_tools import (
+    get_record,
+    query_records,
+    create_record,
+    update_record,
+    delete_record,
+    list_available_tables
 )
-from mcp_server.tools.account_tools import (
-    list_accounts,
-    get_account,
-    search_accounts,
-    get_account_balance,
-    get_account_hierarchy
-)
-from mcp_server.tools.invoice_tools import (
-    list_invoices,
-    get_invoice,
-    search_invoices,
-    get_invoice_stats
-)
-from mcp_server.tools.journal_tools import (
-    list_journal_entries,
-    get_journal_entry,
-    search_journal_entries,
-    get_journal_stats
-)
-from mcp_server.tools.supplier_tools import (
-    list_suppliers,
-    get_supplier,
-    search_suppliers
-)
-from mcp_server.tools.customer_tools import (
-    list_customers,
-    get_customer,
-    search_customers
-)
-from mcp_server.tools.budget_tools import (
-    list_budgets,
-    get_budget,
-    search_budgets
-)
-from mcp_server.tools.cost_center_tools import (
-    list_cost_centers,
-    get_cost_center,
-    search_cost_centers
-)
-from mcp_server.tools.tax_tools import (
-    list_tax_rules,
-    get_tax_rule,
-    search_tax_rules,
-    list_tax_categories,
-    list_tax_templates
-)
+
+# Import prompt tools (schema guides and CRUD guides)
+from tools.prompt_tools import register_prompt_tools
 
 # Create FastMCP instance
 mcp = FastMCP(
     name=config.SERVER_NAME,
     version=config.SERVER_VERSION
 )
+
+# Register all schema guide tools (21 tables + filter syntax + CRUD operation guide)
+register_prompt_tools(mcp)
 
 
 # ============================================
@@ -86,38 +64,83 @@ def get_database_schema() -> str:
     return "Schema documentation not found"
 
 
+# ============================================
+# PROMPTS - Example Queries for New Architecture
+# ============================================
+
 @mcp.prompt()
-def company_query_examples() -> str:
-    """Examples of how to query company data"""
+def generic_tool_examples() -> str:
+    """Examples of how to use the generic data tools"""
     return """
-# Company Query Examples
+# Generic Data Tools Examples
 
-## List all companies (paginated):
-- Tool: list_companies_tool(page=1, page_size=20)
+## WORKFLOW: Always follow this order
+1. Call get_<table>_schema_guide() to understand the table
+2. Call get_crud_operation_guide(operation) for few-shot examples (if CRUD)
+3. Use generic tool with table name
 
-## List companies with filters:
-- Tool: list_companies_tool(filters={"country": "USA"}, page=1, page_size=20)
-- Tool: list_companies_tool(filters={"is_active": True}, page=1, page_size=20)
-- Tool: list_companies_tool(filters={"name__icontains": "tech"}, page=1, page_size=20)
+## Reading Data
 
-## Get specific company details:
-- Tool: get_company_tool(company_id=1)
+### Get single record by ID:
+get_record_tool(table="company", record_id=5)
+get_record_tool(table="invoice", record_id=123)
+get_record_tool(table="supplier", record_id=10)
 
-## Search companies by name/country:
-- Tool: search_companies_tool(query="ABC", page=1, page_size=20)
+### Query multiple records with filters:
+query_records_tool(table="company", filters={"country": "USA"})
+query_records_tool(table="invoice", filters={"status": "paid", "date__gte": "2024-01-01"})
+query_records_tool(table="account", filters={"account_type": "asset", "is_disabled": False})
 
-## Search with additional filters:
-- Tool: search_companies_tool(query="tech", filters={"country": "USA", "is_active": True})
+### Query with text search:
+query_records_tool(table="company", text_search="tech")
+query_records_tool(table="supplier", text_search="ABC Corp")
+query_records_tool(table="invoice", text_search="INV-2024")
 
-## Get company's chart of accounts:
-- Tool: get_company_accounts_tool(company_id=1, page=1, page_size=20)
+### Combined filters and search:
+query_records_tool(table="supplier", text_search="import", filters={"country": "Pakistan"})
 
-## Get company statistics:
-- Tool: get_company_stats_tool(company_id=1)
-  Returns: account count, supplier count, customer count, invoice stats, financial summary
+### Pagination and ordering:
+query_records_tool(table="account", page=2, page_size=50, order_by="-created_at")
 
-## Filter Operators Available:
-- Exact match: {"field": "value"}
+## Creating Data
+
+### Create a company:
+create_record_tool(table="company", data={"name": "Tech Corp", "country": "USA", "default_currency": "USD"})
+
+### Create an account (with FK):
+create_record_tool(table="account", data={"name": "Cash", "company": 5, "account_type": "asset"})
+
+### Create an invoice:
+create_record_tool(table="invoice", data={
+    "invoice_id": "INV-2024-001",
+    "invoice_number": "2024-001",
+    "date": "2024-01-15",
+    "supplier": 10,
+    "company": 1,
+    "amount_before_vat": 5000.00,
+    "total_vat": 0.00,
+    "total_amount": 5000.00,
+    "status": "draft"
+})
+
+## Updating Data
+
+### Update company name:
+update_record_tool(table="company", record_id=5, data={"name": "New Name Inc"})
+
+### Update invoice status:
+update_record_tool(table="invoice", record_id=123, data={"status": "paid"})
+
+### Update multiple fields:
+update_record_tool(table="supplier", record_id=10, data={"contact_email": "new@email.com", "city": "New York"})
+
+## Deleting Data (always confirm first!)
+
+### Delete a record:
+delete_record_tool(table="accounting_dimension", record_id=7, confirm=True)
+
+## Filter Syntax Reference:
+- Exact: {"field": "value"}
 - Contains: {"field__icontains": "text"}
 - Greater than: {"field__gt": value}
 - Greater/equal: {"field__gte": value}
@@ -130,501 +153,172 @@ def company_query_examples() -> str:
 """
 
 
-@mcp.prompt()
-def account_query_examples() -> str:
-    """Examples of how to query account data"""
-    return """
-# Account Query Examples
-
-## List all accounts:
-- Tool: list_accounts_tool(page=1, page_size=20)
-
-## List accounts with filters:
-- Tool: list_accounts_tool(filters={"account_type": "Asset"})
-- Tool: list_accounts_tool(filters={"balance__gte": 10000})
-- Tool: list_accounts_tool(filters={"company__id": 5})
-- Tool: list_accounts_tool(filters={"is_group": False, "is_active": True})
-
-## Get specific account:
-- Tool: get_account_tool(account_id=1)
-
-## Search accounts:
-- Tool: search_accounts_tool(query="Cash", page=1, page_size=20)
-
-## Search with filters:
-- Tool: search_accounts_tool(query="cash", filters={"account_type": "Asset", "balance__gte": 5000})
-
-## Calculate account balance:
-- Tool: get_account_balance_tool(account_id=1)
-  Returns: total debits, total credits, balance, entry count
-
-## Get account hierarchy (parent/children):
-- Tool: get_account_hierarchy_tool(account_id=1)
-
-## Complex Filter Examples:
-- Asset accounts with balance over $10,000: 
-  list_accounts_tool(filters={"account_type": "Asset", "balance__gte": 10000})
-  
-- Active liability accounts for specific company:
-  list_accounts_tool(filters={"account_type": "Liability", "is_active": True, "company__id": 5})
-  
-- Accounts created in 2025:
-  list_accounts_tool(filters={"created_at__range": ["2025-01-01", "2025-12-31"]})
-  
-- Accounts with names containing "bank":
-  search_accounts_tool(query="bank", filters={"is_active": True})
-
-## Available Filter Operators:
-- Exact: {"field": "value"}
-- Contains (case-insensitive): {"field__icontains": "text"}
-- Greater than: {"field__gt": 100}
-- Greater/equal: {"field__gte": 100}
-- Less than: {"field__lt": 1000}
-- Less/equal: {"field__lte": 1000}
-- In list: {"field__in": ["value1", "value2"]}
-- Date range: {"field__range": ["2024-01-01", "2024-12-31"]}
-- Is null: {"field__isnull": True}
-- Related field: {"company__name": "ABC Corp", "parent_account__id": 10}
-"""
-
-
 # ============================================
-# TOOLS - Company Operations
+# GENERIC DATA TOOLS (5 Core Tools)
 # ============================================
 
 @mcp.tool()
-def list_companies_tool(filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
+async def get_record_tool(
+    table: str,
+    record_id: int,
+    include_related_counts: bool = True
+) -> dict:
     """
-    List all companies with optional filtering and pagination
+    Get a single record by ID from any table.
+    
+    WORKFLOW:
+    1. First call get_<table>_schema_guide() to understand the schema
+    2. Then call this tool with the table name and record ID
     
     Args:
-        filters: Optional dict for filtering (e.g., {"country": "USA", "is_active": True})
-        page: Page number (default: 1)
-        page_size: Results per page (default: 20, max: 100)
-    
-    Returns:
-        Paginated list of companies with metadata
+        table: Name of the table (e.g., "company", "account", "invoice", "supplier")
+        record_id: The ID of the record to retrieve
+        include_related_counts: Whether to include counts of related objects (default: True)
         
-    Example filters:
+    Returns:
+        Record details with optional related counts
+        
+    Available tables:
+        company, account, invoice, journal_entry, supplier, customer,
+        budget, cost_center, cost_center_allocation, accounting_dimension,
+        tax_item_template, tax_category, tax_rule, tax_withholding_category,
+        tax_withholding_rate, tax_category_account, deduction_certificate,
+        bank_account_type, bank_account_subtype, bank_account, user_profile
+    """
+    return await sync_to_async(get_record)(table, record_id, include_related_counts)
+
+
+@mcp.tool()
+async def query_records_tool(
+    table: str,
+    filters: Optional[Dict[str, Any]] = None,
+    text_search: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20,
+    order_by: Optional[str] = None
+) -> dict:
+    """
+    Query multiple records from any table with optional filters and text search.
+    
+    WORKFLOW:
+    1. First call get_<table>_schema_guide() to understand available fields
+    2. Optionally call get_filter_syntax_guide() for complex filters
+    3. Then call this tool with appropriate filters/search
+    
+    Args:
+        table: Name of the table (e.g., "company", "accounts", "invoices")
+        filters: Optional dict of field filters
+        text_search: Optional text to search across searchable fields
+        page: Page number (1-indexed, default: 1)
+        page_size: Number of results per page (default: 20, max: 100)
+        order_by: Field to order by (prefix with - for descending)
+        
+    Filter examples:
         {"country": "USA"}
         {"name__icontains": "tech"}
-        {"is_active": True}
-    """
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return list_companies(filters, page, page_size)
-
-
-@mcp.tool()
-def get_company_tool(company_id: int) -> dict:
-    """
-    Get detailed information about a specific company
-    
-    Args:
-        company_id: The unique ID of the company
-    
-    Returns:
-        Company details including related counts
-    """
-    return get_company(company_id)
-
-
-@mcp.tool()
-def search_companies_tool(query: str, filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """
-    Search companies by name, abbreviation, or country with optional additional filters
-    
-    Args:
-        query: Search string
-        filters: Optional dict for additional filtering (e.g., {"is_active": True})
-        page: Page number (default: 1)
-        page_size: Results per page (default: 20)
-    
-    Returns:
-        Matching companies
-        
-    Example:
-        search_companies_tool("tech", {"country": "USA", "is_active": True})
-    """
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return search_companies(query, filters, page, page_size)
-
-
-@mcp.tool()
-def get_company_accounts_tool(company_id: int, page: int = 1, page_size: int = 20) -> dict:
-    """
-    Get all accounts belonging to a specific company
-    
-    Args:
-        company_id: The unique ID of the company
-        page: Page number (default: 1)
-        page_size: Results per page (default: 20)
-    
-    Returns:
-        Company's chart of accounts
-    """
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return get_company_accounts(company_id, page, page_size)
-
-
-@mcp.tool()
-def get_company_stats_tool(company_id: int) -> dict:
-    """
-    Get statistical summary for a company
-    
-    Args:
-        company_id: The unique ID of the company
-    
-    Returns:
-        Statistics: account count, suppliers, customers, invoices, budgets, financial summary
-    """
-    return get_company_stats(company_id)
-
-
-# ============================================
-# TOOLS - Account Operations
-# ============================================
-
-@mcp.tool()
-def list_accounts_tool(filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """
-    List all accounts in the chart of accounts with optional filtering
-    
-    Args:
-        filters: Optional dict for filtering (e.g., {"account_type": "Asset", "balance__gte": 1000})
-        page: Page number (default: 1)
-        page_size: Results per page (default: 20)
-    
-    Example filters:
-        {"account_type": "Asset"}
-        {"balance__gte": 10000}
+        {"balance__gte": 1000}
+        {"status__in": ["pending", "approved"]}
+        {"date__range": ["2024-01-01", "2024-12-31"]}
         {"company__id": 5}
-        {"is_group": False, "is_active": True}
-    
-    Returns:
-        Paginated list of accounts
     """
     if page_size > config.MAX_RESULTS_PER_QUERY:
         page_size = config.MAX_RESULTS_PER_QUERY
-    return list_accounts(filters, page, page_size)
+    return await sync_to_async(query_records)(table, filters, text_search, page, page_size, order_by)
 
 
 @mcp.tool()
-def get_account_tool(account_id: int) -> dict:
+async def create_record_tool(
+    table: str,
+    data: Dict[str, Any]
+) -> dict:
     """
-    Get detailed information about a specific account
+    Create a new record in any table.
+    
+    WORKFLOW:
+    1. First call get_<table>_schema_guide() to understand required fields
+    2. Call get_crud_operation_guide("create") for few-shot examples
+    3. Then call this tool with the validated data
     
     Args:
-        account_id: The unique ID of the account
-    
-    Returns:
-        Account details with related counts
-    """
-    return get_account(account_id)
-
-
-@mcp.tool()
-def search_accounts_tool(query: str, filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """
-    Search accounts by name or account number with optional additional filters
-    
-    Args:
-        query: Search string
-        filters: Optional dict for additional filtering (e.g., {"account_type": "Asset"})
-        page: Page number (default: 1)
-        page_size: Results per page (default: 20)
-    
-    Returns:
-        Matching accounts
+        table: Name of the table (e.g., "company", "account", "invoice")
+        data: Dictionary of field values for the new record
+              For foreign keys, pass integer IDs (not names)
         
-    Example:
-        search_accounts_tool("cash", {"account_type": "Asset", "balance__gte": 5000})
-    """
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return search_accounts(query, filters, page, page_size)
-
-
-@mcp.tool()
-def get_account_balance_tool(account_id: int) -> dict:
-    """
-    Calculate account balance from journal entries
-    
-    Args:
-        account_id: The unique ID of the account
-    
     Returns:
-        Balance calculation: total debits, credits, net balance, entry count
+        Created record with ID
+        
+    Important:
+        - Check schema guide for required vs optional fields
+        - Foreign keys must be integer IDs
+        - Date fields use format "YYYY-MM-DD"
+        - Decimal fields should be numbers, not strings
     """
-    return get_account_balance(account_id)
+    return await sync_to_async(create_record)(table, data)
 
 
 @mcp.tool()
-def get_account_hierarchy_tool(account_id: int) -> dict:
+async def update_record_tool(
+    table: str,
+    record_id: int,
+    data: Dict[str, Any]
+) -> dict:
     """
-    Get account hierarchy showing parent accounts and sub-accounts
+    Update an existing record in any table.
+    
+    WORKFLOW:
+    1. First call get_<table>_schema_guide() to understand available fields
+    2. Call get_record_tool() to verify the record exists and see current values
+    3. Call get_crud_operation_guide("update") for few-shot examples
+    4. Then call this tool with only the changed fields
     
     Args:
-        account_id: The unique ID of the account
-    
+        table: Name of the table (e.g., "company", "account", "invoice")
+        record_id: The ID of the record to update
+        data: Dictionary of field values to update (only include fields to change)
+        
     Returns:
-        Hierarchical structure with parents and children
+        Updated record with change tracking (old_values and new_values)
+        
+    Important:
+        - Only include fields that are changing
+        - Never try to update id, created_at, or auto-generated fields
+        - Check unique constraints in schema guide
     """
-    return get_account_hierarchy(account_id)
+    return await sync_to_async(update_record)(table, record_id, data)
 
-
-# ============================================
-# TOOLS - Invoice Operations
-# ============================================
 
 @mcp.tool()
-def list_invoices_tool(filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
+async def delete_record_tool(
+    table: str,
+    record_id: int,
+    confirm: bool = False
+) -> dict:
     """
-    List all invoices with optional filtering
+    Delete a record from any table.
+    
+    ⚠️ DESTRUCTIVE OPERATION - ALWAYS CONFIRM WITH USER FIRST!
+    
+    WORKFLOW:
+    1. First call get_<table>_schema_guide() to understand relationships
+    2. Call get_record_tool() to verify the record and check for related data
+    3. Call get_crud_operation_guide("delete") for few-shot examples
+    4. ASK USER FOR CONFIRMATION before proceeding
+    5. Then call this tool with confirm=True
     
     Args:
-        filters: Optional dict for filtering (e.g., {"status": "paid", "total_amount__gte": 5000})
-        page: Page number (default: 1)
-        page_size: Results per page (default: 20)
-    
-    Example filters:
-        {"status": "paid"}
-        {"date__range": ["2025-01-01", "2025-12-31"]}
-        {"supplier__country": "USA"}
+        table: Name of the table (e.g., "company", "account", "invoice")
+        record_id: The ID of the record to delete
+        confirm: Must be True to actually delete (safety check)
+        
+    Returns:
+        Deletion confirmation with deleted record data
+        
+    Important:
+        - NEVER delete without user confirmation
+        - Check for related records that might be affected
+        - Protected relationships will prevent deletion
     """
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return list_invoices(filters, page, page_size)
-
-
-@mcp.tool()
-def get_invoice_tool(invoice_id: int) -> dict:
-    """Get detailed information about a specific invoice"""
-    return get_invoice(invoice_id)
-
-
-@mcp.tool()
-def search_invoices_tool(query: str, filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """Search invoices by invoice number or ID"""
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return search_invoices(query, filters, page, page_size)
-
-
-@mcp.tool()
-def get_invoice_stats_tool(filters: dict = None) -> dict:
-    """Get invoice statistics (total count, amount, by status)"""
-    return get_invoice_stats(filters)
-
-
-# ============================================
-# TOOLS - Journal Entry Operations
-# ============================================
-
-@mcp.tool()
-def list_journal_entries_tool(filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """
-    List all journal entries with optional filtering
-    
-    Args:
-        filters: Optional dict for filtering (e.g., {"date__year": 2025, "debit_amount__gte": 1000})
-    """
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return list_journal_entries(filters, page, page_size)
-
-
-@mcp.tool()
-def get_journal_entry_tool(entry_id: int) -> dict:
-    """Get detailed information about a specific journal entry"""
-    return get_journal_entry(entry_id)
-
-
-@mcp.tool()
-def search_journal_entries_tool(query: str, filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """Search journal entries by entry number or description"""
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return search_journal_entries(query, filters, page, page_size)
-
-
-@mcp.tool()
-def get_journal_stats_tool(filters: dict = None) -> dict:
-    """Get journal entry statistics (debits, credits, balance)"""
-    return get_journal_stats(filters)
-
-
-# ============================================
-# TOOLS - Supplier Operations
-# ============================================
-
-@mcp.tool()
-def list_suppliers_tool(filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """
-    List all suppliers with optional filtering
-    
-    Args:
-        filters: Optional dict for filtering (e.g., {"gst_category": "registered", "country": "India"})
-    """
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return list_suppliers(filters, page, page_size)
-
-
-@mcp.tool()
-def get_supplier_tool(supplier_id: int) -> dict:
-    """Get detailed information about a specific supplier"""
-    return get_supplier(supplier_id)
-
-
-@mcp.tool()
-def search_suppliers_tool(query: str, filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """Search suppliers by name or GSTIN"""
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return search_suppliers(query, filters, page, page_size)
-
-
-# ============================================
-# TOOLS - Customer Operations
-# ============================================
-
-@mcp.tool()
-def list_customers_tool(filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """
-    List all customers with optional filtering
-    
-    Args:
-        filters: Optional dict for filtering (e.g., {"gst_category": "registered", "country": "USA"})
-    """
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return list_customers(filters, page, page_size)
-
-
-@mcp.tool()
-def get_customer_tool(customer_id: int) -> dict:
-    """Get detailed information about a specific customer"""
-    return get_customer(customer_id)
-
-
-@mcp.tool()
-def search_customers_tool(query: str, filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """Search customers by name or GSTIN"""
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return search_customers(query, filters, page, page_size)
-
-
-# ============================================
-# TOOLS - Budget Operations
-# ============================================
-
-@mcp.tool()
-def list_budgets_tool(filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """
-    List all budgets with optional filtering
-    
-    Args:
-        filters: Optional dict for filtering (e.g., {"fiscal_year_from": "2025-2026"})
-    """
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return list_budgets(filters, page, page_size)
-
-
-@mcp.tool()
-def get_budget_tool(budget_id: int) -> dict:
-    """Get detailed information about a specific budget"""
-    return get_budget(budget_id)
-
-
-@mcp.tool()
-def search_budgets_tool(query: str, filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """Search budgets by series"""
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return search_budgets(query, filters, page, page_size)
-
-
-# ============================================
-# TOOLS - Cost Center Operations
-# ============================================
-
-@mcp.tool()
-def list_cost_centers_tool(filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """
-    List all cost centers with optional filtering
-    
-    Args:
-        filters: Optional dict for filtering (e.g., {"is_group": False, "is_disabled": False})
-    """
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return list_cost_centers(filters, page, page_size)
-
-
-@mcp.tool()
-def get_cost_center_tool(cost_center_id: int) -> dict:
-    """Get detailed information about a specific cost center"""
-    return get_cost_center(cost_center_id)
-
-
-@mcp.tool()
-def search_cost_centers_tool(query: str, filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """Search cost centers by name or number"""
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return search_cost_centers(query, filters, page, page_size)
-
-
-# ============================================
-# TOOLS - Tax Operations
-# ============================================
-
-@mcp.tool()
-def list_tax_rules_tool(filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """
-    List all tax rules with optional filtering
-    
-    Args:
-        filters: Optional dict for filtering (e.g., {"tax_type": "sales", "company__id": 5})
-    """
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return list_tax_rules(filters, page, page_size)
-
-
-@mcp.tool()
-def get_tax_rule_tool(tax_rule_id: int) -> dict:
-    """Get detailed information about a specific tax rule"""
-    return get_tax_rule(tax_rule_id)
-
-
-@mcp.tool()
-def search_tax_rules_tool(query: str, filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """Search tax rules by item, city, state, or country"""
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return search_tax_rules(query, filters, page, page_size)
-
-
-@mcp.tool()
-def list_tax_categories_tool(filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """List all tax categories"""
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return list_tax_categories(filters, page, page_size)
-
-
-@mcp.tool()
-def list_tax_templates_tool(filters: dict = None, page: int = 1, page_size: int = 20) -> dict:
-    """List all tax item templates"""
-    if page_size > config.MAX_RESULTS_PER_QUERY:
-        page_size = config.MAX_RESULTS_PER_QUERY
-    return list_tax_templates(filters, page, page_size)
+    return await sync_to_async(delete_record)(table, record_id, confirm)
 
 
 # ============================================
@@ -634,5 +328,8 @@ def list_tax_templates_tool(filters: dict = None, page: int = 1, page_size: int 
 if __name__ == "__main__":
     print(f"Starting {config.SERVER_NAME} v{config.SERVER_VERSION}")
     print(f"Description: {config.SERVER_DESCRIPTION}")
+    print("=" * 60)
+    print("New Architecture: 5 Generic Data Tools + Schema Guides")
+    print("Total Tools: ~29 (5 data + 24 schema/helper)")
     print("=" * 60)
     mcp.run(transport="stdio")

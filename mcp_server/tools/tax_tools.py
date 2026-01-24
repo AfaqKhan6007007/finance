@@ -4,7 +4,7 @@ Micro-tools for querying Tax-related data
 """
 from typing import Dict, Any, Optional
 from finance.models import TaxRule, TaxCategory, TaxItemTemplate
-from mcp_server.utils import (
+from utils.helpers import (
     format_success_response,
     format_error_response,
     serialize_queryset,

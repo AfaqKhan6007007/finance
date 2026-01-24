@@ -8,7 +8,7 @@ Micro-tools for querying Company data following MCP best practices:
 """
 from typing import Dict, Any, List, Optional
 from finance.models import Company
-from mcp_server.utils import (
+from utils.helpers import (
     format_success_response,
     format_error_response,
     serialize_queryset,

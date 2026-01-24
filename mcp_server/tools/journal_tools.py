@@ -4,7 +4,7 @@ Micro-tools for querying Journal Entry data
 """
 from typing import Dict, Any, Optional
 from finance.models import JournalEntry
-from mcp_server.utils import (
+from utils.helpers import (
     format_success_response,
     format_error_response,
     serialize_queryset,
