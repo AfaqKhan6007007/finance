@@ -1,0 +1,123 @@
+2026-01-25 22:43:47,159 - finance.services.chatbot_service_enhanced - INFO - EnhancedChatbotService initialized with subprocess MCP integration
+2026-01-25 22:43:47,526 - finance.services.chatbot_service_enhanced - INFO - Starting MCP server subprocess...
+2026-01-25 22:43:47,526 - chatbot.mcp_client.server_manager - INFO - Starting MCP server: D:\Machine Learning\JFF JOB\finance\mcp_server\server.py
+2026-01-25 22:43:47,526 - chatbot.mcp_client.server_manager - INFO - Using Python: D:\Machine Learning\JFF JOB\finance\venv\Scripts\python.exe
+2026-01-25 22:43:50,532 - chatbot.mcp_client.server_manager - INFO - MCP server started successfully (PID: 12580)
+2026-01-25 22:43:50,532 - finance.services.chatbot_service_enhanced - INFO - MCP server started successfully
+2026-01-25 22:43:50,532 - finance.services.chatbot_service_enhanced - INFO - Connecting to MCP server via stdio...
+2026-01-25 22:43:50,536 - chatbot.mcp_client.connector - INFO - Successfully connected to MCP server
+2026-01-25 22:43:50,536 - finance.services.chatbot_service_enhanced - INFO - Connected to MCP server successfully
+2026-01-25 22:43:50,550 - chatbot.mcp_client.connector - INFO - Discovered 29 tools from MCP server
+2026-01-25 22:43:50,550 - finance.services.chatbot_service_enhanced - INFO - Available tools: 30 (29 MCP + 1 schema)
+2026-01-25 22:43:56,890 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-25 22:43:56,896 - finance.services.chatbot_service_enhanced - INFO - Executing tool: get_company_schema_guide with args: {}
+2026-01-25 22:43:56,913 - finance.services.chatbot_service_enhanced - INFO - Tool get_company_schema_guide returned: {'content': [{'type': 'text', 'text': '## Company Table Schema\n\n**Purpose**: Stores business entities/organizations in the system.\n\n**Fields**:\n- id (PK): Auto-increment primary key\n- name: Comp
+2026-01-25 22:43:58,831 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-25 22:43:58,832 - finance.services.chatbot_service_enhanced - INFO - Executing tool: query_records_tool with args: {'table': 'company'}
+2026-01-25 22:43:58,879 - finance.services.chatbot_service_enhanced - INFO - Tool query_records_tool returned: {'content': [{'type': 'text', 'text': '{"success":true,"data":{"results":[{"id":25,"name":"Retail Solutions Inc","abbreviation":"RSI","country":"USA","date_of_establishment":"2015-06-01","default_curr
+2026-01-25 22:44:01,621 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-25 22:44:01,641 - chatbot.mcp_client.connector - INFO - Discovered 29 tools from MCP server
+2026-01-25 22:44:01,641 - finance.services.chatbot_service_enhanced - INFO - Available tools: 30 (29 MCP + 1 schema)
+2026-01-25 22:44:02,588 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-25 22:44:02,592 - finance.services.chatbot_service_enhanced - INFO - Executing tool: get_invoice_schema_guide with args: {}
+2026-01-25 22:44:02,601 - finance.services.chatbot_service_enhanced - INFO - Tool get_invoice_schema_guide returned: {'content': [{'type': 'text', 'text': '## Invoice Table Schema\n\n**Purpose**: Stores sales and purchase invoices.\n\n**Fields**:\n- id (PK): Auto-increment primary key\n- invoice_id: Unique identifie
+2026-01-25 22:44:03,714 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-25 22:44:03,732 - finance.services.chatbot_service_enhanced - INFO - Executing tool: get_record_tool with args: {'table': 'invoice', 'record_id': 5}
+2026-01-25 22:44:03,741 - finance.services.chatbot_service_enhanced - INFO - Tool get_record_tool returned: {'content': [{'type': 'text', 'text': '{"success":false,"error":{"type":"Exception","message":"Record with ID 5 not found in table \'invoice\'","tool":"get_record","timestamp":"2026-01-25T17:44:03.738
+2026-01-25 22:44:04,891 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-25 22:44:04,913 - chatbot.mcp_client.connector - INFO - Discovered 29 tools from MCP server
+2026-01-25 22:44:04,913 - finance.services.chatbot_service_enhanced - INFO - Available tools: 30 (29 MCP + 1 schema)
+2026-01-25 22:44:06,035 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-25 22:44:06,035 - finance.services.chatbot_service_enhanced - INFO - Executing tool: get_supplier_schema_guide with args: {}
+2026-01-25 22:44:06,046 - finance.services.chatbot_service_enhanced - INFO - Tool get_supplier_schema_guide returned: {'content': [{'type': 'text', 'text': '## Supplier Table Schema\n\n**Purpose**: Stores vendor/supplier information for procurement.\n\n**Fields**:\n- id (PK): Auto-increment primary key\n- gstin_uin: 
+2026-01-25 22:44:07,307 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-25 22:44:07,308 - finance.services.chatbot_service_enhanced - INFO - Executing tool: query_records_tool with args: {'table': 'supplier', 'filters': {'country': 'USA'}}
+2026-01-25 22:44:07,345 - finance.services.chatbot_service_enhanced - INFO - Tool query_records_tool returned: {'content': [{'type': 'text', 'text': '{"success":true,"data":{"results":[{"id":15,"gstin_uin":"","name":"Office Supplies Pro","supplier_type":"company","gst_category":"unregistered","contact_first_na
+2026-01-25 22:44:10,874 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-25 22:44:10,890 - chatbot.mcp_client.server_manager - INFO - Stopping MCP server (PID: 12580)
+2026-01-25 22:44:10,891 - chatbot.mcp_client.server_manager - INFO - MCP server stopped gracefully
+====================================================================================================
+TESTING: Schema Guide Calls Before Data Operations
+====================================================================================================
+
+====================================================================================================
+TEST CASE 1: List all companies
+====================================================================================================
+
+[Expected Workflow:]
+   1. Call get_company_schema_guide()
+   2. Call query_records()
+
+[Watching tool calls in logs above...]
+   Look for lines with 'Executing tool:' to verify order
+
+[Response received (showing first 300 chars):]
+   Here are the key details for all companies:
+
+- ID: 25, Name: Retail Solutions Inc, Country: USA
+- ID: 24, Name: FinTech Services LLC, Country: USA
+- ID: 23, Name: TechCorp India Pvt Ltd, Country: India
+- ID: 22, Name: TechCorp Solutions USA, Country: USA
+- ID: 21, Name: Global Corp International, Co...
+
+====================================================================================================
+
+
+====================================================================================================
+TEST CASE 2: Show me invoice with ID 5
+====================================================================================================
+
+[Expected Workflow:]
+   1. Call get_invoice_schema_guide()
+   2. Call get_record()
+
+[Watching tool calls in logs above...]
+   Look for lines with 'Executing tool:' to verify order
+
+[Response received (showing first 300 chars):]
+   It seems that there is no invoice with ID 5 in the system. If you have a different ID or need information on another invoice, please let me know!...
+
+====================================================================================================
+
+
+====================================================================================================
+TEST CASE 3: Find all suppliers in USA
+====================================================================================================
+
+[Expected Workflow:]
+   1. Call get_supplier_schema_guide()
+   2. Call query_records()
+
+[Watching tool calls in logs above...]
+   Look for lines with 'Executing tool:' to verify order
+
+[Response received (showing first 300 chars):]
+   Here are the suppliers located in the USA:
+
+- **ID**: 15
+  - **Name**: Office Supplies Pro
+  - **Country**: USA
+  - **GST Category**: Unregistered
+
+- **ID**: 14
+  - **Name**: Global Imports LLC
+  - **Country**: USA
+  - **GST Category**: Registered
+
+- **ID**: 13
+  - **Name**: Tech Solutions Ltd
+  - *...
+
+====================================================================================================
+
+
+====================================================================================================
+VERIFICATION INSTRUCTIONS:
+====================================================================================================
+Look at the logs above for each test case.
+You should see tool execution in this order:
+  1. 'Executing tool: get_<table>_schema_guide'
+  2. 'Executing tool: get_record' or 'query_records'
+
+If schema guide is NOT called first, the system prompt needs adjustment.
+====================================================================================================

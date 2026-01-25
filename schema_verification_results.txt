@@ -1,0 +1,26 @@
+====================================================================================================
+SCHEMA GUIDE VERIFICATION REPORT
+====================================================================================================
+
+Total Models: 21
+Expected Schema Guides: 21
+
+====================================================================================================
+
+[COMPANY]
+  Model Fields: 22
+  Fields Documented: 22 (100.0%)
+  Foreign Keys: 2 / 2 documented (100.0%)
+  Choice Fields: 3 / 3 documented (100.0%)
+  Schema Text: 2085 chars, 50 lines
+  Sections: Purpose=True, Fields=True, FKs=True, Choices=True, Logic=False
+  Overall Score: 100.0%
+Traceback (most recent call last):
+  File "D:\Machine Learning\JFF JOB\finance\verify_schema_guides_simple.py", line 205, in <module>
+    main()
+  File "D:\Machine Learning\JFF JOB\finance\verify_schema_guides_simple.py", line 140, in main
+    print("  Status: EXCELLENT \u2705")
+  File "C:\Users\Nemro Neno\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 20: character maps to <undefined>

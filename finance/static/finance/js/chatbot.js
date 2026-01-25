@@ -1,6 +1,7 @@
 /**
  * Chatbot Widget JavaScript
  * Handles UI interactions and API communication for the chatbot
+ * Version: 2.0 - Markdown Support Added
  */
 
 (function() {
@@ -47,12 +48,53 @@
         }
     }
 
+    // Simple Markdown Parser (converts common markdown syntax to HTML)
+    function parseMarkdown(text) {
+        if (!text) return '';
+        
+        // Escape HTML to prevent XSS
+        let html = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        
+        // Parse markdown syntax (order matters!)
+        html = html
+            // Headers (must come before bold/italic)
+            .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+            .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+            .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+            // Bold: **text** or __text__ (must come before italic)
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/__(.+?)__/g, '<strong>$1</strong>')
+            // Italic: *text* or _text_
+            .replace(/\*(?!\*)(.+?)\*/g, '<em>$1</em>')
+            .replace(/_(?!_)(.+?)_/g, '<em>$1</em>')
+            // Code: `code`
+            .replace(/`(.+?)`/g, '<code>$1</code>')
+            // Links: [text](url)
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+        
+        // Don't convert lines with "- Something:" to lists (they're just formatting)
+        // Only convert actual list items that don't have colons immediately after
+        // Line breaks - preserve as-is, don't try to parse lists
+        html = html.replace(/\n/g, '<br>');
+        
+        return html;
+    }
+
     // Add Message to UI
     function addMessage(content, role) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('chatbot-message');
         messageDiv.classList.add(role === 'user' ? 'chatbot-message-user' : 'chatbot-message-assistant');
-        messageDiv.textContent = content;
+        
+        // For assistant messages, parse markdown. For user messages, keep as plain text.
+        if (role === 'assistant') {
+            messageDiv.innerHTML = parseMarkdown(content);
+        } else {
+            messageDiv.textContent = content;
+        }
         
         messagesContainer.appendChild(messageDiv);
         scrollToBottom();

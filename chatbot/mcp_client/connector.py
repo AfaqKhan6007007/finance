@@ -164,12 +164,13 @@ class MCPClientConnector:
         self.is_connected = False
         logger.info("Disconnected from MCP server")
     
-    def _send_request(self, request: dict) -> dict:
+    def _send_request(self, request: dict, timeout: int = 30) -> dict:
         """
         Send JSON-RPC request to MCP server via stdio.
         
         Args:
             request: JSON-RPC request dictionary
+            timeout: Timeout in seconds (default 30)
             
         Returns:
             JSON-RPC response dictionary
@@ -178,22 +179,50 @@ class MCPClientConnector:
             raise RuntimeError("Server process not available")
         
         try:
+            # Check if process is still alive
+            if self.server_manager.process.poll() is not None:
+                raise RuntimeError(f"Server process died with code {self.server_manager.process.poll()}")
+            
             # Serialize request to JSON
             request_json = json.dumps(request) + "\n"
             request_bytes = request_json.encode('utf-8')
+            
+            logger.debug(f"Sending request: {request.get('method', 'unknown')}")
             
             # Send to server stdin
             self.server_manager.process.stdin.write(request_bytes)
             self.server_manager.process.stdin.flush()
             
-            # Read response from server stdout
-            response_line = self.server_manager.process.stdout.readline()
-            if not response_line:
-                raise Exception("No response from server")
+            # Read response from server stdout with timeout
+            import select
+            start_time = time.time()
             
-            response = json.loads(response_line.decode('utf-8'))
-            return response
+            while True:
+                # Check timeout
+                if time.time() - start_time > timeout:
+                    raise TimeoutError(f"No response from server after {timeout}s")
+                
+                # Try to read line (non-blocking check)
+                response_line = self.server_manager.process.stdout.readline()
+                
+                if response_line:
+                    logger.debug(f"Received response: {len(response_line)} bytes")
+                    response = json.loads(response_line.decode('utf-8'))
+                    return response
+                
+                # Check if process died
+                if self.server_manager.process.poll() is not None:
+                    # Read any error output
+                    stderr_output = self.server_manager.process.stderr.read().decode('utf-8', errors='ignore')
+                    raise RuntimeError(f"Server process died. stderr: {stderr_output[:500]}")
+                
+                # Small sleep to avoid busy waiting
+                time.sleep(0.1)
             
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON response from server: {e}")
+            logger.error(f"Raw response: {response_line[:200] if response_line else 'None'}")
+            raise
         except Exception as e:
             logger.error(f"Error sending request to MCP server: {e}")
             raise

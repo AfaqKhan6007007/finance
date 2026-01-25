@@ -30,6 +30,26 @@ class ResponseFormatter:
             Formatted string suitable for LLM context
         """
         try:
+            # Handle MCP protocol format: {'content': [{'type': 'text', 'text': '...'}]}
+            if 'content' in response and isinstance(response['content'], list):
+                for content_item in response['content']:
+                    if content_item.get('type') == 'text':
+                        text_content = content_item.get('text', '')
+                        
+                        # Check if the text content is JSON
+                        try:
+                            parsed_content = json.loads(text_content)
+                            # It's JSON - process it
+                            if isinstance(parsed_content, dict) and 'success' in parsed_content:
+                                response = parsed_content
+                                break
+                            else:
+                                # It's JSON but not our standard format - return as is
+                                return text_content[:max_length]
+                        except json.JSONDecodeError:
+                            # It's plain text - return as is
+                            return text_content[:max_length]
+            
             # Check if response indicates success
             if not response.get('success', False):
                 error_msg = response.get('error', 'Unknown error')
@@ -53,7 +73,7 @@ class ResponseFormatter:
         
         except Exception as e:
             logger.error(f"Error formatting response for {tool_name}: {e}")
-            return f"[{tool_name}] Response received (formatting error)"
+            return f"[{tool_name}] Response received (formatting error: {str(e)})"
     
     @staticmethod
     def _format_list_response(tool_name: str, data: Dict, max_length: int) -> str:

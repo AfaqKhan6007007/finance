@@ -19,11 +19,13 @@ MCP_SERVER_RETRY_DELAY = 2  # seconds
 # Tool Configuration
 TOOL_CALL_TIMEOUT = 15  # seconds for individual tool calls
 MAX_PARALLEL_TOOL_CALLS = 3  # maximum parallel tool executions
+MAX_TOOL_ITERATIONS = 10  # maximum number of back-and-forth tool calling iterations
 ENABLE_TOOL_CACHING = True
 TOOL_CACHE_TTL = 300  # 5 minutes
 
 # Token Optimization
 MAX_CONVERSATION_HISTORY = 10  # reduced from 20 for token efficiency
+TOKEN_THRESHOLD_RATIO = 0.8  # prune conversation when 80% of token limit reached
 MAX_TOOL_RESPONSE_LENGTH = 2000  # characters
 ENABLE_RESPONSE_SUMMARIZATION = True
 TOKEN_LIMIT_WARNING_THRESHOLD = 3000  # warn if approaching context limit

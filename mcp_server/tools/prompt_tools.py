@@ -4,7 +4,7 @@ Each tool provides precise field definitions and foreign key relationships
 Designed for scalable dynamic context retrieval
 """
 
-from mcp import FastMCP
+from fastmcp import FastMCP
 
 
 def register_prompt_tools(mcp: FastMCP):

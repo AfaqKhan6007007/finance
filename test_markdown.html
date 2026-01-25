@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Parser Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-box {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin: 20px 0;
+            background: #f9f9f9;
+        }
+        .output {
+            background: white;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            margin-top: 10px;
+        }
+        strong { font-weight: 600; color: #1a202c; }
+        code {
+            background: #f7fafc;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #e53e3e;
+        }
+    </style>
+</head>
+<body>
+    <h1>Markdown Parser Test</h1>
+    
+    <div class="test-box">
+        <h3>Test 1: Bold Text</h3>
+        <p>Input: There are a total of **5 companies** in the system.</p>
+        <div class="output" id="test1"></div>
+    </div>
+    
+    <div class="test-box">
+        <h3>Test 2: Bold and Italic</h3>
+        <p>Input: **Bold text** and *italic text*</p>
+        <div class="output" id="test2"></div>
+    </div>
+    
+    <div class="test-box">
+        <h3>Test 3: List</h3>
+        <p>Input:<br>
+        Here are the companies:<br>
+        1. **Company A** - USA<br>
+        2. **Company B** - India</p>
+        <div class="output" id="test3"></div>
+    </div>
+
+    <script>
+        // Simple Markdown Parser (from chatbot.js)
+        function parseMarkdown(text) {
+            if (!text) return '';
+            
+            // Escape HTML to prevent XSS
+            let html = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            
+            // Parse markdown syntax (order matters!)
+            html = html
+                // Headers (must come before bold/italic)
+                .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+                .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+                .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+                // Bold: **text** or __text__ (must come before italic)
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/__(.+?)__/g, '<strong>$1</strong>')
+                // Italic: *text* or _text_
+                .replace(/\*(?!\*)(.+?)\*/g, '<em>$1</em>')
+                .replace(/_(?!_)(.+?)_/g, '<em>$1</em>')
+                // Code: `code`
+                .replace(/`(.+?)`/g, '<code>$1</code>')
+                // Links: [text](url)
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+            
+            // Parse lists
+            const lines = html.split('\n');
+            let inList = false;
+            let listType = null;
+            const processedLines = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const orderedMatch = line.match(/^(\d+)\.\s+(.+)$/);
+                const unorderedMatch = line.match(/^[-*]\s+(.+)$/);
+                
+                if (orderedMatch) {
+                    if (!inList || listType !== 'ol') {
+                        if (inList) processedLines.push(`</${listType}>`);
+                        processedLines.push('<ol>');
+                        inList = true;
+                        listType = 'ol';
+                    }
+                    processedLines.push(`<li>${orderedMatch[2]}</li>`);
+                } else if (unorderedMatch) {
+                    if (!inList || listType !== 'ul') {
+                        if (inList) processedLines.push(`</${listType}>`);
+                        processedLines.push('<ul>');
+                        inList = true;
+                        listType = 'ul';
+                    }
+                    processedLines.push(`<li>${unorderedMatch[1]}</li>`);
+                } else {
+                    if (inList) {
+                        processedLines.push(`</${listType}>`);
+                        inList = false;
+                        listType = null;
+                    }
+                    processedLines.push(line);
+                }
+            }
+            
+            if (inList) {
+                processedLines.push(`</${listType}>`);
+            }
+            
+            html = processedLines.join('\n');
+            
+            // Line breaks (convert single newlines to <br>, but not inside lists/headers)
+            html = html.replace(/\n(?!<\/?(ul|ol|li|h[1-3]))/g, '<br>');
+            
+            return html;
+        }
+
+        // Run tests
+        document.getElementById('test1').innerHTML = parseMarkdown('There are a total of **5 companies** in the system.');
+        document.getElementById('test2').innerHTML = parseMarkdown('**Bold text** and *italic text*');
+        document.getElementById('test3').innerHTML = parseMarkdown('Here are the companies:\n1. **Company A** - USA\n2. **Company B** - India');
+        
+        console.log('Test 1:', parseMarkdown('There are a total of **5 companies** in the system.'));
+    </script>
+</body>
+</html>

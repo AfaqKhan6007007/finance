@@ -326,10 +326,15 @@ async def delete_record_tool(
 # ============================================
 
 if __name__ == "__main__":
-    print(f"Starting {config.SERVER_NAME} v{config.SERVER_VERSION}")
-    print(f"Description: {config.SERVER_DESCRIPTION}")
-    print("=" * 60)
-    print("New Architecture: 5 Generic Data Tools + Schema Guides")
-    print("Total Tools: ~29 (5 data + 24 schema/helper)")
-    print("=" * 60)
+    import sys
+    
+    # Only print startup messages to stderr (not stdout, which is used for JSON-RPC)
+    print(f"Starting {config.SERVER_NAME} v{config.SERVER_VERSION}", file=sys.stderr)
+    print(f"Description: {config.SERVER_DESCRIPTION}", file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
+    print("New Architecture: 5 Generic Data Tools + Schema Guides", file=sys.stderr)
+    print("Total Tools: ~29 (5 data + 24 schema/helper)", file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
+    
+    # Run MCP server with stdio transport
     mcp.run(transport="stdio")

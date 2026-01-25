@@ -191,12 +191,15 @@ class EnhancedChatbotService:
                     # No more tool calls, return final response
                     final_response = message.content or "I apologize, but I couldn't generate a response."
                     
-                    # Prune conversation if needed
-                    if self.token_counter.should_prune(conversation):
-                        conversation = self.token_counter.prune_conversation(
-                            conversation,
-                            threshold_ratio=chatbot_config.TOKEN_THRESHOLD_RATIO
-                        )
+                    # Prune conversation if needed (pass all_tools for token counting)
+                    try:
+                        if self.token_counter.should_prune(conversation, all_tools):
+                            conversation = self.token_counter.prune_conversation(
+                                conversation,
+                                threshold_ratio=chatbot_config.TOKEN_THRESHOLD_RATIO
+                            )
+                    except Exception as e:
+                        logger.warning(f"Error pruning conversation: {e}")
                     
                     # Save conversation
                     session['conversation'] = conversation
@@ -207,7 +210,7 @@ class EnhancedChatbotService:
                     tool_name = tool_call.function.name
                     tool_args = json.loads(tool_call.function.arguments)
                     
-                    logger.info(f"Executing tool: {tool_name}")
+                    logger.info(f"Executing tool: {tool_name} with args: {tool_args}")
                     
                     try:
                         # Handle schema tool locally
@@ -216,6 +219,8 @@ class EnhancedChatbotService:
                         else:
                             # Execute via MCP connector
                             result = self.mcp_connector.call_tool(tool_name, tool_args)
+                        
+                        logger.info(f"Tool {tool_name} returned: {str(result)[:200]}")
                         
                         # Format result
                         formatted_result = self.response_formatter.format_tool_response(
@@ -226,15 +231,16 @@ class EnhancedChatbotService:
                         conversation.append({
                             "role": "tool",
                             "tool_call_id": tool_call.id,
-                            "content": json.dumps(formatted_result)
+                            "content": json.dumps(formatted_result) if isinstance(formatted_result, dict) else formatted_result
                         })
                         
                     except Exception as e:
-                        logger.error(f"Error executing tool {tool_name}: {e}")
+                        logger.error(f"Error executing tool {tool_name}: {e}", exc_info=True)
+                        error_msg = f"[{tool_name}] Error: {str(e)}"
                         conversation.append({
                             "role": "tool",
                             "tool_call_id": tool_call.id,
-                            "content": json.dumps({"error": str(e)})
+                            "content": error_msg
                         })
             
             # Max iterations reached

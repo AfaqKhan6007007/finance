@@ -49,6 +49,7 @@ class MCPServerManager:
         
         try:
             logger.info(f"Starting MCP server: {self.server_path}")
+            logger.info(f"Using Python: {self.python_executable}")
             
             # Start server process with stdio transport
             self.process = subprocess.Popen(
@@ -57,16 +58,32 @@ class MCPServerManager:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=False,  # Binary mode for MCP protocol
-                bufsize=0    # Unbuffered
+                bufsize=0,   # Unbuffered
+                cwd=str(self.server_path.parent)  # Set working directory to mcp_server folder
             )
             
             self._start_time = time.time()
             
             # Wait a moment for server to initialize
-            time.sleep(2)
+            time.sleep(3)
             
             if self.is_running():
                 logger.info(f"MCP server started successfully (PID: {self.process.pid})")
+                
+                # Try to read any startup messages from stderr (non-blocking)
+                try:
+                    import select
+                    if hasattr(select, 'select'):
+                        # Unix-like systems
+                        ready = select.select([self.process.stderr], [], [], 0.5)
+                        if ready[0]:
+                            startup_msg = self.process.stderr.read(1024).decode('utf-8', errors='ignore')
+                            if startup_msg:
+                                logger.info(f"Server startup message: {startup_msg[:200]}")
+                except:
+                    # Windows or other systems without select for pipes
+                    pass
+                
                 return True
             else:
                 # Read stderr to see what went wrong
@@ -74,7 +91,7 @@ class MCPServerManager:
                     try:
                         error_output = self.process.stderr.read().decode('utf-8', errors='ignore')
                         if error_output:
-                            logger.error(f"MCP server stderr: {error_output}")
+                            logger.error(f"MCP server stderr: {error_output[:500]}")
                     except:
                         pass
                 logger.error("MCP server process died immediately after start")
