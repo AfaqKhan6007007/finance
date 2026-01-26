@@ -2,7 +2,7 @@ from django.urls import path
 
 from finance.models import TaxWithholdingCategory
 
-from .views import AccountingDimensionCreate, AccountingDimensionDelete, AccountingDimensionEdit, AccountingDimensions, BankAccountCreate, BankAccountDelete, BankAccountEdit, BankAccountSubTypeCreate, BankAccountSubTypeDelete, BankAccountSubTypeEdit, BankAccountSubTypes, BankAccountTypeCreate, BankAccountTypeDelete, BankAccountTypeEdit, BankAccountTypes, BankAccounts, BankGuaranteeCreate, BankGuaranteeCreate, BankGuaranteeDelete, BankGuaranteeEdit, BankGuarantees, Budgets,BudgetCreate,BudgetEdit, BudgetDelete, CostCenterAllocations, CostCenterAllocationsCreate, CostCenterAllocationsDelete, CostCenterAllocationsEdit,CostCenterDelete, CostCenterCreate, CostCenterEdit, CostCenters, CustomerCreate, CustomerDelete, CustomerEdit, Customers, DeductionCertificateCreate, DeductionCertificateDelete, DeductionCertificateEdit, DeductionCertificateView, Login, Signup, Logout, Dashboard, Journal, TaxCategories, TaxCategoryCreate, TaxCategoryDelete, TaxCategoryEdit, TaxItemTemplates, TaxItemTemplatesCreate, TaxItemTemplatesEdit, TaxItemTemplatesDelete, TaxRuleView, TaxRulesCreate, TaxRulesDelete, TaxRulesEdit, TaxWithholdingCategoryCreate, TaxWithholdingCategoryDelete, TaxWithholdingCategoryEdit, TaxWithholdingCategoryList, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, create_invoice
+from .views import AccountingDimensionCreate, AccountingDimensionDelete, AccountingDimensionEdit, AccountingDimensions, BankAccountCreate, BankAccountDelete, BankAccountEdit, BankAccountSubTypeCreate, BankAccountSubTypeDelete, BankAccountSubTypeEdit, BankAccountSubTypes, BankAccountTypeCreate, BankAccountTypeDelete, BankAccountTypeEdit, BankAccountTypes, BankAccounts, BankGuaranteeCreate, BankGuaranteeCreate, BankGuaranteeDelete, BankGuaranteeEdit, BankGuarantees, Budgets,BudgetCreate,BudgetEdit, BudgetDelete, CostCenterAllocations, CostCenterAllocationsCreate, CostCenterAllocationsDelete, CostCenterAllocationsEdit,CostCenterDelete, CostCenterCreate, CostCenterEdit, CostCenters, CustomerCreate, CustomerDelete, CustomerEdit, Customers, DeductionCertificateCreate, DeductionCertificateDelete, DeductionCertificateEdit, DeductionCertificateView, Login, ProcessPaymentReconciliationCreate, ProcessPaymentReconciliationDelete, ProcessPaymentReconciliationEdit, ProcessPaymentReconciliationList, Signup, Logout, Dashboard, Journal, TaxCategories, TaxCategoryCreate, TaxCategoryDelete, TaxCategoryEdit, TaxItemTemplates, TaxItemTemplatesCreate, TaxItemTemplatesEdit, TaxItemTemplatesDelete, TaxRuleView, TaxRulesCreate, TaxRulesDelete, TaxRulesEdit, TaxWithholdingCategoryCreate, TaxWithholdingCategoryDelete, TaxWithholdingCategoryEdit, TaxWithholdingCategoryList, TrialBalance, Ledger, Companies, Payables, Invoices, Receivables, InvoiceScan, Reports, CompanyCreate, CompanyEdit, CompanyDelete, Accounts,AccountCreate,AccountEdit, AccountDelete, InvoiceCreate, InvoiceEdit, InvoiceDelete, JournalCreate, JournalEdit, JournalDelete, Suppliers, SupplierCreate, SupplierEdit, SupplierDelete, UnreconcilePaymentCreate, UnreconcilePaymentDelete, UnreconcilePaymentEdit, UnreconcilePayments, create_invoice
 
 urlpatterns = [
      # ============ Authentication ============
@@ -142,5 +142,33 @@ urlpatterns = [
     path('bank-guarantees/new/', BankGuaranteeCreate.as_view(), name='finance-bank-guarantee-create'),
     path('bank-guarantees/<int:pk>/edit/', BankGuaranteeEdit.as_view(), name='finance-bank-guarantee-edit'),
     path('bank-guarantees/<int:pk>/delete/', BankGuaranteeDelete.as_view(), name='finance-bank-guarantee-delete'),
+
+
+    path('unreconcile-payments/', UnreconcilePayments.as_view(), name='finance-unreconcile-payments'),
+    path('unreconcile-payments/new/', UnreconcilePaymentCreate.as_view(), name='finance-unreconcile-payment-create'),
+    path('unreconcile-payments/<int:pk>/edit/', UnreconcilePaymentEdit.as_view(), name='finance-unreconcile-payment-edit'),
+    path('unreconcile-payments/<int:pk>/delete/', UnreconcilePaymentDelete.as_view(), name='finance-unreconcile-payment-delete'),
+
+    path(
+        'process-payment-reconciliations/',
+        ProcessPaymentReconciliationList.as_view(),
+        name='finance-process-payment-reconciliations'
+    ),
+    path(
+        'process-payment-reconciliations/new/',
+        ProcessPaymentReconciliationCreate.as_view(),
+        name='finance-process-payment-reconciliation-create'
+    ),
+    path(
+        'process-payment-reconciliations/<int:pk>/edit/',
+        ProcessPaymentReconciliationEdit.as_view(),
+        name='finance-process-payment-reconciliation-edit'
+    ),
+    path(
+        'process-payment-reconciliations/<int:pk>/delete/',
+        ProcessPaymentReconciliationDelete.as_view(),
+        name='finance-process-payment-reconciliation-delete'
+    ),
+
 
 ]

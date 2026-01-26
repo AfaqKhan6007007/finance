@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.forms import inlineformset_factory
-from .models import AccountingDimension, BankAccount, BankAccountSubtype, BankAccountType, BankGuarantee, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, Supplier, Budget, TaxCategory, TaxCategoryAccount, TaxItemTemplate, TaxWithholdingCategory, TaxWithholdingRate
+from .models import AccountingDimension, BankAccount, BankAccountSubtype, BankAccountType, BankGuarantee, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, ProcessPaymentReconciliation, Supplier, Budget, TaxCategory, TaxCategoryAccount, TaxItemTemplate, TaxWithholdingCategory, TaxWithholdingRate, UnreconcilePayment
 from django.core.exceptions import ValidationError
 
 class SignupForm(UserCreationForm):
@@ -793,3 +793,21 @@ class BankGuaranteeForm(forms.ModelForm):
                 'placeholder': '0.00',
             }),
         }
+
+
+class UnreconcilePaymentForm(forms.ModelForm):
+    class Meta:
+        model = UnreconcilePayment
+        fields = ['company','voucher_type','voucher_number']
+        widgets = {
+            'company': forms.Select(attrs={'class': 'form-control'}),
+            'voucher_type': forms.Select(attrs={'class': 'form-control'}),
+            'voucher_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter Voucher Number'
+            }),
+        }
+
+class ProcessPaymentReconciliationForm(forms.Form):
+    model = ProcessPaymentReconciliation
+    fields = ['company','party','party_type','receivable_account',]

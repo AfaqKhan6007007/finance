@@ -8,9 +8,9 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from .forms import AccountingDimensionForm, BankAccountForm, BankAccountSubTypeForm, BankAccountTypeForm, BankGuaranteeForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, DeductionCertificateForm, LoginForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm, TaxAccountFormSet, TaxCategoryForm, TaxItemTemplatesForm, TaxRateFormSet, TaxRuleForm, TaxWithholdingCategoryForm
+from .forms import AccountingDimensionForm, BankAccountForm, BankAccountSubTypeForm, BankAccountTypeForm, BankGuaranteeForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, DeductionCertificateForm, LoginForm, ProcessPaymentReconciliationForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm, TaxAccountFormSet, TaxCategoryForm, TaxItemTemplatesForm, TaxRateFormSet, TaxRuleForm, TaxWithholdingCategoryForm, UnreconcilePaymentForm
 from django.db import models, transaction
-from .models import AccountingDimension, BankAccount, BankAccountSubtype, BankAccountType, BankGuarantee, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, Supplier, TaxCategory, TaxItemTemplate, TaxRule, TaxWithholdingCategory
+from .models import AccountingDimension, BankAccount, BankAccountSubtype, BankAccountType, BankGuarantee, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, ProcessPaymentReconciliation, Supplier, TaxCategory, TaxItemTemplate, TaxRule, TaxWithholdingCategory, UnreconcilePayment
 from django.contrib.messages import get_messages
 from django.db.models import Sum, Q
 from datetime import datetime, timedelta
@@ -3831,6 +3831,222 @@ class BankGuaranteeDelete(View):
             'Bank Guarantee deleted successfully!'
         )
         return redirect('finance-bank-guarantees')
+
+class UnreconcilePayments(View):
+    """List all Unreconciled Payments"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        unreconcile_payments = UnreconcilePayment.objects.all()
+
+        search_query = request.GET.get('search', '')
+        if search_query:
+            unreconcile_payments = unreconcile_payments.filter(
+                type__icontains=search_query
+            )
+
+        context = {
+            'unreconcile_payments': unreconcile_payments,
+            'search_query': search_query,
+            'total_count': UnreconcilePayment.objects.count(),
+        }
+        return render(request, 'finance/unreconcile_payments.html', context)
+
+class UnreconcilePaymentCreate(View):
+    """Create new Unreconcile Payment"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        form = UnreconcilePaymentForm()
+        return render(request, 'finance/unreconcile_payment_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = UnreconcilePaymentForm(request.POST)
+
+        if form.is_valid():
+            unreconcile_payment = form.save()
+            messages.success(
+                request,
+                'Unreconcile Payment created successfully!'
+            )
+            return redirect('finance-unreconcile-payments')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/unreconcile_payment_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+    
+class UnreconcilePaymentEdit(View):
+    """Edit existing Unreconcile Payment"""
+
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        unreconcile_payment = get_object_or_404(UnreconcilePayment, pk=pk)
+        form = UnreconcilePaymentForm(instance=unreconcile_payment)
+
+        return render(request, 'finance/unreconcile_payment_form.html', {
+            'form': form,
+            'unreconcile_payment': unreconcile_payment,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        unreconcile_payment = get_object_or_404(UnreconcilePayment, pk=pk)
+        form = UnreconcilePaymentForm(request.POST, instance=unreconcile_payment)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                'Unreconcile Payment updated successfully!'
+            )
+            return redirect('finance-unreconcile-payments')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/unreconcile_payment_form.html', {
+            'form': form,
+            'unreconcile_payment': unreconcile_payment,
+            'action': 'Edit',
+            'is_edit': True
+        })
+    
+class UnreconcilePaymentDelete(View):
+    """Delete Unreconcile Payment"""
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        unreconcile_payment = get_object_or_404(UnreconcilePayment, pk=pk)
+        unreconcile_payment.delete()
+
+        messages.success(
+            request,
+            'Unreconcile Payment deleted successfully!'
+        )
+        return redirect('finance-unreconcile-payments')
+
+class ProcessPaymentReconciliationList(View):
+    """List all Process Payment Reconciliations"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        reconciliations = ProcessPaymentReconciliation.objects.all()
+
+        search_query = request.GET.get('search', '')
+        if search_query:
+            reconciliations = reconciliations.filter(
+                party__icontains=search_query
+            )
+
+        context = {
+            'reconciliations': reconciliations,
+            'search_query': search_query,
+            'total_count': ProcessPaymentReconciliation.objects.count(),
+        }
+        return render(
+            request,
+            'finance/process_payment_reconciliations.html',
+            context
+        )
+    
+class ProcessPaymentReconciliationCreate(View):
+    """Create new Process Payment Reconciliation"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        form = ProcessPaymentReconciliationForm()
+        return render(request, 'finance/process_payment_reconciliation_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = ProcessPaymentReconciliationForm(request.POST)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                'Process Payment Reconciliation created successfully!'
+            )
+            return redirect('finance-process-payment-reconciliations')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/process_payment_reconciliation_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+class ProcessPaymentReconciliationEdit(View):
+    """Edit existing Process Payment Reconciliation"""
+
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        reconciliation = get_object_or_404(
+            ProcessPaymentReconciliation, pk=pk
+        )
+        form = ProcessPaymentReconciliationForm(instance=reconciliation)
+
+        return render(request, 'finance/process_payment_reconciliation_form.html', {
+            'form': form,
+            'reconciliation': reconciliation,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        reconciliation = get_object_or_404(
+            ProcessPaymentReconciliation, pk=pk
+        )
+        form = ProcessPaymentReconciliationForm(
+            request.POST,
+            instance=reconciliation
+        )
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                'Process Payment Reconciliation updated successfully!'
+            )
+            return redirect('finance-process-payment-reconciliations')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/process_payment_reconciliation_form.html', {
+            'form': form,
+            'reconciliation': reconciliation,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+class ProcessPaymentReconciliationDelete(View):
+    """Delete Process Payment Reconciliation"""
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        reconciliation = get_object_or_404(
+            ProcessPaymentReconciliation, pk=pk
+        )
+        reconciliation.delete()
+
+        messages.success(
+            request,
+            'Process Payment Reconciliation deleted successfully!'
+        )
+        return redirect('finance-process-payment-reconciliations')
+
 
 
 class Login(View):

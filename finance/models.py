@@ -901,3 +901,58 @@ class BankGuarantee(models.Model):
 
     def __str__(self):
         return f"{self.type} - {self.amount} starting {self.start_date}"
+    
+class UnreconcilePayment(models.Model):
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='unreconcile_payments',
+        verbose_name="Company"
+    )
+    voucher_type = models.CharField(max_length=100, verbose_name="Voucher Type", choices=[('Payment Entry', 'Payment Entry'), ('Journal Entry', 'Journal Entry')],blank=True,null=True)
+    voucher_number = models.CharField(max_length=100, verbose_name="Voucher Number",blank=True,null=True)
+    class Meta:
+        verbose_name_plural = "Unreconcile Payments"
+        ordering = ['-voucher_number']
+    def __str__(self):
+        return f"{self.voucher_type} - {self.voucher_number}"
+    
+class ProcessPaymentReconciliation(models.Model):
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='process_payment_reconciliations',
+        verbose_name="Company"
+
+    )
+    party = models.CharField(max_length=200, verbose_name="Party", blank=True)
+    party_type = models.CharField(max_length=100, verbose_name="Party Type", choices=[('customer', 'Customer'), ('supplier', 'Supplier'),('employee','Employee'),('shareholder','Shareholder')], blank=True)
+    receivable_payable_account = models.ForeignKey(
+        Account,
+        on_delete=models.CASCADE,
+        related_name='process_payment_reconciliations',
+        verbose_name="Account"
+    )
+    from_invoice_date = models.DateField(verbose_name="From Invoice Date", null=True, blank=True)
+    to_invoice_date = models.DateField(verbose_name="To Invoice Date", null=True, blank=True)
+    from_payment_date = models.DateField(verbose_name="From Payment Date", null=True, blank=True)
+    to_payment_date = models.DateField(verbose_name="To Payment Date", null=True, blank=True)
+    cost_center = models.ForeignKey(
+        CostCenter,
+        on_delete=models.CASCADE,
+        related_name='process_payment_reconciliations',
+        verbose_name="Cost Center",
+        null=True, blank=True
+    )
+    bank_cash_account = models.ForeignKey(
+        Account,
+        on_delete=models.CASCADE,
+        related_name='bank_cash_process_payment_reconciliations',
+        verbose_name="Bank/Cash Account",
+        null=True, blank=True
+    )
+    class Meta:
+        verbose_name_plural = "Process Payment Reconciliations"
+        ordering = ['-from_invoice_date']
+    def __str__(self):
+        return f"{self.party_type} - {self.party}"
