@@ -23,53 +23,33 @@ def register_prompt_tools(mcp: FastMCP):
 
 **Purpose**: Stores business entities/organizations in the system.
 
-**Fields**:
-- id (PK): Auto-increment primary key
-- name: Company legal name (required, max 200 chars)
+**REQUIRED Fields (must provide):**
+- name: Company legal name (max 200 chars)
+- country: Operating country (max 100 chars)
+
+**OPTIONAL Fields (can be null - ASK USER):**
 - abbreviation: Short name (max 50 chars)
-- country: Operating country (required, max 100 chars)
 - date_of_establishment: Company founding date
 - default_currency: Currency code (default "USD", max 10 chars)
 - tax_id: Tax registration number (max 100 chars)
 - default_letter_head: Letter head template (max 200 chars)
 - domain: Company domain/website (max 200 chars)
-- parent_company (FK): Self-reference to parent Company.id (nullable)
+- parent_company (FK): Parent Company.id (nullable)
 - is_parent_company: Boolean - is this a holding company
-- registration_details: Text field for registration info
-- account_number: Legacy field (max 50 chars)
+- registration_details: Text - registration info
 - is_disabled: Boolean - is company disabled
 - is_group: Boolean - is this a group company
 - company_type: Choice - regular/subsidiary/branch/holding
-- account_type: Choice - asset/liability/equity/income/expense
 - tax_rate: Decimal (5,2) - default tax rate
-- balance_must_be: Choice - debit/credit/both
-- created_at: Timestamp (auto)
-- updated_at: Timestamp (auto)
 - created_by (FK): User.id who created (nullable)
 
-**Foreign Keys**:
-- parent_company → Company.id (self-reference, nullable)
-- created_by → User.id (nullable)
-
-**Reverse Relations**:
-- subsidiaries: Companies where this is parent_company
-- accounts: Account records for this company
-- cost_centers: CostCenter records for this company
-- budgets: Budget records for this company
-- invoices: Invoice records for this company
-- journal_entries: JournalEntry records for this company
-- suppliers: Supplier records for this company
-- customers: Customer records for this company
-- tax_item_templates: TaxItemTemplate records
-- tax_rules: TaxRule records
-- cost_center_allocations: CostCenterAllocation records
-
-**Unique Constraints**: None (name not enforced unique)
+**Auto-generated Fields (don't ask user):**
+- id: Auto-increment primary key
+- created_at: Timestamp (auto)
+- updated_at: Timestamp (auto)
 
 **Choices**:
-- company_type: regular, subsidiary, branch, holding
-- account_type: asset, liability, equity, income, expense
-- balance_must_be: debit, credit, both"""
+- company_type: regular, subsidiary, branch, holding"""
 
     # ============================================
     # 2. ACCOUNT TABLE
@@ -84,43 +64,29 @@ def register_prompt_tools(mcp: FastMCP):
 
 **Purpose**: Chart of Accounts - defines all financial accounts in the system.
 
-**Fields**:
-- id (PK): Auto-increment primary key
-- name: Account name (required, max 200 chars)
+**REQUIRED Fields (must provide):**
+- name: Account name (max 200 chars)
+- company (FK): Company.id
+
+**OPTIONAL Fields (can be null - ASK USER):**
 - account_number: Account code/number (max 50 chars)
+- currency: Currency code (default "USD", max 10 chars)
+- parent_account (FK): Parent Account.id (nullable)
+- account_type: Choice - asset/liability/equity/income/expense
+- tax_rate: Decimal (5,2) - tax rate
+- balance_must_be: Choice - debit/credit/both
 - is_disabled: Boolean - is account disabled
 - is_group: Boolean - is this a parent/group account
-- company (FK): Company.id (required)
-- currency: Currency code (default "USD", max 10 chars)
-- parent_account (FK): Self-reference to parent Account.id (nullable)
-- account_type: Choice - asset/liability/equity/income/expense
-- tax_rate: Decimal (5,2) - tax rate for this account
-- balance_must_be: Choice - debit/credit/both
+- created_by (FK): User.id (nullable)
+
+**Auto-generated Fields (don't ask user):**
+- id: Auto-increment primary key
 - created_at: Timestamp (auto)
 - updated_at: Timestamp (auto)
-- created_by (FK): User.id who created (nullable)
-
-**Foreign Keys**:
-- company → Company.id (required, CASCADE)
-- parent_account → Account.id (self-reference, nullable, SET_NULL)
-- created_by → User.id (nullable, SET_NULL)
-
-**Reverse Relations**:
-- sub_accounts: Child accounts where this is parent_account
-- budgets: Budget records for this account
-- journal_entries: JournalEntry records for this account
-
-**Unique Constraints**:
-- (company, account_number): Account number must be unique per company
 
 **Choices**:
 - account_type: asset, liability, equity, income, expense
-- balance_must_be: debit, credit, both
-
-**Accounting Rules**:
-- Group accounts (is_group=True) cannot have transactions
-- Asset/Expense: Normal debit balance
-- Liability/Equity/Income: Normal credit balance"""
+- balance_must_be: debit, credit, both"""
 
     # ============================================
     # 3. INVOICE TABLE
@@ -135,11 +101,12 @@ def register_prompt_tools(mcp: FastMCP):
 
 **Purpose**: Stores sales and purchase invoices.
 
-**Fields**:
-- id (PK): Auto-increment primary key
-- invoice_id: Unique identifier (required, max 50 chars, unique)
-- invoice_number: Display number (required, max 50 chars)
-- date: Invoice date (required)
+**REQUIRED Fields (must provide):**
+- invoice_id: Unique identifier (max 50 chars, unique)
+- invoice_number: Display number (max 50 chars)
+- date: Invoice date
+
+**OPTIONAL Fields (can be null - ASK USER):**
 - supplier (FK): Supplier.id (nullable, for purchase invoices)
 - supplier_vat: Supplier VAT/GST number (max 50 chars)
 - customer (FK): Customer.id (nullable, for sales invoices)
@@ -151,20 +118,12 @@ def register_prompt_tools(mcp: FastMCP):
 - qr_code_data: Text - QR code content
 - status: Choice - draft/sent/paid/cancelled/return
 - company (FK): Company.id (nullable)
+- created_by (FK): User.id (nullable)
+
+**Auto-generated Fields (don't ask user):**
+- id: Auto-increment primary key
 - created_at: Timestamp (auto)
 - updated_at: Timestamp (auto)
-- created_by (FK): User.id who created (nullable)
-
-**Foreign Keys**:
-- supplier → Supplier.id (nullable, PROTECT)
-- customer → Customer.id (nullable, PROTECT)
-- company → Company.id (nullable, CASCADE)
-- created_by → User.id (nullable, SET_NULL)
-
-**Reverse Relations**: None
-
-**Unique Constraints**:
-- invoice_id: Must be globally unique
 
 **Choices**:
 - status: draft, sent, paid, cancelled, return
@@ -172,8 +131,7 @@ def register_prompt_tools(mcp: FastMCP):
 **Business Logic**:
 - Either supplier OR customer should be set (not both)
 - Purchase invoice: supplier is set
-- Sales invoice: customer is set
-- total_amount auto-calculated: amount_before_vat + total_vat"""
+- Sales invoice: customer is set"""
 
     # ============================================
     # 4. JOURNAL ENTRY TABLE
@@ -188,34 +146,31 @@ def register_prompt_tools(mcp: FastMCP):
 
 **Purpose**: Records individual accounting transactions (double-entry bookkeeping).
 
-**Fields**:
-- id (PK): Auto-increment primary key
-- entry_number: Unique entry ID (required, max 50 chars, unique)
+**REQUIRED Fields (must provide):**
+- entry_number: Unique entry ID (max 50 chars, unique) - auto-generates if not provided
 - date: Posting date (required)
-- account (FK): Account.id (required)
-- debit_amount: Decimal (15,2) - debit amount
-- credit_amount: Decimal (15,2) - credit amount
-- description: Text - transaction description
-- company (FK): Company.id (nullable)
-- created_at: Timestamp (auto)
-- updated_at: Timestamp (auto)
-- created_by (FK): User.id who created (nullable)
+- account (FK): Account.id (required) - which GL account
+- debit_amount OR credit_amount: Decimal (15,2) - must fill one, not both
+
+**OPTIONAL Fields (can be null - ASK USER):**
+- company (FK): Company.id (nullable) - which company this entry belongs to
+- description: Text (nullable) - transaction description
+- created_by (FK): User.id (nullable) - who created this entry
 
 **Foreign Keys**:
 - account → Account.id (required, CASCADE)
-- company → Company.id (nullable, CASCADE)
-- created_by → User.id (nullable, SET_NULL)
+- company → Company.id (OPTIONAL, CASCADE)
+- created_by → User.id (OPTIONAL, SET_NULL)
 
-**Reverse Relations**: None
-
-**Unique Constraints**:
-- entry_number: Must be globally unique
+**Auto-generated Fields (don't ask user):**
+- id: Auto-increment primary key
+- created_at: Timestamp (auto)
+- updated_at: Timestamp (auto)
 
 **Business Logic**:
 - Auto-generates entry_number: "JE00001", "JE00002", etc.
-- Each entry is ONE side of a double-entry transaction
 - Debit and credit are mutually exclusive (one should be 0)
-- Complete transaction needs paired entries with balanced debits/credits"""
+- Each entry is ONE side of a double-entry transaction"""
 
     # ============================================
     # 5. SUPPLIER TABLE
@@ -230,10 +185,11 @@ def register_prompt_tools(mcp: FastMCP):
 
 **Purpose**: Stores vendor/supplier information for procurement.
 
-**Fields**:
-- id (PK): Auto-increment primary key
+**REQUIRED Fields (must provide):**
+- name: Supplier name (max 200 chars)
+
+**OPTIONAL Fields (can be null - ASK USER):**
 - gstin_uin: GST/UIN number (max 30 chars)
-- name: Supplier name (required, max 200 chars)
 - supplier_type: Choice - company/individual/partnership
 - gst_category: Choice - registered/unregistered/SEZ/overseas/etc
 - contact_first_name: Contact person first name (max 100 chars)
@@ -249,20 +205,12 @@ def register_prompt_tools(mcp: FastMCP):
 - state: State/province (max 100 chars)
 - country: Country (max 100 chars, default "Pakistan")
 - company (FK): Company.id (nullable)
+- created_by (FK): User.id (nullable)
+
+**Auto-generated Fields (don't ask user):**
+- id: Auto-increment primary key
 - created_at: Timestamp (auto)
 - updated_at: Timestamp (auto)
-- created_by (FK): User.id who created (nullable)
-
-**Foreign Keys**:
-- company → Company.id (nullable, SET_NULL)
-- created_by → User.id (nullable, SET_NULL)
-
-**Reverse Relations**:
-- invoices: Purchase invoices from this supplier
-- deduction_certificates: DeductionCertificate records for this supplier
-
-**Unique Constraints**:
-- (company, name): Supplier name must be unique per company
 
 **Choices**:
 - supplier_type: company, individual, partnership
@@ -281,10 +229,11 @@ def register_prompt_tools(mcp: FastMCP):
 
 **Purpose**: Stores customer/client information for sales.
 
-**Fields**:
-- id (PK): Auto-increment primary key
+**REQUIRED Fields (must provide):**
+- name: Customer name (max 200 chars)
+
+**OPTIONAL Fields (can be null - ASK USER):**
 - gstin_uin: GST/UIN number (max 30 chars)
-- name: Customer name (required, max 200 chars)
 - customer_type: Choice - company/individual/partnership
 - gst_category: Choice - registered/unregistered/SEZ/overseas/etc
 - contact_first_name: Contact person first name (max 100 chars)
@@ -300,20 +249,12 @@ def register_prompt_tools(mcp: FastMCP):
 - state: State/province (max 100 chars)
 - country: Country (max 100 chars, default "Pakistan")
 - company (FK): Company.id (nullable)
+- created_by (FK): User.id (nullable)
+
+**Auto-generated Fields (don't ask user):**
+- id: Auto-increment primary key
 - created_at: Timestamp (auto)
 - updated_at: Timestamp (auto)
-- created_by (FK): User.id who created (nullable)
-
-**Foreign Keys**:
-- company → Company.id (nullable, SET_NULL)
-- created_by → User.id (nullable, SET_NULL)
-
-**Reverse Relations**:
-- invoices: Sales invoices to this customer
-- tax_rules: TaxRule records for this customer
-
-**Unique Constraints**:
-- (company, name): Customer name must be unique per company
 
 **Choices**:
 - customer_type: company, individual, partnership
@@ -332,36 +273,25 @@ def register_prompt_tools(mcp: FastMCP):
 
 **Purpose**: Stores budget allocations for accounts and cost centers.
 
-**Fields**:
-- id (PK): Auto-increment primary key
-- series: Budget series/name (required, max 200 chars)
-- budget_against: Choice - cost_center/project
-- fiscal_year_from: Fiscal year start (max 20 chars, choice)
-- fiscal_year_to: Fiscal year end (max 20 chars, choice)
-- company (FK): Company.id (required)
-- distribution: Choice - monthly/quarterly/half-yearly/yearly
-- cost_center (FK): CostCenter.id (required, non-group only)
-- account (FK): Account.id (required)
+**REQUIRED Fields (must provide):**
+- series: Budget series/name (max 200 chars)
+- company (FK): Company.id
+- cost_center (FK): CostCenter.id (non-group only)
+- account (FK): Account.id
 - budget_amount: Decimal (15,2) - total budget amount
 
-**Foreign Keys**:
-- company → Company.id (required, CASCADE)
-- cost_center → CostCenter.id (required, PROTECT, limit: is_group=False, is_disabled=False)
-- account → Account.id (required, CASCADE)
+**OPTIONAL Fields (can be null - ASK USER):**
+- budget_against: Choice - cost_center/project
+- fiscal_year_from: Fiscal year start (max 20 chars)
+- fiscal_year_to: Fiscal year end (max 20 chars)
+- distribution: Choice - monthly/quarterly/half-yearly/yearly
 
-**Reverse Relations**: None
-
-**Unique Constraints**: None specified
+**Auto-generated Fields (don't ask user):**
+- id: Auto-increment primary key
 
 **Choices**:
 - budget_against: cost_center, project
-- fiscal_year_from: 2025-2026 (extensible)
-- fiscal_year_to: 2025-2026 (extensible)
-- distribution: monthly, quarterly, half-yearly, yearly
-
-**Business Logic**:
-- Can only budget against non-group, enabled cost centers
-- Distribution determines how budget_amount is split across periods"""
+- distribution: monthly, quarterly, half-yearly, yearly"""
 
     # ============================================
     # 8. COST CENTER TABLE
@@ -376,20 +306,20 @@ def register_prompt_tools(mcp: FastMCP):
 
 **Purpose**: Defines cost centers (departments/projects) for expense tracking.
 
-**Fields**:
-- id (PK): Auto-increment primary key
-- name: Cost center name (required, max 150 chars)
-- cost_center_number: Cost center code (max 50 chars, nullable)
-- company (FK): Company.id (required)
-- parent (FK): Self-reference to parent CostCenter.id (nullable)
+**REQUIRED Fields (must provide):**
+- name: Cost center name (max 150 chars)
+- company (FK): Company.id
+
+**OPTIONAL Fields (can be null - ASK USER):**
+- cost_center_number: Cost center code (max 50 chars)
+- parent (FK): Parent CostCenter.id (nullable)
 - is_group: Boolean - is this a parent/group cost center
 - is_disabled: Boolean - is cost center disabled
+
+**Auto-generated Fields (don't ask user):**
+- id: Auto-increment primary key
 - created_at: Timestamp (auto)
 - updated_at: Timestamp (auto)
-
-**Foreign Keys**:
-- company → Company.id (required, CASCADE)
-- parent → CostCenter.id (self-reference, nullable, SET_NULL)
 
 **Reverse Relations**:
 - children: Child cost centers where this is parent

@@ -1,0 +1,176 @@
+"""
+=============================================================================
+SCHEMA GUIDE RESTRUCTURING - VERIFICATION REPORT
+=============================================================================
+Date: January 28, 2026
+Issue: Chatbot not asking for optional fields during CREATE operations
+Root Cause: Schema guides had REQUIRED and OPTIONAL fields mixed together
+Solution: Restructured schema guides with clear visual sections
+
+=============================================================================
+CHANGES MADE
+=============================================================================
+
+1. FILE: mcp_server/tools/prompt_tools.py
+   - Restructured 8 critical schema guides (out of 21 total)
+   - New format has THREE distinct sections with bold headers:
+     * **REQUIRED Fields (must provide):**
+     * **OPTIONAL Fields (can be null - ASK USER):**
+     * **Auto-generated Fields (don't ask user):**
+
+2. SCHEMAS RESTRUCTURED (8/21):
+   ✅ Company
+   ✅ Account
+   ✅ Invoice
+   ✅ Journal Entry
+   ✅ Supplier
+   ✅ Customer
+   ✅ Budget
+   ✅ Cost Center
+
+3. REMAINING SCHEMAS (13/21) - Still have mixed format:
+   - CostCenterAllocation
+   - AccountingDimension
+   - TaxItemTemplate
+   - TaxCategory
+   - TaxCategoryAccount
+   - TaxWithholdingCategory
+   - TaxRule
+   - DeductionCertificate
+   - And 5 others
+
+=============================================================================
+VERIFICATION
+=============================================================================
+
+### Journal Entry Schema (MOST CRITICAL):
+
+**REQUIRED Fields (must provide):**
+- entry_number: Unique entry ID (max 50 chars, unique) - auto-generates if not provided
+- date: Posting date (required)
+- account (FK): Account.id (required) - which GL account
+- debit_amount OR credit_amount: Decimal (15,2) - must fill one, not both
+
+**OPTIONAL Fields (can be null - ASK USER):**
+- company (FK): Company.id (nullable) - which company this entry belongs to  ✅
+- description: Text (nullable) - transaction description
+- created_by (FK): User.id (nullable) - who created this entry
+
+✅ VERIFIED: "company" field is now clearly in OPTIONAL section with "(nullable)" notation
+
+### Company Schema:
+
+**REQUIRED Fields (must provide):**
+- name: Company legal name (max 200 chars)
+- country: Operating country (max 100 chars)
+
+**OPTIONAL Fields (can be null - ASK USER):**
+- abbreviation: Short name (max 50 chars)
+- date_of_establishment: Company founding date
+- default_currency: Currency code (default "USD", max 10 chars)
+- tax_id: Tax registration number (max 100 chars)
+... (10 more optional fields)
+
+✅ VERIFIED: Clear separation between required (2 fields) and optional (12 fields)
+
+=============================================================================
+EXPECTED BEHAVIOR AFTER FIX
+=============================================================================
+
+When user says: "Create a journal entry for office supplies"
+
+OLD BEHAVIOR (BROKEN):
+1. Chatbot gets mixed field list from schema guide
+2. Asks for required fields only (entry_number, date, account, amount)
+3. SKIPS optional fields (company, description)
+4. Auto-assigns company from unknown source → DATA INTEGRITY VIOLATION
+
+NEW BEHAVIOR (EXPECTED):
+1. Chatbot sees clear "REQUIRED Fields" and "OPTIONAL Fields" sections
+2. Asks for ALL required fields first
+3. Then asks: "Do you want to set company? (optional, can skip)"
+4. Then asks: "Do you want to set description? (optional, can skip)"
+5. If user says NO → create_record WITHOUT that field
+6. NO AUTO-POPULATION
+
+=============================================================================
+TEST PLAN
+=============================================================================
+
+Test Case 1: Create Journal Entry
+- Command: "Create a journal entry for office supplies purchase"
+- Expected: Chatbot asks about company field explicitly
+- Expected: If user says "skip company", entry created WITHOUT company field
+
+Test Case 2: Create Company
+- Command: "Create a new company"
+- Expected: Chatbot asks for name, country (required)
+- Expected: Chatbot asks about EACH optional field individually
+- Expected: Chatbot should ask about 12 optional fields (abbreviation, tax_id, etc.)
+
+Test Case 3: Create Supplier
+- Command: "Create a new supplier"
+- Expected: Chatbot asks for name (required only)
+- Expected: Chatbot asks about ALL 15 optional fields
+
+=============================================================================
+ROOT CAUSE ANALYSIS SUMMARY
+=============================================================================
+
+Issue Timeline:
+1. Journal Entry #55 created with wrong company (data integrity violation)
+2. User tested multiple times - chatbot NEVER asked for optional fields
+3. Agent made 5 different fix attempts:
+   - Attempt 1: Updated CRUD workflow logic
+   - Attempt 2: Added system prompt examples
+   - Attempt 3: Optimized prompts (reduced verbosity)
+   - Attempt 4: Set temperature=0.0 + moved CRITICAL RULE to top
+   - Attempt 5: Restructured schema guides (CURRENT)
+
+Root Causes Identified:
+1. Temperature defaulting to 1.0 (fixed → 0.0)
+2. Schema guides had mixed field format (fixing now)
+3. "(nullable)" and "(required)" buried in text descriptions
+
+Why Previous Fixes Failed:
+- Workflow instructions and system prompts were correct
+- But schema guides presented ambiguous data
+- LLM had to PARSE each line to determine if field is optional
+- Too subtle → LLM skipped optional fields
+
+Current Solution:
+- VISUAL SEPARATION with bold headers
+- Impossible to miss "OPTIONAL Fields (can be null - ASK USER):"
+- No parsing required - section header makes it obvious
+
+=============================================================================
+NEXT STEPS
+=============================================================================
+
+1. ✅ Restructure 8 critical schemas (DONE)
+2. ✅ Restart Django server to load changes (DONE - running on port 8000)
+3. [ ] Test journal entry creation
+4. [ ] Test company creation
+5. [ ] Restructure remaining 13 schemas if needed
+6. [ ] Verify fix across all table types
+
+=============================================================================
+FILES MODIFIED
+=============================================================================
+
+1. mcp_server/tools/prompt_tools.py (8 schema guides restructured)
+2. core/chatbot/system_prompt.py (temperature=0.0, CRITICAL RULE at top)
+3. core/chatbot/crud_prompt_templates.py (optimized to 94 lines)
+4. core/chatbot/chatbot_service_enhanced.py (temperature=0.0 in API call)
+
+=============================================================================
+SERVER STATUS
+=============================================================================
+
+Django Server: RUNNING on http://0.0.0.0:8000/
+Virtual Environment: Activated (d:\Machine Learning\JFF JOB\finance\venv)
+Changes Loaded: YES (server restarted after schema guide changes)
+Ready for Testing: YES
+
+=============================================================================
+"""

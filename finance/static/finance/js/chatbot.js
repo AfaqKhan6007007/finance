@@ -217,6 +217,7 @@
             const response = await fetch(API_ENDPOINTS.clear, {
                 method: 'POST',
                 headers: {
+                    'Content-Type': 'application/json',
                     'X-CSRFToken': getCsrfToken()
                 }
             });
@@ -251,6 +252,22 @@
         }
     }
 
+    // Clear conversation on page load/refresh (for short-term memory only)
+    async function clearConversationOnPageLoad() {
+        try {
+            await fetch(API_ENDPOINTS.clear, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                }
+            });
+            console.log('✓ Conversation cleared on page load (short-term memory only)');
+        } catch (error) {
+            console.error('Error clearing conversation on page load:', error);
+        }
+    }
+
     // Event Listeners
     toggleBtn.addEventListener('click', toggleChat);
     closeBtn.addEventListener('click', toggleChat);
@@ -282,7 +299,8 @@
         }
     });
 
-    // Initialize
+    // Initialize: Clear conversation on page load for short-term memory
+    clearConversationOnPageLoad();
     console.log('Chatbot widget initialized');
 
 })();

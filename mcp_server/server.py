@@ -25,13 +25,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Import config first to initialize Django
 import config
 
-# Import generic data tools (5 core tools)
+# Import generic data tools (6 core tools - added referential integrity check)
 from tools.generic_data_tools import (
     get_record,
     query_records,
     create_record,
     update_record,
     delete_record,
+    check_referential_integrity,
     list_available_tables
 )
 
@@ -319,6 +320,173 @@ async def delete_record_tool(
         - Protected relationships will prevent deletion
     """
     return await sync_to_async(delete_record)(table, record_id, confirm)
+
+
+@mcp.tool()
+async def check_referential_integrity_tool(
+    table: str,
+    record_id: int
+) -> dict:
+    """
+    Check if a record has dependencies before deletion.
+    
+    ⚠️ CRITICAL: ALWAYS call this BEFORE delete_record_tool!
+    
+    This tool checks all reverse foreign key relationships to determine if other
+    records depend on this record. Prevents data integrity violations by blocking
+    deletions of records that are referenced by other tables.
+    
+    WORKFLOW FOR DELETION:
+    1. Get record: get_record_tool(table, record_id)
+    2. CHECK INTEGRITY: Call this tool to check for dependencies
+    3. If has_dependencies=True:
+       a. Display the dependencies list to user with counts and sample IDs
+       b. Explain which tables/records depend on this
+       c. STOP - DO NOT proceed with deletion
+       d. Ask user to handle dependencies first (delete or reassign)
+    4. If has_dependencies=False: Proceed to delete_record_tool(confirm=True)
+    
+    Args:
+        table: Name of the table (e.g., "company", "account", "supplier")
+        record_id: The ID of the record to check for dependencies
+        
+    Returns:
+        {
+            "success": true,
+            "data": {
+                "table": "company",
+                "record_id": 22,
+                "has_dependencies": true/false,
+                "can_delete": true/false,
+                "dependencies": [
+                    {
+                        "table": "account",
+                        "count": 5,
+                        "field": "company",
+                        "sample_ids": [95, 96, 97, 98, 99]
+                    },
+                    {
+                        "table": "invoice", 
+                        "count": 12,
+                        "field": "company",
+                        "sample_ids": [101, 102, 103, 104, 105]
+                    }
+                ],
+                "summary": "Cannot delete: 5 account + 12 invoice records depend on this"
+            }
+        }
+        
+    Example User Message When Dependencies Found:
+    "Cannot delete Company 'ABC Corp' (ID: 22) because:
+    - 5 Account records reference it (IDs: 95, 96, 97, 98, 99)
+    - 12 Invoice records reference it (IDs: 101, 102, 103, 104, 105)
+    
+    You must first delete or reassign these dependent records before deleting the company."
+    
+    Important:
+        - ALWAYS call this before attempting deletion
+        - NEVER delete if has_dependencies=True
+        - Show user the full dependencies list with counts
+        - Explain which specific records are blocking the deletion
+    """
+    return await sync_to_async(check_referential_integrity)(table, record_id)
+
+
+@mcp.tool()
+async def validate_required_fields_tool(
+    table: str,
+    provided_data: dict
+) -> dict:
+    """
+    Validate if all required fields are provided before creating a record.
+    
+    ⚠️ CRITICAL: ALWAYS call this BEFORE create_record_tool!
+    
+    WORKFLOW FOR CREATION:
+    1. Get schema guide: get_<table>_schema_guide()
+    2. VALIDATE FIELDS: Call this tool with user-provided data
+    3. If is_valid=False:
+       a. Display missing_required_fields to user
+       b. For each missing FK, call list_foreign_key_options_tool
+       c. Ask user to provide missing information
+       d. DO NOT call create_record_tool yet!
+    4. If is_valid=True: Proceed to create_record_tool
+    
+    Args:
+        table: Name of the table (e.g., "account", "invoice")
+        provided_data: Dictionary of fields user wants to create
+        
+    Returns:
+        Validation result with:
+        - is_valid: True if all required fields provided
+        - missing_required_fields: List of fields user needs to provide
+        - missing_foreign_keys: FK fields that need values
+        - required_fields_info: Description of each required field
+        
+    Example Response (invalid):
+        {
+            "is_valid": false,
+            "missing_required_fields": ["company", "account_type"],
+            "missing_foreign_keys": ["company"],
+            "required_fields_info": {
+                "company": "Foreign key to Company table (required)",
+                "account_type": "Choice field: asset/liability/equity/income/expense (required)"
+            }
+        }
+    """
+    from tools.generic_data_tools import validate_required_fields
+    return await sync_to_async(validate_required_fields)(table, provided_data)
+
+
+@mcp.tool()
+async def list_foreign_key_options_tool(
+    table: str,
+    foreign_key_field: str,
+    page: int = 1,
+    page_size: int = 10
+) -> dict:
+    """
+    List available records from a foreign key related table for user selection.
+    
+    ⚠️ CRITICAL: When creating a record with FK fields, call this to show options to user!
+    
+    WORKFLOW:
+    1. validate_required_fields_tool identifies missing FKs
+    2. For each missing FK, call this tool
+    3. Display options to user in a friendly format
+    4. User selects by name or ID
+    5. Use the ID in create_record_tool
+    
+    Args:
+        table: Name of the table being created (e.g., "account")
+        foreign_key_field: Name of the FK field (e.g., "company")
+        page: Page number (default 1)
+        page_size: Records per page (default 10, max 50)
+        
+    Returns:
+        List of available records with ID and display name
+        
+    Example Response:
+        {
+            "foreign_key_field": "company",
+            "related_table": "Company",
+            "options": [
+                {"id": 22, "display": "TechCorp Solutions USA"},
+                {"id": 23, "display": "Global Corp International"},
+                {"id": 24, "display": "SmartTech Industries"}
+            ],
+            "total": 5,
+            "instruction": "User should select one by name or ID"
+        }
+        
+    Display to user:
+        "Please select a company from the list:
+        - TechCorp Solutions USA (ID: 22)
+        - Global Corp International (ID: 23)
+        - SmartTech Industries (ID: 24)"
+    """
+    from tools.generic_data_tools import list_foreign_key_options
+    return await sync_to_async(list_foreign_key_options)(table, foreign_key_field, page, page_size)
 
 
 # ============================================

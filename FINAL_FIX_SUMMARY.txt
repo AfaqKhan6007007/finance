@@ -1,0 +1,58 @@
+OPTIONAL FIELDS FIX - FINAL VERSION
+====================================
+
+PROBLEM: Chatbot was NOT asking for optional fields (like company in journal_entry)
+         It was either skipping them or auto-assigning values
+
+ROOT CAUSE: Prompts were not explicit enough about the workflow
+
+SOLUTION APPLIED:
+-----------------
+
+1. SYSTEM PROMPT - Added explicit CREATE rules:
+   ✓ "You MUST ask user about EVERY field (required AND optional)"
+   ✓ "For OPTIONAL fields: Ask 'Do you want to set [field_name]?'"
+   ✓ "If user says NO → DO NOT include that field in create_record call"
+   ✓ "NEVER auto-assign any field the user didn't explicitly provide"
+   
+2. SYSTEM PROMPT - Added complete JOURNAL ENTRY example:
+   ✓ Shows schema guide result (required vs optional)
+   ✓ Shows exact questions to ask user
+   ✓ Shows user saying "NO company"
+   ✓ Shows create_record WITHOUT company field
+   ✓ Explicit NOTE: "company NOT included because user said NO"
+
+3. CRUD TEMPLATE - Made workflow ultra-clear:
+   ✓ Step 2: "ASK user for EVERY field (required + optional)"
+   ✓ "For optional: 'Do you want to set [field]?'"
+   ✓ "User says NO → Don't include in create_record"
+   ✓ Journal entry example with company as optional
+
+4. EMPHASIS on WRONG behaviors to avoid:
+   ✓ "Skipping optional fields without asking"
+   ✓ "Auto-assigning company based on account's company"
+   ✓ "Including fields user didn't provide"
+
+EXPECTED CHATBOT BEHAVIOR NOW:
+-------------------------------
+User: "Create journal entry for office supplies"
+
+Chatbot will:
+1. Call get_journal_entry_schema_guide()
+2. Call get_crud_operation_guide("create")
+3. Ask: "Entry number?"
+4. Ask: "Date?"
+5. Ask: "Account ID?"
+6. Ask: "Debit or credit amount?"
+7. Ask: "Do you want to assign a company? (optional, you can skip)"
+8. Ask: "Do you want to add a description? (optional, you can skip)"
+9. Only include fields in create_record that user provided
+
+If user says NO to company → create_record will NOT have company field
+If user says YES to company → chatbot asks which company, then includes it
+
+VERIFICATION:
+-------------
+All 7 critical instruction checks: PASS ✓
+
+The fix is now in place with explicit, direct instructions.

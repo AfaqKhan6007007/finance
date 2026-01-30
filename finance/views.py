@@ -1,6 +1,7 @@
 import io
 from xml.parsers.expat import model
 import os
+import logging
 from django.conf import settings
 from django.shortcuts import redirect, render, get_object_or_404
 from django.views import View
@@ -39,6 +40,7 @@ from openai import OpenAI
 from pdfminer.high_level import extract_text
 
 client_openai = OpenAI(api_key=settings.OPENAI_API_KEY)
+logger = logging.getLogger(__name__)
 
 class Accounts(View):
     """List all accounts"""
@@ -3656,10 +3658,18 @@ def chatbot_send_message(request):
                 'error': 'Message cannot be empty'
             }, status=400)
         
+        # EXTENSIVE LOGGING - Track which service is used
+        logger.info("="*80)
+        logger.info(f"CHATBOT REQUEST: User message: {user_message}")
+        logger.info(f"USE_ENHANCED_CHATBOT setting: {USE_ENHANCED_CHATBOT}")
+        logger.info(f"Environment variable USE_MCP_CHATBOT: {os.getenv('USE_MCP_CHATBOT', 'NOT SET')}")
+        
         # Use enhanced chatbot service with MCP integration
         if USE_ENHANCED_CHATBOT:
+            logger.info(">>> USING EnhancedChatbotService (MCP-enabled)")
             chatbot = EnhancedChatbotService()
         else:
+            logger.info(">>> USING Basic ChatbotService (OLD)")
             chatbot = ChatbotService()
         
         # Send message and get response

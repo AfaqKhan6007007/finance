@@ -519,17 +519,22 @@ def update_record(
     data: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
-    Update an existing record in any table.
+    Update a SINGLE existing record in any table.
+    
+    ⚠️ CRITICAL RESTRICTION:
+    - ONLY ONE RECORD AT A TIME - Never batch update
+    - Must confirm record ID with user before updating
     
     WORKFLOW:
-    1. First call get_<table>_schema_guide() to understand available fields
-    2. Call get_record() to verify the record exists and see current values
-    3. Call get_crud_operation_guide(operation="update") for few-shot examples
-    4. Then call this tool with updated data
+    1. Call get_<table>_schema_guide() to understand available fields
+    2. Call get_record() to verify the record exists and show current values to user
+    3. Confirm with user which SINGLE record to update
+    4. Call get_crud_operation_guide(operation="update") for few-shot examples
+    5. Then call this tool with updated data for ONE record only
     
     Args:
         table: Name of the table (e.g., "company", "account", "invoice")
-        record_id: The ID of the record to update
+        record_id: The ID of the SINGLE record to update (must be integer, NOT list)
         data: Dictionary of field values to update (only include fields to change)
         
     Returns:
@@ -548,6 +553,19 @@ def update_record(
     tool_name = "update_record"
     
     try:
+        # CRITICAL: Validate single record only
+        if isinstance(record_id, (list, tuple)):
+            return format_error_response(
+                Exception("CRITICAL ERROR: Cannot update multiple records at once. Only ONE record ID allowed. Never batch update."),
+                tool_name
+            )
+        
+        if not isinstance(record_id, int):
+            return format_error_response(
+                Exception(f"CRITICAL ERROR: record_id must be a single integer, got {type(record_id).__name__}"),
+                tool_name
+            )
+        
         # Validate table name
         model = _get_model(table)
         if model is None:
@@ -627,27 +645,121 @@ def update_record(
         return format_error_response(e, tool_name)
 
 
+def check_referential_integrity(
+    table: str,
+    record_id: int
+) -> Dict[str, Any]:
+    """
+    Check if a record is referenced by other tables as a foreign key.
+    This ensures referential integrity before deletion.
+    
+    Args:
+        table: Name of the table (e.g., "company", "account")
+        record_id: The ID of the record to check
+        
+    Returns:
+        Dict with 'has_dependencies' boolean and 'dependencies' list
+        
+    Example:
+        {
+            "has_dependencies": True,
+            "dependencies": [
+                {"table": "account", "count": 5, "field": "company"},
+                {"table": "invoice", "count": 12, "field": "company"}
+            ]
+        }
+    """
+    tool_name = "check_referential_integrity"
+    
+    try:
+        # Validate table name
+        model = _get_model(table)
+        if model is None:
+            available_tables = list(set(_normalize_table_name(t) for t in TABLE_REGISTRY.keys()))
+            return format_error_response(
+                Exception(f"Invalid table '{table}'. Available tables: {sorted(available_tables)}"),
+                tool_name
+            )
+        
+        # Get the record
+        try:
+            instance = model.objects.get(id=record_id)
+        except model.DoesNotExist:
+            return format_error_response(
+                Exception(f"Record with ID {record_id} not found in table '{table}'"),
+                tool_name
+            )
+        
+        # Check all related objects (reverse FK relationships)
+        dependencies = []
+        
+        # Get all reverse FK relationships
+        for related_object in instance._meta.related_objects:
+            related_name = related_object.get_accessor_name()
+            related_model_name = related_object.related_model._meta.model_name
+            field_name = related_object.field.name
+            
+            # Count related objects
+            related_manager = getattr(instance, related_name)
+            count = related_manager.count()
+            
+            if count > 0:
+                # Get sample IDs (first 5)
+                sample_ids = list(related_manager.values_list('id', flat=True)[:5])
+                
+                dependencies.append({
+                    "table": related_model_name,
+                    "count": count,
+                    "field": field_name,
+                    "sample_ids": sample_ids,
+                    "message": f"{count} {related_model_name} record(s) reference this {table}"
+                })
+        
+        has_dependencies = len(dependencies) > 0
+        
+        return format_success_response(
+            data={
+                "has_dependencies": has_dependencies,
+                "dependencies": dependencies,
+                "record_id": record_id,
+                "table": table,
+                "can_delete": not has_dependencies
+            },
+            tool_name=tool_name,
+            metadata=get_tool_metadata(tool_name)
+        )
+        
+    except Exception as e:
+        return format_error_response(e, tool_name)
+
+
 def delete_record(
     table: str,
     record_id: int,
     confirm: bool = False
 ) -> Dict[str, Any]:
     """
-    Delete a record from any table.
+    Delete a SINGLE record from any table.
+    
+    ⚠️ CRITICAL RESTRICTIONS:
+    - ONLY ONE RECORD AT A TIME - Never batch delete
+    - Must check referential integrity BEFORE deletion
+    - If dependencies exist, deletion is BLOCKED
     
     WORKFLOW:
-    1. First call get_<table>_schema_guide() to understand relationships
-    2. Call get_record() to verify the record and check dependencies
-    3. Call get_crud_operation_guide(operation="delete") for few-shot examples
-    4. Then call this tool with confirm=True
+    1. Call get_<table>_schema_guide() to understand the table
+    2. Call get_record() to verify the record exists
+    3. Call check_referential_integrity() to check for dependencies
+    4. If has_dependencies=True, STOP and show user the dependent records
+    5. Only if has_dependencies=False, call this tool with confirm=True
     
     Args:
         table: Name of the table (e.g., "company", "account", "invoice")
-        record_id: The ID of the record to delete
+        record_id: The ID of the SINGLE record to delete (must be integer, NOT list)
         confirm: Must be True to actually delete (safety check)
         
     Returns:
-        Deletion confirmation
+        Deletion confirmation or error if dependencies exist
         
     Example:
         delete_record(table="invoice", record_id=123, confirm=True)
@@ -655,6 +767,19 @@ def delete_record(
     tool_name = "delete_record"
     
     try:
+        # CRITICAL: Validate single record only
+        if isinstance(record_id, (list, tuple)):
+            return format_error_response(
+                Exception("CRITICAL ERROR: Cannot delete multiple records at once. Only ONE record ID allowed. Never batch delete."),
+                tool_name
+            )
+        
+        if not isinstance(record_id, int):
+            return format_error_response(
+                Exception(f"CRITICAL ERROR: record_id must be a single integer, got {type(record_id).__name__}"),
+                tool_name
+            )
+        
         # Validate table name
         model = _get_model(table)
         if model is None:
@@ -680,11 +805,30 @@ def delete_record(
                 tool_name
             )
         
+        # CRITICAL: Check referential integrity BEFORE deletion
+        integrity_check = check_referential_integrity(table, record_id)
+        
+        if integrity_check.get('success') and integrity_check['data'].get('has_dependencies'):
+            dependencies = integrity_check['data']['dependencies']
+            dep_summary = []
+            for dep in dependencies:
+                dep_summary.append(f"- {dep['count']} {dep['table']} record(s) via field '{dep['field']}' (IDs: {dep['sample_ids']})")
+            
+            error_msg = (
+                f"DELETION BLOCKED: Cannot delete {table} ID {record_id} due to referential integrity constraints.\n"
+                f"The following records depend on it:\n" + "\n".join(dep_summary) + "\n\n"
+                f"You must first delete or update these dependent records before deleting this {table}."
+            )
+            
+            return format_error_response(
+                Exception(error_msg),
+                tool_name
+            )
+        
         # Store record data before deletion
         deleted_data = serialize_model_instance(instance)
         
-        # Check for protected relationships before deleting
-        # This will raise ProtectedError if there are related objects
+        # Perform deletion
         try:
             instance.delete()
         except Exception as delete_error:
@@ -782,3 +926,229 @@ def list_available_tables() -> Dict[str, Any]:
         tool_name=tool_name,
         metadata=get_tool_metadata(tool_name)
     )
+
+
+def validate_required_fields(
+    table: str,
+    provided_data: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Validate if all required fields are provided for creating a record.
+    
+    CRITICAL: Call this BEFORE create_record to check if user provided all mandatory fields.
+    If missing fields, display them to user and ask for the information.
+    
+    Args:
+        table: Name of the table (e.g., "company", "account")
+        provided_data: Dictionary of field values user wants to create
+        
+    Returns:
+        Validation result with:
+        - is_valid: True if all required fields provided
+        - missing_required_fields: List of missing required fields
+        - missing_foreign_keys: List of missing FK fields
+        - provided_fields: List of fields user provided
+        
+    Example:
+        validate_required_fields(
+            table="account",
+            provided_data={"name": "Cash"}
+        )
+        
+        Returns:
+        {
+            "is_valid": False,
+            "missing_required_fields": ["company", "account_type"],
+            "missing_foreign_keys": ["company"],
+            "provided_fields": ["name"],
+            "required_fields_info": {
+                "company": "Foreign key to Company table (required)",
+                "account_type": "Choice field: asset/liability/equity/income/expense (required)"
+            }
+        }
+    """
+    tool_name = "validate_required_fields"
+    
+    try:
+        # Get model
+        model = _get_model(table)
+        if model is None:
+            return format_error_response(
+                Exception(f"Invalid table '{table}'"),
+                tool_name
+            )
+        
+        # Get all required fields (excluding auto fields like id, created_at, updated_at)
+        required_fields = []
+        required_field_info = {}
+        missing_fks = []
+        
+        for field in model._meta.fields:
+            # Skip auto fields
+            if field.auto_created or field.name in ['id', 'created_at', 'updated_at']:
+                continue
+            
+            # Check if field is required (not nullable and no default)
+            is_required = not field.null and not field.has_default()
+            
+            if is_required:
+                required_fields.append(field.name)
+                
+                # Build description
+                desc_parts = []
+                if field.is_relation:
+                    related_model = field.related_model.__name__
+                    desc_parts.append(f"Foreign key to {related_model} table")
+                    if field.name not in provided_data:
+                        missing_fks.append(field.name)
+                elif field.choices:
+                    choices_str = "/".join([c[0] for c in field.choices])
+                    desc_parts.append(f"Choice field: {choices_str}")
+                else:
+                    desc_parts.append(f"{field.get_internal_type()}")
+                    if hasattr(field, 'max_length') and field.max_length:
+                        desc_parts.append(f"max {field.max_length} chars")
+                
+                desc_parts.append("(required)")
+                required_field_info[field.name] = " ".join(desc_parts)
+        
+        # Check which required fields are missing
+        provided_fields = list(provided_data.keys())
+        missing_fields = [f for f in required_fields if f not in provided_data]
+        
+        is_valid = len(missing_fields) == 0
+        
+        return format_success_response(
+            data={
+                "is_valid": is_valid,
+                "table": table,
+                "required_fields": required_fields,
+                "provided_fields": provided_fields,
+                "missing_required_fields": missing_fields,
+                "missing_foreign_keys": missing_fks,
+                "required_fields_info": required_field_info,
+                "validation_message": "All required fields provided!" if is_valid else f"Missing {len(missing_fields)} required field(s)"
+            },
+            tool_name=tool_name,
+            metadata={
+                **get_tool_metadata(tool_name),
+                "table": table
+            }
+        )
+        
+    except Exception as e:
+        return format_error_response(e, tool_name)
+
+
+def list_foreign_key_options(
+    table: str,
+    foreign_key_field: str,
+    page: int = 1,
+    page_size: int = 10
+) -> Dict[str, Any]:
+    """
+    List available records from a foreign key related table for selection.
+    
+    CRITICAL: When creating a record that requires a FK, call this to show user the available options.
+    User can then select from the list by name/ID.
+    
+    Args:
+        table: Name of the table being created (e.g., "account")
+        foreign_key_field: Name of the FK field (e.g., "company")
+        page: Page number for pagination (default 1)
+        page_size: Records per page (default 10, max 50)
+        
+    Returns:
+        List of available records from the related table with ID and display name
+        
+    Example:
+        list_foreign_key_options(
+            table="account",
+            foreign_key_field="company"
+        )
+        
+        Returns:
+        {
+            "foreign_key_field": "company",
+            "related_table": "Company",
+            "options": [
+                {"id": 1, "display": "Global Corp International"},
+                {"id": 2, "display": "TechCorp Solutions USA"},
+                {"id": 3, "display": "SmartTech Industries"}
+            ],
+            "total": 5,
+            "page": 1,
+            "instruction": "User should select one of these options by name or ID"
+        }
+    """
+    tool_name = "list_foreign_key_options"
+    
+    try:
+        # Get model
+        model = _get_model(table)
+        if model is None:
+            return format_error_response(
+                Exception(f"Invalid table '{table}'"),
+                tool_name
+            )
+        
+        # Find the FK field
+        fk_field = None
+        for field in model._meta.fields:
+            if field.name == foreign_key_field and field.is_relation:
+                fk_field = field
+                break
+        
+        if not fk_field:
+            return format_error_response(
+                Exception(f"Field '{foreign_key_field}' is not a foreign key in table '{table}'"),
+                tool_name
+            )
+        
+        # Get the related model
+        related_model = fk_field.related_model
+        related_table_name = related_model.__name__
+        
+        # Query all records from related table
+        queryset = related_model.objects.all()
+        total = queryset.count()
+        
+        # Paginate
+        page_size = min(page_size, 50)  # Max 50
+        start = (page - 1) * page_size
+        end = start + page_size
+        
+        records = queryset[start:end]
+        
+        # Build options list with ID and display name
+        options = []
+        for record in records:
+            display_name = str(record)  # Uses __str__ method
+            options.append({
+                "id": record.pk,
+                "display": display_name
+            })
+        
+        return format_success_response(
+            data={
+                "foreign_key_field": foreign_key_field,
+                "related_table": related_table_name,
+                "related_table_normalized": _normalize_table_name(related_table_name),
+                "options": options,
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+                "has_more": end < total,
+                "instruction": f"User should select one of these {related_table_name} records by name or ID. Use the ID value in the '{foreign_key_field}' field when creating the record."
+            },
+            tool_name=tool_name,
+            metadata={
+                **get_tool_metadata(tool_name),
+                "table": table,
+                "foreign_key_field": foreign_key_field
+            }
+        )
+        
+    except Exception as e:
+        return format_error_response(e, tool_name)
+
