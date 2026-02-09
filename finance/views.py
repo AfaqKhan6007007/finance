@@ -8,9 +8,9 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from .forms import AccountingDimensionForm, BankAccountForm, BankAccountSubTypeForm, BankAccountTypeForm, BankGuaranteeForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, DeductionCertificateForm, LoginForm, ProcessPaymentReconciliationForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm, TaxAccountFormSet, TaxCategoryForm, TaxItemTemplatesForm, TaxRateFormSet, TaxRuleForm, TaxWithholdingCategoryForm, UnreconcilePaymentForm
+from .forms import AccountingDimensionForm, BankAccountForm, BankAccountSubTypeForm, BankAccountTypeForm, BankGuaranteeForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, DeductionCertificateForm, DunningForm, LoginForm, ProcessPaymentReconciliationForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm, TaxAccountFormSet, TaxCategoryForm, TaxItemTemplatesForm, TaxRateFormSet, TaxRuleForm, TaxWithholdingCategoryForm, UnreconcilePaymentForm
 from django.db import models, transaction
-from .models import AccountingDimension, BankAccount, BankAccountSubtype, BankAccountType, BankGuarantee, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Invoice, JournalEntry, ProcessPaymentReconciliation, Supplier, TaxCategory, TaxItemTemplate, TaxRule, TaxWithholdingCategory, UnreconcilePayment
+from .models import AccountingDimension, BankAccount, BankAccountSubtype, BankAccountType, BankGuarantee, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Dunning, Invoice, JournalEntry, ProcessPaymentReconciliation, Supplier, TaxCategory, TaxItemTemplate, TaxRule, TaxWithholdingCategory, UnreconcilePayment
 from django.contrib.messages import get_messages
 from django.db.models import Sum, Q
 from datetime import datetime, timedelta
@@ -4046,6 +4046,111 @@ class ProcessPaymentReconciliationDelete(View):
             'Process Payment Reconciliation deleted successfully!'
         )
         return redirect('finance-process-payment-reconciliations')
+
+class DunningList(View):
+    """List all Dunning records"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        dunnings = Dunning.objects.all()
+
+        search_query = request.GET.get('search', '')
+        if search_query:
+            dunnings = dunnings.filter(
+                customer__name__icontains=search_query
+            )
+
+        context = {
+            'dunnings': dunnings,
+            'search_query': search_query,
+            'total_count': Dunning.objects.count(),
+        }
+        return render(
+            request,
+            'finance/dunnings.html',
+            context
+        )
+
+class DunningCreate(View):
+    """Create new Dunning"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        form = DunningForm()
+        return render(request, 'finance/dunning_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = DunningForm(request.POST)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                'Dunning created successfully!'
+            )
+            return redirect('finance-dunnings')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/dunning_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+class DunningEdit(View):
+    """Edit existing Dunning"""
+
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        dunning = get_object_or_404(Dunning, pk=pk)
+        form = DunningForm(instance=dunning)
+
+        return render(request, 'finance/dunning_form.html', {
+            'form': form,
+            'dunning': dunning,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        dunning = get_object_or_404(Dunning, pk=pk)
+        form = DunningForm(request.POST, instance=dunning)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                'Dunning updated successfully!'
+            )
+            return redirect('finance-dunnings')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/dunning_form.html', {
+            'form': form,
+            'dunning': dunning,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+class DunningDelete(View):
+    """Delete Dunning"""
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        dunning = get_object_or_404(Dunning, pk=pk)
+        dunning.delete()
+
+        messages.success(
+            request,
+            'Dunning deleted successfully!'
+        )
+        return redirect('finance-dunnings')
 
 
 

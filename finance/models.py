@@ -956,3 +956,29 @@ class ProcessPaymentReconciliation(models.Model):
         ordering = ['-from_invoice_date']
     def __str__(self):
         return f"{self.party_type} - {self.party}"
+
+class Dunning(models.Model):
+    customer = models.ForeignKey(
+        'Customer',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='dunning',
+        verbose_name="Customer",
+    )
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='dunning',
+        verbose_name="Company"
+    )
+    date = models.DateField(null=True,blank=True)
+
+class DunningType(models.Model):
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='dunning_type',
+        verbose_name="Company"
+    )
+    dunning_type= models.TextField(blank=True,null=True)

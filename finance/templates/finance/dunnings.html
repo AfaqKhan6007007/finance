@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dunnings - Finance</title>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                         'Helvetica Neue', Arial, sans-serif;
+            background-color: #f9fafb;
+            color: #1f2937;
+        }
+
+        body.sidebar-collapsed .sidebar { transform: translateX(-100%); }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background-color: white;
+            border-bottom: 1px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
+            height: var(--topbar-height);
+            transition: margin-left 0.3s ease, width 0.3s ease;
+        }
+
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px;
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s ease, width 0.3s ease;
+        }
+
+        body.sidebar-collapsed .header {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        body.sidebar-collapsed .main-content {
+            margin-left: 0;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 32px;
+        }
+
+        .page-title-section h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #00a896;
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid #d1d5db;
+            background: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: #374151;
+        }
+
+        .btn-primary {
+            background-color: #00a896;
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover { background-color: #008c7a; }
+
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        thead { background-color: #f3f4f6; }
+
+        th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            color: #00a896;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 16px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px;
+        }
+
+        tr:hover { background-color: #f9fafb; }
+
+        .action-icons {
+            display: flex;
+            gap: 16px;
+        }
+
+        .icon-btn {
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .icon-btn:hover { color: #00a896; }
+
+        .icon-btn-delete { color: #dc2626; }
+
+        .fab {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            width: 56px;
+            height: 56px;
+            background-color: #00a896;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+{% include "finance/header.html" %}
+{% include "finance/sidenav_banking.html" %}
+
+<div class="main-content">
+
+    <div class="page-header">
+        <div class="page-title-section">
+            <h1>Dunnings</h1>
+            <p class="page-subtitle">Manage all dunning records</p>
+        </div>
+
+        <div class="header-actions">
+            <a href="{% url 'finance-dunning-create' %}" class="btn btn-primary">
+                ➕ Add Dunning
+            </a>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Company</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th>{{ dunnings|length }} of {{ total_count }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dunning in dunnings %}
+                <tr>
+                    <td>{{ dunning.id }}</td>
+                    <td>{{ dunning.company }}</td>
+                    <td>{{ dunning.customer|default:"—" }}</td>
+                    <td>{{ dunning.date }}</td>
+                    <td>
+                        <div class="action-icons">
+                            <a href="{% url 'finance-dunning-edit' dunning.pk %}"
+                               class="icon-btn">✏️ Edit</a>
+
+                            <form method="post"
+                                  action="{% url 'finance-dunning-delete' dunning.pk %}"
+                                  style="display:inline;">
+                                {% csrf_token %}
+                                <button class="icon-btn icon-btn-delete">🗑️ Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align:center;">
+                        No dunning records found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<a href="{% url 'finance-dunning-create' %}" class="fab">
+    <svg viewBox="0 0 24 24" width="24" height="24">
+        <path d="M12 5v14M5 12h14"
+              stroke="white" stroke-width="2"
+              stroke-linecap="round"/>
+    </svg>
+</a>
+
+</body>
+</html>
