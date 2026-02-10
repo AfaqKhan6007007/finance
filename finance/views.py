@@ -8,9 +8,9 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from .forms import AccountingDimensionForm, BankAccountForm, BankAccountSubTypeForm, BankAccountTypeForm, BankGuaranteeForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, DeductionCertificateForm, DunningForm, LoginForm, ProcessPaymentReconciliationForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm, TaxAccountFormSet, TaxCategoryForm, TaxItemTemplatesForm, TaxRateFormSet, TaxRuleForm, TaxWithholdingCategoryForm, UnreconcilePaymentForm
+from .forms import AccountingDimensionForm, BankAccountForm, BankAccountSubTypeForm, BankAccountTypeForm, BankGuaranteeForm, BudgetForm, CostCenterAllocationsForm, CostCenterForm, DeductionCertificateForm, DunningForm, DunningTypeForm, LoginForm, ProcessPaymentReconciliationForm, SignupForm, CompanyForm, AccountForm, InvoiceForm, JournalEntryForm, SupplierForm, CustomerForm, TaxAccountFormSet, TaxCategoryForm, TaxItemTemplatesForm, TaxRateFormSet, TaxRuleForm, TaxWithholdingCategoryForm, UnreconcilePaymentForm
 from django.db import models, transaction
-from .models import AccountingDimension, BankAccount, BankAccountSubtype, BankAccountType, BankGuarantee, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Dunning, Invoice, JournalEntry, ProcessPaymentReconciliation, Supplier, TaxCategory, TaxItemTemplate, TaxRule, TaxWithholdingCategory, UnreconcilePayment
+from .models import AccountingDimension, BankAccount, BankAccountSubtype, BankAccountType, BankGuarantee, Budget, Company, Account, CostCenter, CostCenterAllocation, Customer, DeductionCertificate, Dunning, DunningType, Invoice, JournalEntry, ProcessPaymentReconciliation, Supplier, TaxCategory, TaxItemTemplate, TaxRule, TaxWithholdingCategory, UnreconcilePayment
 from django.contrib.messages import get_messages
 from django.db.models import Sum, Q
 from datetime import datetime, timedelta
@@ -4151,6 +4151,112 @@ class DunningDelete(View):
             'Dunning deleted successfully!'
         )
         return redirect('finance-dunnings')
+
+
+class DunningTypeList(View):
+    """List all Dunning records"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        dunning_types = DunningType.objects.all()
+
+        search_query = request.GET.get('search', '')
+        if search_query:
+            dunning_types = dunning_types.filter(
+                dunning_type__icontains=search_query
+            )
+
+        context = {
+            'dunning_types': dunning_types,
+            'search_query': search_query,
+            'total_count': DunningType.objects.count(),
+        }
+        return render(
+            request,
+            'finance/dunning_types.html',
+            context
+        )
+
+class DunningTypeCreate(View):
+    """Create new Dunning Type"""
+
+    @method_decorator(login_required)
+    def get(self, request):
+        form = DunningTypeForm()
+        return render(request, 'finance/dunning_type_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = DunningTypeForm(request.POST)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                'Dunning Type created successfully!'
+            )
+            return redirect('finance-dunning-types')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/dunning_type_form.html', {
+            'form': form,
+            'action': 'New',
+            'is_edit': False
+        })
+
+class DunningTypeEdit(View):
+    """Edit existing Dunning Type"""
+
+    @method_decorator(login_required)
+    def get(self, request, pk):
+        dunning_type = get_object_or_404(DunningType, pk=pk)
+        form = DunningTypeForm(instance=dunning_type)
+
+        return render(request, 'finance/dunning_type_form.html', {
+            'form': form,
+            'dunning_type': dunning_type,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        dunning_type = get_object_or_404(DunningType, pk=pk)
+        form = DunningTypeForm(request.POST, instance=dunning_type)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                'Dunning Type updated successfully!'
+            )
+            return redirect('finance-dunning-types')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, 'finance/dunning_type_form.html', {
+            'form': form,
+            'dunning_type': dunning_type,
+            'action': 'Edit',
+            'is_edit': True
+        })
+
+class DunningTypeDelete(View):
+    """Delete Dunning Type"""
+
+    @method_decorator(login_required)
+    def post(self, request, pk):
+        dunning_type = get_object_or_404(DunningType, pk=pk)
+        dunning_type.delete()
+
+        messages.success(
+            request,
+            'Dunning Type deleted successfully!'
+        )
+        return redirect('finance-dunning-types')
 
 
 

@@ -981,4 +981,4 @@ class DunningType(models.Model):
         related_name='dunning_type',
         verbose_name="Company"
     )
-    dunning_type= models.TextField(blank=True,null=True)
+    dunning_type = models.TextField(blank=True,null=True)

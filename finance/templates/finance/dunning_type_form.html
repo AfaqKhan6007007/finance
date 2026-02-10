@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% if is_edit %}Edit{% else %}New{% endif %} Dunning Type</title>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                         'Helvetica Neue', Arial, sans-serif;
+            background-color: #f9fafb;
+            color: #333;
+        }
+
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px;
+            margin-left: var(--sidebar-width);
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 40px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px 32px;
+        }
+
+        .form-label {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+        }
+
+        .btn-save {
+            margin-top: 24px;
+            padding: 10px 32px;
+            background-color: #00b894;
+            color: white;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+{% include "finance/header.html" %}
+{% include "finance/sidenav_banking.html" %}
+
+<div class="main-content">
+
+    <h2 style="margin-bottom: 24px;">
+        {% if is_edit %}Edit{% else %}New{% endif %} Dunning Type
+    </h2>
+
+    <div class="form-card">
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-grid">
+
+                <div>
+                    <label class="form-label">Company</label>
+                    <select name="company" class="form-control">
+                        {% for company in form.fields.company.queryset %}
+                        <option value="{{ company.pk }}"
+                            {% if form.company.value == company.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ company }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+
+                <div>
+                    <label class="form-label">Dunning Type</label>
+                    <input type="text"
+                           name="dunning_type"
+                           class="form-control"
+                           value="{{ form.dunning_type.value }}">
+                </div>
+
+            </div>
+
+            <button type="submit" class="btn-save">Save</button>
+        </form>
+    </div>
+
+</div>
+</body>
+</html>
