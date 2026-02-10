@@ -4154,7 +4154,7 @@ class DunningDelete(View):
 
 
 class DunningTypeList(View):
-    """List all Dunning records"""
+    """List all Dunning Type records"""
 
     @method_decorator(login_required)
     def get(self, request):
